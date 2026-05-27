@@ -776,10 +776,9 @@ namespace Hecton8.Core
                 abyssalAmbientSnapshot.TransitionTo(AudioSnapshotDiveCrossfadeSeconds);
         }
 
-        private static void ResetWorldEntryFreezeState()
+        private void ResetWorldEntryFreezeState()
         {
-            SceneRuntimeService runtime = GlobalRegistry.SceneRuntime;
-            runtime?.ResetWorldEntryFreezeStateFromCache();
+            ResetWorldEntryFreezeStateFromCache();
 
             Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
             Shader.SetGlobalFloat(_GamePausedId, 0f);
