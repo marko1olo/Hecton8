@@ -2,7 +2,7 @@
 
 Batch source: `Docs/Tasks/CURRENT_BATCH.md`
 Domain: compute shader thread sizing, C# compute dispatch sizing, GPU buffer layout audit.
-Status: VERIFIED GREEN STATIC / LEGACY COMPUTEBUFFER DEV SMOKE PURGED / BUILD BLOCKED BY CROSS-DOMAIN COMPILE WALL
+Status: VERIFIED GREEN STATIC / VENDOR COMPONENT ACTIVATION GATE + SCANNER PREFILTER / BUILD BLOCKED BY CROSS-DOMAIN COMPILE WALL
 
 Relevant mandates read:
 - `GPU_Compute_Kernels_Kernels_Optimization_MX350.txt`
@@ -46,6 +46,8 @@ Latest scanner result:
 - first-party high-resource direct shader-reference violations: 0
 - first-party compute service bridge violations: 0
 - compute service bridge contracts audited: 3
+- first-party vendor component activation violations: 0
+- vendor component activation contracts audited: 7
 - first-party compute texture random-write contract violations: 0
 - first-party supported-kernel resolver violations: 0
 - supported-kernel resolver contracts audited: 10
@@ -54,7 +56,7 @@ Latest scanner result:
 - dispatch group dimension ceiling contracts audited: 38
 - first-party literal one-group compute dispatch violations: 0
 - RenderGraph/CommandBuffer dispatch fallback-divisor violations: 0
-- purge scanned C# files: 50
+- purge scanned C# files: 51
 - native collection field declarations: 276
 - vault-owner native fields classified: 13
 - persistent native fields remaining: 0
@@ -66,11 +68,11 @@ Latest scanner result:
 - AUP runtime conversion proof: true
 - compaction-aware lock proof: true
 - telemetry ring proof: true
-- transient vault views: 1697
+- transient vault views: 1703
 - transient job views: 295
 - byte offset maps: 134
-- purge verification hash: `b8c553eb893c444b1b86e94855bbc70a10db89e6062150365bb656572c586690`
-- current-pass code/proof hash: `b8c553eb893c444b1b86e94855bbc70a10db89e6062150365bb656572c586690`
+- purge verification hash: `f54d1fa1dc5d6fada69755f7f6625b14407dce2bdbf765e624869d36cf016364`
+- current-pass code/proof hash: `f54d1fa1dc5d6fada69755f7f6625b14407dce2bdbf765e624869d36cf016364`
 - build: `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1` launched after CPU/process gate opened (`7%`, no compiler processes). It failed before reaching 1333-owned code on existing cross-domain errors: missing `ToolKinematics.Contracts`, missing many non-1333 `BufferID` enum members, missing Odin attributes, duplicate world/inventory methods.
 
 ## Checklist
@@ -143,6 +145,8 @@ Latest scanner result:
 - [x] Task 66: SARGASSUM_SCATTER_VEGETATION_GPU_WRITE_HELPER_PURGE | DOD: Sargassum boid ping/spatial/counter UAVs, GPU scatter visibility cache, and vegetation cull telemetry counters no longer use lock-write allocations or lock-upload helpers while bound as `RW*` resources | Rejected: leaving helper-shaped `EnsureBuffer` calls green because Unity documents lock-write buffers as GPU-read-only for UAV/copy-destination use | Estimate: 0 us measured; removes driver-contract risk
 - [x] Task 67: GPU_WRITE_LOCK_UPLOAD_SCANNER_HARDENING | DOD: dispatch scanner now tracks non-generic ref helper allocations, indirect-args helper allocations, and `GraphicsBufferUploadUtility.UploadArray/UploadNativeArray` calls on GPU-written fields; scanner reports 0 first-party lock contract violations | Rejected: allocation-only proof because lock-upload helpers can still call `LockBufferForWrite` after allocation was fixed | Estimate: 0 us runtime; editor scan only
 - [x] Task 68: LEGACY_COMPUTEBUFFER_DEV_SMOKE_PURGE | DOD: `HabitatStressSmokeTester` no longer owns first-party `ComputeBuffer` fields or allocations; smoke shader payload lanes now use `GraphicsBuffer`, and `OOP_ComputeDispatch_Scanner.py` rejects first-party `new ComputeBuffer(...)` after stripping comments/strings | Rejected: leaving a dev-only legacy buffer exception, raw grep that matches string literals, and broad vendor package rewrites | Estimate: 0 us runtime; smoke harness cold allocation only
+- [x] Task 69: AUTHORED_VENDOR_COMPONENT_ACTIVATION_GATE | DOD: dispatch scanner audits first-party `.prefab`/`.unity` authored Crest/GPUI component activation; 7 contracts, 0 first-party violations; scene-authored GPUI managers are admitted only through `HardwareTierDetector.AllowHighResourceComputeShaders` runtime disable guards | Rejected: raw scene binary mutation and broad vendor package edits | Estimate: 0 us normal path; unsupported backends skip vendor manager work
+- [x] Task 70: SCANNER_HOTPATH_PREFILTER | DOD: `OOP_ComputeDispatch_Scanner.py` now prefilters legacy `ComputeBuffer` and graphics-buffer lock analysis before comment stripping/regex passes; dispatch scanner remains green and drops from ~100-130 s to ~21 s locally | Rejected: accepting proof tooling that is too slow for repeated autonomous loops | Estimate: 0 us runtime; editor scanner only
 
 ## Loop State
 
@@ -203,3 +207,5 @@ Latest scanner result:
 - Iteration 55: Re-audited the lock-contract scanner itself and found an underscore-prefix assumption: static `s_` buffers were not classified as GPU write destinations. Repaired `DroneFleetManager` static procedural args ownership, expanded scanner field parsing to `_` and `s_` names, regenerated dispatch/purge reports green, and left build pending until the CPU/process gate is open.
 - Iteration 56: Re-audited helper-shaped GPU-write buffer ownership. Repaired `SargassumMicroFaunaBoids`, `GPUScatterDirector`, and `HectonIndirectVegetationRenderer` so UAV/CopyCount/readback counters use GPU-write-capable buffers plus `SetData`; expanded scanner proof for non-generic helpers and lock-upload helpers; regenerated reports green; deferred build because active `dotnet` and `VBCSCompiler` were present.
 - Iteration 57: Re-audited first-party legacy buffer API usage after hardening lock-write contracts. Found `HabitatStressSmokeTester` still used `ComputeBuffer` for cold smoke shader payloads, converted the fields/allocations to `GraphicsBuffer`, added first-party legacy `ComputeBuffer` scanner enforcement, regenerated dispatch/purge reports green, then attempted `Hecton8.Core.csproj` after CPU/process gate opened. Build is blocked by cross-domain compile errors unrelated to the touched files.
+- Iteration 58: Re-audited authored scene/prefab activation for vendor compute packages. Dispatch scanner now proves Crest `ShapeFFT` is paired with `Crest4KinematicsAdapter` and scene-authored GPUI manager components are covered by runtime admission disable guards; report shows 7 vendor component activation contracts and 0 first-party violations.
+- Iteration 59: Profiled the dispatch scanner after the asset gate and found most time in comment/string stripping for legacy `ComputeBuffer` proof across all C# files. Added cheap API prefilters before the heavy analyzers, regenerated dispatch/purge reports green, and reduced local dispatch scanner runtime to ~21 seconds.

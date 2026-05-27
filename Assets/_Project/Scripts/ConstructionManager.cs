@@ -625,7 +625,12 @@ namespace Hecton8.Construction
             // Ensure ModuleMarker exists.
             if (!module.TryGetComponent(out ModuleMarker marker))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 marker = module.AddComponent<ModuleMarker>();
+#else
+                RetireModuleInstanceWithoutDestroy(module, _cachedObjectPool);
+                return;
+#endif
             }
 
             // Initialize marker when build data is present.
