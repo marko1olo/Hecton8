@@ -930,8 +930,7 @@ namespace Hecton8.Environment
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Player:
-                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
-                    ApplyPlayerRuntimeContext();
+                    RebindPlayerRuntimeContext(previousService, currentService);
                     break;
                 case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
                     _resolvedFluidDecals = currentService as IFluidDecalPresentationSink;
@@ -987,6 +986,20 @@ namespace Hecton8.Environment
             _resolvedAtmosphereReadModel = null;
         }
 
+        private void RebindPlayerRuntimeContext(object previousService, object currentService)
+        {
+            IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+            if (previousContext != null &&
+                previousContext.PlayerTransform != null &&
+                ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+            {
+                playerTransform = null;
+            }
+
+            _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+            ApplyPlayerRuntimeContext();
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_hotSwapRegistered || !Application.isPlaying)
@@ -1038,7 +1051,9 @@ namespace Hecton8.Environment
 
         private void EvaluateMatrix(bool forcePublish)
         {
-            ResolveReferences();
+            if (!Application.isPlaying)
+                ResolveReferences();
+
             Transform evaluationTransform = ResolveEvaluationTransform();
 
             if (evaluationTransform == null || !HasCatalog)
@@ -1225,10 +1240,11 @@ namespace Hecton8.Environment
             if (playerContext == null)
                 return;
 
-            if (playerTransform == null)
+            if (playerContext.PlayerTransform != null)
                 playerTransform = playerContext.PlayerTransform;
 
-            _playerMovement = playerContext.PlayerMovement;
+            if (playerContext.PlayerMovement != null)
+                _playerMovement = playerContext.PlayerMovement;
         }
 
         private Transform ResolveEvaluationTransform()

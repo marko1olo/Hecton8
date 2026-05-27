@@ -46,6 +46,7 @@ namespace Hecton8.AI
         private const float BiteHullDentMaximumDepthMeters = 0.28f;
         private const uint LeviathanRigMagicH8lr = 0x524C3848u; // H8LR
         private const uint LeviathanRigMagicLvrg = 0x4752564Cu; // LVRG
+        private const BufferID TerrainSdfSnapshotBuffer = (BufferID)71337;
         private const int LeviathanRigHeaderBytes = 16;
         private const int LeviathanRigRowBytes = 16;
         private const int LeviathanIkGlobalsBytes = 32;
@@ -127,6 +128,7 @@ namespace Hecton8.AI
         private VaultGenerationHandle<CurrentJawPos> _currentJawPosHandle;
         private VaultGenerationHandle<BiteIkSolveEvent> _biteIkSolveEventsHandle;
         private VaultGenerationHandle<int> _biteIkTelemetryCursorHandle;
+        private VaultGenerationHandle<byte> _terrainSdfSnapshotHandle;
 
         private GraphicsBuffer _bonesGraphicsBufferA;
         private GraphicsBuffer _bonesGraphicsBufferB;
@@ -138,12 +140,10 @@ namespace Hecton8.AI
 
         private JobHandle _pendingHandle;
         private JobHandle _disposeHandle;
-        private HectonVoxelVolume _terrainSdfLeaseVolume;
-        private HectonVoxelVolume.PublishedSonarSdfReadLease _terrainSdfReadLease;
         private long _solverScheduleTimestamp;
         private float _lastBurstSolveMicros;
         private bool _solverScheduled;
-        private bool _terrainSdfReadLeaseLocked;
+        private bool _terrainSdfSnapshotLocked;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
@@ -409,8 +409,7 @@ namespace Hecton8.AI
                 out float3 terrainOrigin,
                 out float3 terrainSize,
                 out int terrainResolution,
-                out HectonVoxelVolume terrainSdfLeaseVolume,
-                out HectonVoxelVolume.PublishedSonarSdfReadLease terrainSdfReadLease);
+                out bool terrainSdfSnapshotLocked);
 
             float safeTailWhipSecondsRemaining = ResolveSafeTailWhipSecondsRemaining();
             if (safeTailWhipSecondsRemaining > 0f)
@@ -484,17 +483,15 @@ namespace Hecton8.AI
                 RuntimeFlags = runtimeFlags
             };
 
-            bool terrainSdfLeaseClaimed = false;
+            bool terrainSdfSnapshotClaimed = false;
             JobHandle scheduledHandle = default;
             try
             {
                 scheduledHandle = job.Schedule();
-                if (terrainSdfLeaseVolume != null)
+                if (terrainSdfSnapshotLocked)
                 {
-                    _terrainSdfLeaseVolume = terrainSdfLeaseVolume;
-                    _terrainSdfReadLease = terrainSdfReadLease;
-                    _terrainSdfReadLeaseLocked = true;
-                    terrainSdfLeaseClaimed = true;
+                    _terrainSdfSnapshotLocked = true;
+                    terrainSdfSnapshotClaimed = true;
                 }
 
                 _pendingHandle = scheduledHandle;
@@ -502,8 +499,8 @@ namespace Hecton8.AI
             }
             finally
             {
-                if (!terrainSdfLeaseClaimed && terrainSdfLeaseVolume != null)
-                    terrainSdfLeaseVolume.ReleasePublishedSonarSdfPayloadReadLease(in terrainSdfReadLease);
+                if (!terrainSdfSnapshotClaimed)
+                    UnlockTerrainSdfSnapshot(ref terrainSdfSnapshotLocked);
             }
 
             if (biteTargetReady)
@@ -559,7 +556,7 @@ namespace Hecton8.AI
                 return;
 
             _solverScheduled = false;
-            ReleaseTerrainSdfReadLease();
+            ReleaseTerrainSdfSnapshotLock();
             CaptureCompletedSolverTelemetry();
             AdvanceFrameIndex();
             ApplyPendingOriginShiftRebase();
@@ -592,7 +589,7 @@ namespace Hecton8.AI
                 }
 
                 _solverScheduled = false;
-                ReleaseTerrainSdfReadLease();
+                ReleaseTerrainSdfSnapshotLock();
                 CaptureCompletedSolverTelemetry();
                 AdvanceFrameIndex();
                 if (TelemetryHasInvalidFrame())
@@ -823,7 +820,7 @@ namespace Hecton8.AI
             if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
-            if (vault == null || requiredLength <= 0)
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked || requiredLength <= 0)
             {
                 buffer = default;
                 return false;
@@ -846,9 +843,11 @@ namespace Hecton8.AI
         {
             buffer = default;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !IsMatchingVaultHandle(in handle, bufferId) ||
                 !vault.TryResolveHandle(in handle, out buffer) ||
+                vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -874,11 +873,13 @@ namespace Hecton8.AI
         {
             buffer = default;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
                 handle.BufferID != (uint)bufferId ||
                 handle.Generation == 0u ||
                 !vault.TryResolveHandle(in handle, out buffer) ||
+                vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -894,6 +895,7 @@ namespace Hecton8.AI
             if (_solverScheduled)
             {
                 DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
+                ReleaseTerrainSdfSnapshotLock();
                 CaptureCompletedSolverTelemetry();
             }
 
@@ -920,6 +922,7 @@ namespace Hecton8.AI
             _currentJawPosHandle = default;
             _biteIkSolveEventsHandle = default;
             _biteIkTelemetryCursorHandle = default;
+            _terrainSdfSnapshotHandle = default;
             _biteVaultReady = false;
         }
 
@@ -930,25 +933,23 @@ namespace Hecton8.AI
 
             DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
             _solverScheduled = false;
-            ReleaseTerrainSdfReadLease();
+            ReleaseTerrainSdfSnapshotLock();
             CaptureCompletedSolverTelemetry();
             AdvanceFrameIndex();
             if (TelemetryHasInvalidFrame())
                 DumpTelemetryBlackBoxOnce();
         }
 
-        private void ReleaseTerrainSdfReadLease()
+        private void ReleaseTerrainSdfSnapshotLock()
         {
-            if (!_terrainSdfReadLeaseLocked)
+            if (!_terrainSdfSnapshotLocked)
                 return;
 
-            HectonVoxelVolume volume = _terrainSdfLeaseVolume;
-            if (volume != null)
-                volume.ReleasePublishedSonarSdfPayloadReadLease(in _terrainSdfReadLease);
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(TerrainSdfSnapshotBuffer, SystemID.AnimationFauna);
 
-            _terrainSdfLeaseVolume = null;
-            _terrainSdfReadLease = default;
-            _terrainSdfReadLeaseLocked = false;
+            _terrainSdfSnapshotLocked = false;
         }
 
         private void HydrateRigDefinitionsOrMockCold()
@@ -1773,8 +1774,7 @@ namespace Hecton8.AI
             out float3 terrainOrigin,
             out float3 terrainSize,
             out int terrainResolution,
-            out HectonVoxelVolume terrainSdfLeaseVolume,
-            out HectonVoxelVolume.PublishedSonarSdfReadLease terrainSdfReadLease)
+            out bool terrainSdfSnapshotLocked)
         {
             sdfTexture3D = default;
             sdfDimensions = default;
@@ -1785,8 +1785,7 @@ namespace Hecton8.AI
             terrainOrigin = float3.zero;
             terrainSize = float3.zero;
             terrainResolution = 0;
-            terrainSdfLeaseVolume = null;
-            terrainSdfReadLease = default;
+            terrainSdfSnapshotLocked = false;
 
             float3 ownerPosition = ResolveOwnerRuntimePosition();
             ResolveSdfPayload(
@@ -1797,8 +1796,7 @@ namespace Hecton8.AI
                 out sdfOrigin,
                 out sdfCellSize,
                 out sdfRange,
-                out terrainSdfLeaseVolume,
-                out terrainSdfReadLease);
+                out terrainSdfSnapshotLocked);
             ResolveMapMagicPayload(ownerPosition, out heightSamples, out terrainOrigin, out terrainSize, out terrainResolution);
         }
 
@@ -1810,16 +1808,14 @@ namespace Hecton8.AI
             out float3 sdfOrigin,
             out float3 sdfCellSize,
             out float sdfRange,
-            out HectonVoxelVolume leaseVolume,
-            out HectonVoxelVolume.PublishedSonarSdfReadLease lease)
+            out bool snapshotLocked)
         {
             sdfTexture3D = default;
             sdfDimensions = default;
             sdfOrigin = float3.zero;
             sdfCellSize = float3.zero;
             sdfRange = 0f;
-            leaseVolume = null;
-            lease = default;
+            snapshotLocked = false;
 
             if (!_enableSdfHugging || SmoothQualityCurve(qualityWeight) <= 0.0001f)
                 return;
@@ -1850,22 +1846,88 @@ namespace Hecton8.AI
                     return;
                 }
 
-                NativeArray<byte>.ReadOnly resolvedSdf = publishedSdf;
+                if (!TryCopyTerrainSdfLeaseToSnapshot(publishedSdf, expectedLength, out NativeArray<byte>.ReadOnly resolvedSdf, out snapshotLocked))
+                    return;
 
                 sdfTexture3D = resolvedSdf;
                 sdfDimensions = resolvedDimensions;
                 sdfOrigin = (float3)origin;
                 sdfCellSize = (float3)cellSize;
                 sdfRange = math.max(0f, range);
-                leaseVolume = publishedVolume;
-                lease = publishedLease;
                 accepted = true;
             }
             finally
             {
-                if (!accepted && publishedVolume != null)
+                if (publishedVolume != null)
                     publishedVolume.ReleasePublishedSonarSdfPayloadReadLease(in publishedLease);
+                if (!accepted)
+                    UnlockTerrainSdfSnapshot(ref snapshotLocked);
             }
+        }
+
+        private bool TryCopyTerrainSdfLeaseToSnapshot(
+            NativeArray<byte>.ReadOnly sourceSdf,
+            int requiredLength,
+            out NativeArray<byte>.ReadOnly snapshotSdf,
+            out bool snapshotLocked)
+        {
+            snapshotSdf = default;
+            snapshotLocked = false;
+            if (!sourceSdf.IsCreated || requiredLength <= 0 || sourceSdf.Length < requiredLength)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
+
+            if (!TryOpenVaultBuffer(vault, ref _terrainSdfSnapshotHandle, TerrainSdfSnapshotBuffer, requiredLength, out NativeArray<byte> snapshot))
+            {
+                if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                    return false;
+
+                _terrainSdfSnapshotHandle = vault.EnsureGenerationHandle<byte>(
+                    TerrainSdfSnapshotBuffer,
+                    requiredLength,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (vault.IsCompactionFenceActive ||
+                !vault.TryLockBuffer(TerrainSdfSnapshotBuffer, SystemID.AnimationFauna))
+            {
+                return false;
+            }
+
+            snapshotLocked = true;
+            if (vault.IsCompactionFenceActive)
+            {
+                UnlockTerrainSdfSnapshot(ref snapshotLocked);
+                return false;
+            }
+
+            if (!TryOpenVaultBuffer(vault, ref _terrainSdfSnapshotHandle, TerrainSdfSnapshotBuffer, requiredLength, out snapshot))
+            {
+                UnlockTerrainSdfSnapshot(ref snapshotLocked);
+                return false;
+            }
+
+            for (int i = 0; i < requiredLength; i++)
+                snapshot[i] = sourceSdf[i];
+
+            snapshotSdf = snapshot.AsReadOnly();
+            return true;
+        }
+
+        private void UnlockTerrainSdfSnapshot(ref bool locked)
+        {
+            if (!locked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(TerrainSdfSnapshotBuffer, SystemID.AnimationFauna);
+
+            locked = false;
         }
 
         private void ResolveMapMagicPayload(

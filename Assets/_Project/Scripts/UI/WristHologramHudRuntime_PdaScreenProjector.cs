@@ -1072,7 +1072,9 @@ namespace Hecton8.UI
             }
             finally
             {
-                _vault?.ReleaseWriteLock(in _pdaProjectionProfileHandle, SystemID.UI);
+                IDataVault vault = _vault;
+                if (vault != null)
+                    vault.ReleaseWriteLock(in _pdaProjectionProfileHandle, SystemID.UI);
             }
         }
 
@@ -1305,8 +1307,8 @@ namespace Hecton8.UI
         private void DumpPdaProjectionBlackBoxOnce(uint flags)
         {
             if (_pdaProjectionBlackBoxDumped ||
-                !TryReadPdaProjectionVaultBuffer(in _pdaProjectionTelemetryHandle, PdaProjectionTelemetryBufferId, PdaProjectionTelemetryCapacity, out NativeArray<PdaProjectionTelemetryEntry> telemetry) ||
-                !TryReadPdaProjectionVaultBuffer(in _pdaProjectionTelemetryCursorHandle, PdaProjectionTelemetryCursorBufferId, 1, out NativeArray<int> cursor))
+                !TryReadOnlyPdaProjectionVaultBuffer(in _pdaProjectionTelemetryHandle, PdaProjectionTelemetryBufferId, PdaProjectionTelemetryCapacity, out NativeArray<PdaProjectionTelemetryEntry>.ReadOnly telemetry) ||
+                !TryReadOnlyPdaProjectionVaultBuffer(in _pdaProjectionTelemetryCursorHandle, PdaProjectionTelemetryCursorBufferId, 1, out NativeArray<int>.ReadOnly cursor))
             {
                 return;
             }
@@ -1339,7 +1341,7 @@ namespace Hecton8.UI
                     return;
 
                 Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_1309_UIPresentation_PdaProjection.bin");
+                string path = Path.Combine(directory, "Dump_1335_UIPresentation_PdaProjection.bin");
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&header), UnsafeUtility.SizeOf<PdaProjectionBlackBoxDumpHeader>()));
@@ -1348,27 +1350,27 @@ namespace Hecton8.UI
             }
             catch (IOException)
             {
-                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
             }
             catch (UnauthorizedAccessException)
             {
-                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
             }
             catch (ObjectDisposedException)
             {
-                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
             }
             catch (InvalidOperationException)
             {
-                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
             }
             catch (ArgumentException)
             {
-                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
             }
             catch (NotSupportedException)
             {
-                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
             }
         }
 
@@ -1385,7 +1387,7 @@ namespace Hecton8.UI
 #endif
         }
 
-        private static int CountValidPdaProjectionTelemetryRows(NativeArray<PdaProjectionTelemetryEntry> telemetry)
+        private static int CountValidPdaProjectionTelemetryRows(NativeArray<PdaProjectionTelemetryEntry>.ReadOnly telemetry)
         {
             if (!telemetry.IsCreated)
                 return 0;
@@ -1530,19 +1532,28 @@ namespace Hecton8.UI
         {
             WristHologramHudRuntime runtime = s_activePdaProjectorRuntime;
             if (runtime == null ||
-                !runtime.TryResolvePdaProjectionVaultBuffer(in runtime._pdaProjectionTuningHandle, PdaProjectionTuningBufferId, 1, out NativeArray<PdaProjectionTuningDTO> buffer))
+                !runtime.TryAcquirePdaProjectionVaultBuffer(in runtime._pdaProjectionTuningHandle, PdaProjectionTuningBufferId, 1, out NativeArray<PdaProjectionTuningDTO> buffer))
             {
                 return false;
             }
 
-            ref PdaProjectionTuningDTO tuning = ref ResolvePdaProjectionElementRef(buffer, 0);
-            tuning.Params1.y = math.clamp(glassRefractionIndex, 1f, 1.8f);
-            tuning.Params1.z = math.saturate(screenCurvatureScalar);
-            tuning.Params1.x = math.clamp(qualityOverride01, -1f, 1f);
-            runtime.pdaProjectionGlassRefractionIndex = tuning.Params1.y;
-            runtime.pdaProjectionScreenCurvatureScalar = tuning.Params1.z;
-            runtime.pdaProjectionQualityOverride01 = tuning.Params1.x;
-            return true;
+            try
+            {
+                ref PdaProjectionTuningDTO tuning = ref ResolvePdaProjectionElementRef(buffer, 0);
+                tuning.Params1.y = math.clamp(glassRefractionIndex, 1f, 1.8f);
+                tuning.Params1.z = math.saturate(screenCurvatureScalar);
+                tuning.Params1.x = math.clamp(qualityOverride01, -1f, 1f);
+                runtime.pdaProjectionGlassRefractionIndex = tuning.Params1.y;
+                runtime.pdaProjectionScreenCurvatureScalar = tuning.Params1.z;
+                runtime.pdaProjectionQualityOverride01 = tuning.Params1.x;
+                return true;
+            }
+            finally
+            {
+                IDataVault vault = runtime._vault;
+                if (vault != null)
+                    vault.ReleaseWriteLock(in runtime._pdaProjectionTuningHandle, SystemID.UI);
+            }
         }
 #endif
 

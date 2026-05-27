@@ -194,3 +194,63 @@ Cinematic Cheats used: none in verification.
 Exact Microseconds saved: no runtime claim.
 
 Verification: JSON report parsed. `git diff --check` passed for the new rock/geology files and docs with CRLF warnings only. Hot-path scan found no `SetData`, `GetData`, `DrawMeshInstanced`, LINQ, or array allocation patterns in the new shader/compute edits.
+
+---
+
+Date: 2026-05-27
+Status: STATIC VERIFIED / COMPILE GATE PENDING
+
+What was wrong: `Hecton_TerrainDamageVolume.compute` trusted authored 3D resolution and stamp/world params before texture load/write and radius math.
+
+What was done: added source/result texture dimension queries, active-resolution clamp, finite world/min-size/recovery guards, malformed stamp rejection, sanitized radius/strength, and finite output.
+
+Cinematic Cheats used: preserved terrain damage as a visual volume mask. No physical deformation, CPU validation, or readback.
+
+Exact Microseconds saved: PENDING PROFILE. Static estimate: 4-12 us only during malformed damage-volume dispatches.
+
+Verification: `git diff --check` passed for `Hecton_TerrainDamageVolume.compute` with CRLF warning only. Shader compiler was not available in this shell.
+
+---
+
+Date: 2026-05-27
+Status: STATIC VERIFIED / COMPILE GATE PENDING
+
+What was wrong: `ParticleUpdate.compute` could cast a malformed particle count into a huge uint window and could sample flow-field buffers from unchecked resolution/origin/cell-size data.
+
+What was done: clamped particle count to read/write buffer capacity, queried flow buffer capacity, bounded flow resolution, sanitized particle state, params, dt, velocity, position, size, life, and flow samples.
+
+Cinematic Cheats used: retained GPU fake dispersion using cheap triangle turbulence. No CPU particle simulation and no GPU readback.
+
+Exact Microseconds saved: PENDING PROFILE. Static estimate: 6-20 us only during corrupt micro-particle/flow payload frames.
+
+Verification: `git diff --check` passed for `ParticleUpdate.compute` with CRLF warning only. Shader compiler was not available in this shell.
+
+---
+
+Date: 2026-05-27
+Status: STATIC VERIFIED / COMPILE GATE PENDING
+
+What was wrong: `Hecton_SargassumMaster.shader` used raw vertex/color/UV/time/prop-wash/cut/sink data in forward and shadow passes before motion, mask sampling, and alpha clip.
+
+What was done: added finite helper overloads and sanitized sargassum sway, prop-wash response, pulse, wound curl, global cut mask, buoyancy sink mask, alpha clip, and final color.
+
+Cinematic Cheats used: kept all sargassum motion shader-side. Invalid data fails closed; valid data keeps visual motion/biolum.
+
+Exact Microseconds saved: PENDING PROFILE. Static estimate: 6-18 us only during malformed sargassum payload frames.
+
+Verification: `git diff --check` passed for `Hecton_SargassumMaster.shader` with CRLF warning only. Shader compiler was not available in this shell.
+
+---
+
+Date: 2026-05-27
+Status: STATIC VERIFIED / COMPILE GATE PENDING
+
+What was wrong: `TerrainMaster.shader` still has `_MATH_LOD_LOW` compile-time terrain micro-detail branches. This is a residual rule conflict, but the runtime continuous quality binding for terrain was not proven.
+
+What was done: did not mutate terrain blindly. Recorded the risk for a focused terrain-material contract pass instead of adding fake compliance.
+
+Cinematic Cheats used: none.
+
+Exact Microseconds saved: no runtime claim.
+
+Verification: documented residual risk only. No code changed in `TerrainMaster.shader`.

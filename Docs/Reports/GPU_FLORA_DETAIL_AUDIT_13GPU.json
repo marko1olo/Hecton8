@@ -79,6 +79,21 @@
       "path": "Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader",
       "sha256": "DC6692A28DCC69F409509772D675220CB732A841902DC3E679010B33AF53DD35",
       "change": "Adds finite guards for voxel rock vertex/absolute positions, origin offset, biome grid casts, volume/cut/damage mask sampling, and caustic/noise data."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_TerrainDamageVolume.compute",
+      "sha256": "756F8943EA98D7AB68CAA9DC2AD3954B04001B8B15E1E72F2FA23D545E2A7B58",
+      "change": "Adds source/result 3D texture dimension guards and finite stamp/world parameter guards before terrain damage volume reads/writes."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/ParticleUpdate.compute",
+      "sha256": "8B1DE2809F2BE7704F138A7541A4A5D507076D520247E4839F6A45BA8559EA61",
+      "change": "Clamps particle dispatch count to read/write buffer capacity, validates flow buffer capacity, and sanitizes particle/flow params before visual dispersion integration."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_SargassumMaster.shader",
+      "sha256": "ED11787EE3D75DBDDF9EAD42243A134A1D5A6842485E40DC4A8EBD905C81C89D",
+      "change": "Adds finite ingress guards for sargassum vertex/color/UV/time/prop-wash/cut/sink/clip paths in forward and shadow passes."
     }
   ],
   "confirmedProblems": [
@@ -189,6 +204,30 @@
       "severity": "high",
       "evidence": "Pre-patch Hecton_AbyssalVoxelRock.shader used unchecked positions, origin offsets, biome grid params, mask rects, damage volume params, and caustic layer/time data before int casts, texture samples, and displacement/noise math.",
       "fix": "Voxel rock now sanitizes scalar/vector ingress and fails closed around biome grid casts, carve masks, damage volume masks, displacement, and caustic/noise inputs."
+    },
+    {
+      "id": "TERRAIN_DAMAGE_VOLUME_UNCHECKED_TEXTURE_REGION",
+      "severity": "medium",
+      "evidence": "Pre-patch Hecton_TerrainDamageVolume.compute trusted authored resolution and stamp/world params before Texture3D.Load, RWTexture3D writes, radius math, and output.",
+      "fix": "The kernel now clamps to the shared source/result 3D texture dimensions and sanitizes world, recovery, radius, strength, current, and output values."
+    },
+    {
+      "id": "MICRO_PARTICLE_FLOW_UINT_COUNT_AND_FLOW_INDEX_HAZARD",
+      "severity": "medium",
+      "evidence": "Pre-patch ParticleUpdate.compute cast _FieldParams.y to uint directly and indexed the flow field from unchecked resolution/origin/cell-size data.",
+      "fix": "Particle count is clamped to read/write buffer capacity; flow sampling is rejected if required samples exceed buffer capacity; particle and flow state is sanitized before integration."
+    },
+    {
+      "id": "SARGASSUM_SHADER_RAW_MOTION_AND_MASK_INPUTS",
+      "severity": "medium",
+      "evidence": "Pre-patch Hecton_SargassumMaster.shader used raw vertex/color/UV/time/prop-wash/cut/sink data in forward and shadow passes before motion, mask sampling, and alpha clip.",
+      "fix": "Sargassum forward and shadow passes now sanitize finite inputs for sway, prop-wash, pulse, wound curl, cut mask, buoyancy sink, alpha clip, and final color."
+    },
+    {
+      "id": "TERRAIN_MASTER_BINARY_MATH_LOD_RESIDUAL_RISK",
+      "severity": "medium",
+      "evidence": "TerrainMaster.shader still contains _MATH_LOD_LOW compile-time branches. Runtime terrain continuous quality binding was not proven in this pass.",
+      "fix": "Not fixed in this pass. Recorded as residual risk for a focused terrain material/quality contract pass; blind mutation was rejected."
     }
   ],
   "staticChecks": {
@@ -197,9 +236,9 @@
     "addedLinq": false,
     "addedHotPathArrayAllocation": false,
     "diffCheck": "PASS_CRLF_WARNINGS_ONLY",
-    "compile": "NOT_RELAUNCHED_LATEST_GATE_CPU_73_THEN_77_AFTER_30S_NO_ACTIVE_DOTNET_CSC; CPU_ABOVE_50_FORBIDS_BUILD; EARLIER_BLOCKERS_CANDICE_SQLITE_MISSING_MONO_DATA_AND_PROJECT_GRAPH_RESOLVEPROJECTREFERENCES_CYCLE_MISSING_TEMP_SHADERGRAPH_EDITOR_DLL",
+    "compile": "PENDING_RECHECK_AFTER_SARGASSUM_PARTICLE_TERRAIN_DAMAGE_PASS; EARLIER_NOT_RELAUNCHED_GATE_CPU_73_THEN_77_AFTER_30S_NO_ACTIVE_DOTNET_CSC_CPU_ABOVE_50_FORBIDS_BUILD; EARLIER_BLOCKERS_CANDICE_SQLITE_MISSING_MONO_DATA_AND_PROJECT_GRAPH_RESOLVEPROJECTREFERENCES_CYCLE_MISSING_TEMP_SHADERGRAPH_EDITOR_DLL",
     "shaderCompile": "NOT_RUN_UNITY_SHADER_COMPILER_UNAVAILABLE"
   },
   "runtimeProof": "absent",
-  "estimatedMicrosecondsSaved": "35-80 during depth threshold churn; 15-40 corrupt BRG cull containment; 20-60 poisoned HLOD batch containment; 10-30 invalid scatter spacing containment; 20-50 corrupt compute cull containment; 5-20 bad impostor material fallback containment; 15-45 corrupt distant landmark/HLOD payload containment; 10-35 malformed GPU scatter dispatch containment; 8-25 corrupt kelp payload containment; 5-18 corrupt coral ripple payload containment; 3-8 malformed geology impostor payload containment; 5-15 malformed voxel SSAO dispatch containment; 12-40 corrupt abyssal rock/geology payload containment. HLOD and landmark fallback materials are visual correctness, atlas guards are corruption containment, normal kelp/coral/geology/rock changes are continuous visual scaling or fail-closed safety, not profiler-backed saving claims. Pending profiler capture."
+  "estimatedMicrosecondsSaved": "35-80 during depth threshold churn; 15-40 corrupt BRG cull containment; 20-60 poisoned HLOD batch containment; 10-30 invalid scatter spacing containment; 20-50 corrupt compute cull containment; 5-20 bad impostor material fallback containment; 15-45 corrupt distant landmark/HLOD payload containment; 10-35 malformed GPU scatter dispatch containment; 8-25 corrupt kelp payload containment; 5-18 corrupt coral ripple payload containment; 3-8 malformed geology impostor payload containment; 5-15 malformed voxel SSAO dispatch containment; 12-40 corrupt abyssal rock/geology payload containment; 4-12 malformed terrain damage volume dispatch containment; 6-20 corrupt micro-particle/flow payload containment; 6-18 malformed sargassum payload containment. HLOD and landmark fallback materials are visual correctness, atlas/damage-volume guards are corruption containment, normal flora/particle/geology/rock changes are visual fake safety or fail-closed containment, not profiler-backed saving claims. Pending profiler capture."
 }
