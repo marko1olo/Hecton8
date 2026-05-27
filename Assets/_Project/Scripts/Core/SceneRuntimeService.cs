@@ -139,6 +139,9 @@ namespace Hecton8.Core
         private object _terminalBootSceneService;
         private object _terminalBootPhysicsService;
         private object _terminalBootAudioService;
+        private ITickDispatcher _tickDispatcher;
+        private ISceneTransitionAudioBridge _sceneTransitionAudioBridge;
+        private ICameraJuiceSystem _cameraJuiceSystem;
         private uint _terminalBootSeed;
         private int _terminalBootLastFrame = -1;
         private bool _transitionPerformanceWarningPublished;
@@ -775,34 +778,42 @@ namespace Hecton8.Core
 
         private static void ResetWorldEntryFreezeState()
         {
-            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
-            if (dispatcher != null && dispatcher.SimulationPaused)
-                dispatcher.RequestSimulationPause(false);
+            SceneRuntimeService runtime = GlobalRegistry.SceneRuntime;
+            runtime?.ResetWorldEntryFreezeStateFromCache();
 
             Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
             Shader.SetGlobalFloat(_GamePausedId, 0f);
         }
 
-        private static void BeginWorldDroneCrossfade()
+        private void ResetWorldEntryFreezeStateFromCache()
         {
-            if (GlobalRegistry.Audio is ISceneTransitionAudioBridge spatialAudio)
-            {
-                spatialAudio.BeginWorldDroneTransition(
-                    WorldDroneLoadDb,
-                    WorldDroneRuntimeDb,
-                    TransitionDissolveSeconds);
-            }
+            ITickDispatcher dispatcher = _tickDispatcher;
+            if (dispatcher != null && dispatcher.SimulationPaused)
+                dispatcher.RequestSimulationPause(false);
         }
 
-        private static void UpdateWorldDroneCrossfade(float normalized)
+        private void BeginWorldDroneCrossfade()
         {
-            if (GlobalRegistry.Audio is ISceneTransitionAudioBridge spatialAudio)
+            ISceneTransitionAudioBridge spatialAudio = _sceneTransitionAudioBridge;
+            if (spatialAudio == null)
+                return;
+
+            spatialAudio.BeginWorldDroneTransition(
+                WorldDroneLoadDb,
+                WorldDroneRuntimeDb,
+                TransitionDissolveSeconds);
+        }
+
+        private void UpdateWorldDroneCrossfade(float normalized)
+        {
+            ISceneTransitionAudioBridge spatialAudio = _sceneTransitionAudioBridge;
+            if (spatialAudio != null)
                 spatialAudio.SetWorldDroneTransitionProgress(normalized);
         }
 
-        private static void BeginInputReclaimInterpolation()
+        private void BeginInputReclaimInterpolation()
         {
-            ICameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
+            ICameraJuiceSystem cameraJuice = _cameraJuiceSystem;
             if (cameraJuice != null)
                 cameraJuice.BeginInputReclaimFov(InputReclaimStartFov, InputReclaimDurationSeconds);
         }
@@ -1152,6 +1163,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcherAvailable = currentService != null;
                     _terminalBootDispatcherService = currentService;
+                    _tickDispatcher = currentService as ITickDispatcher;
                     TryUnregisterUpdatable();
                     if (!_dispatcherAvailable || !_isInitialized || !isActiveAndEnabled)
                         return;
@@ -1169,6 +1181,10 @@ namespace Hecton8.Core
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     _terminalBootAudioService = currentService;
+                    _sceneTransitionAudioBridge = currentService as ISceneTransitionAudioBridge;
+                    break;
+                case GlobalRegistryServiceSlot.CameraJuiceRuntime:
+                    _cameraJuiceSystem = currentService as ICameraJuiceSystem;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     _dataVault = currentService as IDataVault;
@@ -1183,6 +1199,9 @@ namespace Hecton8.Core
             _terminalBootSceneService = GlobalRegistry.Scene;
             _terminalBootPhysicsService = GlobalRegistry.Physics;
             _terminalBootAudioService = GlobalRegistry.Audio;
+            _tickDispatcher = GlobalRegistry.TickDispatcher;
+            _sceneTransitionAudioBridge = GlobalRegistry.Audio as ISceneTransitionAudioBridge;
+            _cameraJuiceSystem = GlobalRegistry.CameraJuice;
         }
 
         private void ClearTerminalBootServiceHandles()
@@ -1192,6 +1211,9 @@ namespace Hecton8.Core
             _terminalBootSceneService = null;
             _terminalBootPhysicsService = null;
             _terminalBootAudioService = null;
+            _tickDispatcher = null;
+            _sceneTransitionAudioBridge = null;
+            _cameraJuiceSystem = null;
         }
 
         private void TryRegisterHotSwapListener()
