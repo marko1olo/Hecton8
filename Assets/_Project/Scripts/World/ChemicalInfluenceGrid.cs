@@ -2297,6 +2297,7 @@ namespace Hecton8.World
 
         private void ResetVaultStateForRebind()
         {
+            ReleaseVaultHandles(_dataVault);
             _breadcrumbCount = 0;
             _breadcrumbWriteCursor = 0;
             _pendingEmitterWriteCursor = 0;
@@ -2311,6 +2312,43 @@ namespace Hecton8.World
             _scheduledSwapAfterFinalize = false;
             _scheduledTelemetryIndex = -1;
             ClearVaultHandles();
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _frontCellHandle);
+            ReleaseVaultHandle(vault, ref _backCellHandle);
+            ReleaseVaultHandle(vault, ref _publishedGridHandle);
+            ReleaseVaultHandle(vault, ref _overlayGridHandle);
+            ReleaseVaultHandle(vault, ref _breadcrumbsHandle);
+            ReleaseVaultHandle(vault, ref _pendingEmitterHandle);
+            ReleaseVaultHandle(vault, ref _pendingEmitterCountHandle);
+            ReleaseVaultHandle(vault, ref _activeEmitterHandle);
+            ReleaseVaultHandle(vault, ref _activeEmitterCountHandle);
+            ReleaseVaultHandle(vault, ref _mockEmitterHandle);
+            ReleaseVaultHandle(vault, ref _mockEmitterCountHandle);
+            ReleaseVaultHandle(vault, ref _tuningHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+            ReleaseVaultHandle(vault, ref _atomicCounterHandle);
+            ReleaseVaultHandle(vault, ref _defoliantZoneHandle);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseVaultHandle(vault, ref _profileTableHandle);
+            ReleaseVaultHandle(vault, ref _profileCountHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.AISensory)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private void ClearVaultHandles()
@@ -2616,7 +2654,7 @@ namespace Hecton8.World
             return hash == 0u ? 1u : hash;
         }
 
-        private static bool TryReadLine(ReadOnlySpan<byte> source, ref int cursor, out ReadOnlySpan<byte> line)
+        private static bool TryReadLine(ReadOnlySpan<byte> source, scoped ref int cursor, out ReadOnlySpan<byte> line)
         {
             if (cursor >= source.Length)
             {
@@ -2638,7 +2676,7 @@ namespace Hecton8.World
             return true;
         }
 
-        private static bool TryReadCsvToken(ReadOnlySpan<byte> line, ref int cursor, out ReadOnlySpan<byte> token)
+        private static bool TryReadCsvToken(ReadOnlySpan<byte> line, scoped ref int cursor, out ReadOnlySpan<byte> token)
         {
             if (cursor > line.Length)
             {

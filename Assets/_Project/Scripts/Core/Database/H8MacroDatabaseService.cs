@@ -206,7 +206,7 @@ namespace Hecton8.Core.Database
             _signalSink = signalSink;
             _dataVault = cacheOwner as IDataVault;
             EnsureNativeState();
-            CleanupCompactionTemp(path);
+            CleanupCompactionTempCold(path);
 
             if (_cacheOwner != null && !_cacheOwner.TryReserveMacroDatabaseCache(_config.NativeCacheCapacity))
             {
@@ -274,10 +274,10 @@ namespace Hecton8.Core.Database
 
         public bool TryCreateEmpty(string path, long initialSizeBytes)
         {
-            return TryCreateEmptyFile(path, initialSizeBytes, true);
+            return TryCreateEmptyFileCold(path, initialSizeBytes, true);
         }
 
-        private bool TryCreateEmptyFile(string path, long initialSizeBytes, bool requireDatabaseExtension)
+        private bool TryCreateEmptyFileCold(string path, long initialSizeBytes, bool requireDatabaseExtension)
         {
             if ((requireDatabaseExtension && !IsValidDatabasePath(path)) || string.IsNullOrEmpty(path))
                 return false;
@@ -752,7 +752,7 @@ namespace Hecton8.Core.Database
                 if (string.IsNullOrEmpty(tempPath))
                     return false;
 
-                CleanupCompactionTemp(_path);
+                CleanupCompactionTempCold(_path);
                 _compactionTempPath = tempPath;
                 _compactionTempBytes = 0L;
                 _compactionTier = tier;
@@ -854,7 +854,7 @@ namespace Hecton8.Core.Database
                         target.Shutdown();
 
                     if (faulted)
-                        CleanupCompactionTemp(_path);
+                        CleanupCompactionTempCold(_path);
 
                     long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
                     _lastCompactionStallMicroseconds = elapsedTicks > 0L
@@ -938,10 +938,11 @@ namespace Hecton8.Core.Database
                 _compactionState = (int)MacroDatabaseCompactionState.Idle;
                 FlushDirtyPayloadsLocked();
                 CloseFileHandles();
-                CleanupCompactionTemp(_path);
+                CleanupCompactionTempCold(_path);
                 ClearBlackBoxLocked();
                 ClearDirtyPayloadQueueLocked();
                 ClearSectorCoordCacheLocked();
+                ReleaseVaultHandlesLocked(_dataVault);
 
                 _cacheOwner = null;
                 _signalSink = null;
@@ -953,8 +954,10 @@ namespace Hecton8.Core.Database
                 _blackBoxHandle = default;
                 _dirtyPayloadSlotsHandle = default;
                 _dirtyPayloadKeysHandle = default;
+                _payloadCopyScratchHandle = default;
                 _sectorCoordSlotsHandle = default;
                 _scratchCapacity = 0;
+                _payloadCopyScratchCapacity = 0;
                 _dirtyPayloadSlotCapacity = 0;
                 _sectorCoordSlotCapacity = 0;
                 _blackBoxWriteIndex = 0;
@@ -970,6 +973,29 @@ namespace Hecton8.Core.Database
                 _deadBytes = 0L;
                 ResetCompactionStateLocked();
             }
+        }
+
+        private void ReleaseVaultHandlesLocked(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _sectorWindowScratchHandle);
+            ReleaseVaultHandle(vault, ref _sectorCoordWindowScratchHandle);
+            ReleaseVaultHandle(vault, ref _asyncHydrateScratchHandle);
+            ReleaseVaultHandle(vault, ref _blackBoxHandle);
+            ReleaseVaultHandle(vault, ref _dirtyPayloadSlotsHandle);
+            ReleaseVaultHandle(vault, ref _dirtyPayloadKeysHandle);
+            ReleaseVaultHandle(vault, ref _payloadCopyScratchHandle);
+            ReleaseVaultHandle(vault, ref _sectorCoordSlotsHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         public void Dispose()
@@ -1043,7 +1069,7 @@ namespace Hecton8.Core.Database
             {
                 target._config = NormalizeConfig(_config);
                 target.EnsureNativeState();
-                if (!target.TryCreateEmptyFile(tempPath, _config.InitialFileBytes, false))
+                if (!target.TryCreateEmptyFileCold(tempPath, _config.InitialFileBytes, false))
                     return false;
 
                 WaitForCompactionResume();
@@ -1395,7 +1421,7 @@ namespace Hecton8.Core.Database
             _compactionState = (int)MacroDatabaseCompactionState.Faulted;
             Volatile.Write(ref _compactionActive, 0);
             _compactionTempBytes = 0L;
-            CleanupCompactionTemp(_path);
+            CleanupCompactionTempCold(_path);
         }
 
         private void ResetCompactionStateLocked()
@@ -1422,7 +1448,7 @@ namespace Hecton8.Core.Database
                 : Path.Combine(directory, H8MacroDatabaseFileFormat.CompactionTempFileName);
         }
 
-        private static void CleanupCompactionTemp(string activePath)
+        private static void CleanupCompactionTempCold(string activePath)
         {
             if (string.Equals(
                     Path.GetFileName(activePath),

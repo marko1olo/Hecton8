@@ -323,12 +323,7 @@ namespace Hecton8.Ecosystem
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            CompleteScheduledJobForVaultSwapBarrier();
-            UnlockJobBuffers();
-            _vault = currentService as IDataVault;
-            ResetVaultHandles();
-            _initialized = false;
-            _dumpedFault = false;
+            RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
             if (_vault != null)
                 EnsureVaultState();
         }
@@ -339,6 +334,7 @@ namespace Hecton8.Ecosystem
             CompleteScheduledJobForTeardown();
             UnlockJobBuffers();
             TryUnregister();
+            ReleaseOwnedVaultHandles(_vault);
             ResetVaultHandles();
             _vault = null;
             _initialized = false;
@@ -360,11 +356,26 @@ namespace Hecton8.Ecosystem
             if (vault == null || ReferenceEquals(_vault, vault))
                 return;
 
+            RebindDataVaultForLifecycle(vault, null);
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault releaseVaultFallback)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            IDataVault releaseVault = _vault ?? releaseVaultFallback;
             CompleteScheduledJobForVaultSwapBarrier();
             UnlockJobBuffers();
-            _vault = vault;
+            ReleaseOwnedVaultHandles(releaseVault);
             ResetVaultHandles();
+            _vault = nextVault;
             _initialized = false;
+            _dumpedFault = false;
+            _telemetryCursor = 0;
+            _lastTelemetrySlot = 0;
+            _simulationTick = 0u;
+            _csvTimestampTicks = 0L;
         }
 
         private bool EnsureVaultState()
@@ -961,6 +972,7 @@ namespace Hecton8.Ecosystem
                 return false;
             }
 
+            ReleaseOwnedVaultHandle(vault, ref handle);
             handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
@@ -1019,6 +1031,35 @@ namespace Hecton8.Ecosystem
             runtime._telemetryHandle = default;
             runtime._csvScratchHandle = default;
             runtime._faultFlagHandle = default;
+        }
+
+        private void ReleaseOwnedVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedVaultHandle(vault, ref _frontHandle);
+            ReleaseOwnedVaultHandle(vault, ref _backHandle);
+            ReleaseOwnedVaultHandle(vault, ref _remainderHandle);
+            ReleaseOwnedVaultHandle(vault, ref _coordHandle);
+            ReleaseOwnedVaultHandle(vault, ref _indexEntryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _biomeSpecHandle);
+            ReleaseOwnedVaultHandle(vault, ref _tuningHandle);
+            ReleaseOwnedVaultHandle(vault, ref _counterHandle);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseOwnedVaultHandle(vault, ref _faultFlagHandle);
+        }
+
+        private static void ReleaseOwnedVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.AIEcology)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private static void WriteUInt32(Span<byte> target, uint value)

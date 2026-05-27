@@ -805,6 +805,7 @@ namespace Hecton8.AI
             _ = previousService;
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                CompleteScheduledJobAndReleaseLocksForLifecycle();
                 _vault = currentService as IDataVault;
                 ClearHandlesCold();
             }
@@ -838,6 +839,14 @@ namespace Hecton8.AI
 
         public void Dispose()
         {
+            CompleteScheduledJobAndReleaseLocksForLifecycle();
+            TryUnregisterTicks();
+            _vault = null;
+            ClearHandlesCold();
+        }
+
+        private void CompleteScheduledJobAndReleaseLocksForLifecycle()
+        {
             if (_jobScheduled)
                 DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: true);
 
@@ -845,10 +854,8 @@ namespace Hecton8.AI
             if (lockedVault != null && _lockedCount > 0)
                 UnlockJobBuffers(lockedVault, _lockedCount);
 
-            TryUnregisterTicks();
-            _vault = null;
+            _activeHandle = default;
             _lockedVault = null;
-            ClearHandlesCold();
             _jobScheduled = false;
             _lockedCount = 0;
         }

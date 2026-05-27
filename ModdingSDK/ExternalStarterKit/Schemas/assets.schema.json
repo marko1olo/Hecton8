@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hecton8.local/schemas/assets.schema.json",
+  "title": "HECTON-8 asset declaration draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Schema", "Assets"],
+  "properties": {
+    "Schema": { "const": "hecton8.assets.draft.v1" },
+    "Assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "Id": { "type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" },
+          "Path": { "type": "string" },
+          "Kind": { "type": "string" },
+          "Crc32": { "type": "string", "pattern": "^[0-9A-Fa-f]{8}$" }
+        }
+      }
+    }
+  }
+}

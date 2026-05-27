@@ -1,0 +1,24 @@
+{
+  "Schema": "hecton8.h8mod.authoring.v1",
+  "Id": "com.example.starter",
+  "DisplayName": "Starter Mod",
+  "Author": "YourName",
+  "Version": "0.1.0",
+  "RequiredAPIVersion": 2,
+  "Capabilities": [],
+  "Budgets": {
+    "MaxEnvelopesPerFrame": 0,
+    "MaxAssetBytes": 0
+  },
+  "Compatibility": {
+    "Game": "HECTON-8",
+    "Runtime": "envelope-only"
+  },
+  "Entrypoints": {
+    "CommandGraph": "Graphs/main.h8graph.json",
+    "AssetManifest": "Content/assets.h8manifest.json",
+    "SettingsTable": "Tables/settings.h8table.json",
+    "LocaleRoot": "Locales"
+  }
+}
+

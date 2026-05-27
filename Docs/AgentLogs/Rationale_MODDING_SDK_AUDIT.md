@@ -590,3 +590,195 @@ Rejected Alternatives: Relying on the earlier `FileInfo` check was rejected beca
 Scalability potential: Low tier avoids crash-prone legacy raw file ingress and keeps envelope-only runtime at 0 us/frame. Middle tier gets deterministic null-return behavior for broken packages. High tier can reopen curated legacy content only with bounded file reads. Ultra tier can add richer workbench diagnostics for rejected texture files without changing runtime asset authority.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Added cost is only exception-path catch handling around a cold file read. Removed risk is an unhandled raw texture filesystem exception after the byte cap.
+
+## Decision 50 - Legacy AssetBundle lookup must be exact-name-only
+
+Problem: `ModAssetManager.LoadAsset<TAsset>` used exact `AssetBundle.LoadAsset<TAsset>(assetName)` first, but on miss it called `AssetBundle.GetAllAssetNames()` and suffix-matched paths. That creates a dormant allocation of the full bundle asset-name array and lets ambiguous suffixes pick a different asset than the SDK/workbench intended.
+
+Solution: Remove the suffix fallback and `EndsWithAssetPath`. Legacy AssetBundle lookup now uses the exact asset name only. Schema revision 62 records `assetBundleSuffixFallbackDisabled=true` and `assetBundleGetAllAssetNamesForbidden=true`; the validator proves source, schema, resource audit, spec, and playbook.
+
+Rejected Alternatives: Capping the loop after `GetAllAssetNames()` was rejected because the allocation already happened before the cap. Keeping suffix lookup for convenience was rejected because SDK tooling must write exact asset names or hash manifests instead of making runtime guess.
+
+Scalability potential: Low tier avoids cold allocation spikes from bad bundle queries. Middle tier gets deterministic authoring errors instead of suffix surprises. High tier can add richer workbench asset previews and exact-name manifests. Ultra tier can add visual-overkill package diagnostics without changing runtime lookup authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Removed risk is cold `string[]` allocation on legacy AssetBundle lookup miss and ambiguous asset resolution.
+
+## Decision 51 - Modders need one current SDK entry point, not scattered docs
+
+Problem: The implemented Unity Editor surface had only `Hecton/Modding/Mod Builder`. The docs described a future Workbench/CLI/graph product, but a developer opening the project had no single current place for builder, contracts, sample, runtime playbook, local Mods folder, and static validation. The builder also used `AssetDatabase.FindAssets` for bundle collection, allocating a full GUID array from the selected folder.
+
+Solution: Add `ModdingSdkHubWindow` at `Hecton/Modding/SDK Hub`. It opens the Mod Builder, core docs, sample, runtime playbook, local `Mods/` folder, and runs `Validate_Mod_API_Static.ps1`. Bound `ModBuilderWindow` bundle asset collection with `MaxBundleBuildAssetCount=512`, `Directory.EnumerateFiles`, deterministic sort, and no `AssetDatabase.FindAssets` GUID array. Schema revision 63 records the hub and builder cap; the validator proves source, schema, README, spec, authoring plan, and playbook.
+
+Rejected Alternatives: Adding only more documentation was rejected because the user asked how mod developers will actually work. Leaving `FindAssets` was rejected because a broad selected folder can allocate and process an uncontrolled GUID array before the builder knows package scale. Adding runtime managed DLL execution was rejected because current authority is envelope-only and managed entries are legacy/internal.
+
+Scalability potential: Low tier runtime is unchanged: 0 us/frame and envelope-only. Middle tier creators get deterministic local validation and a bounded package asset list. High tier can build richer Workbench screens on the same hub. Ultra tier can add overkill package inspection, previews, and graph simulation while preserving the runtime envelope boundary.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Editor/package-time risk reduction: selected asset folders are capped at 512 bundle-eligible files instead of using an unbounded GUID array. No gameplay tick, SignalBus, NativeQueue, DataVault, save, or Burst path changed.
+
+## Decision 52 - SDK builder validation must stay bounded and loader-parity exact
+
+Problem: `ModBuilderWindow` could select more managed DLLs than the loader's 32-DLL package cap, allowed duplicate selected DLL file names to collide in output, performed deep asset/DLL validation from UI repaint paths, and cleaned stale output DLLs through an unbounded top-level file array.
+
+Solution: Add `MaxManagedAssemblyInputCount=32`, reject duplicate selected DLL output names, split shallow `OnGUI` validation from build-time deep file validation, make configured empty asset folders fail at build time, and bound stale DLL cleanup with `MaxStaleAssemblyCleanupScanCount=128`. Schema revision 64 records the proof.
+
+Rejected Alternatives: Letting the loader reject bad SDK packages was rejected because the SDK must not generate ambiguous packages. Keeping deep scans in repaint was rejected because selected folders and DLL metadata are filesystem-bound authoring inputs, not cheap UI state. Capping stale cleanup after `Directory.GetFiles` was rejected because it still allocates the full path array first.
+
+Scalability potential: Low tier runtime remains 0 us/frame and envelope-only. Middle tier creators get predictable SDK package failures before load. High tier can add richer workbench diagnostics on the same caps. Ultra tier can add heavy package previews and graph simulation without widening runtime package authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Editor/package-time risk reduction: managed assembly inputs cap at 32, stale DLL cleanup scans at most 128 top-level DLLs, and UI repaint no longer performs deep asset/DLL identity scans.
+
+## Decision 53 - Reserved subtitle aliases must not be editor-injectable
+
+Problem: `allowed_opcodes.csv` and `GenerateEmergencyMockOpcodes()` already rejected `TriggerSubtitleCue` and `SubtitleCue`, but `ModKernelInspectorWindow` still exposed `FutureCommandOpcodes.SubtitleCue` through an Inject Subtitle button. That editor route contradicted the reserved opcode contract and could make an unowned localization/subtitle kernel look supported.
+
+Solution: Remove the Inject Subtitle button, make the inspector injector return for unknown opcode hashes instead of constructing the old subtitle payload, and extend the static validator to read both `ModApiSandboxTunerWindow` and `ModKernelInspectorWindow`. Schema revision 65 records `editorRuntimeOpcodeTunersRejectReservedSubtitleAliases=true`.
+
+Rejected Alternatives: Leaving the button as "diagnostic only" was rejected because executable editor tooling is an authority signal for mod developers. Only checking `ModApiSandboxTunerWindow` was rejected because the actual leak was in the kernel inspector. Removing subtitle telemetry counters was rejected because reading internal telemetry is not the same as exposing an injector.
+
+Scalability potential: Low tier runtime stays at 0 us/frame with no subtitle route. Middle tier avoids false SDK promises. High tier can reopen subtitles later only through localization-owner proof, quotas, unload behavior, and playbook evidence. Ultra tier can add visual-overkill subtitle authoring previews as offline tooling without granting runtime opcode authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Removed risk is authority drift in editor tooling; no gameplay tick, packet layout, SignalBus, NativeQueue, save, DataVault, or Burst/job path changed.
+
+## Decision 54 - Public modders need a concrete external starter kit
+
+Problem: `Hecton/Modding/SDK Hub` made the internal Unity project easier to navigate, but a random external mod author still had no concrete folder contract. Existing docs described a future Workbench/CLI while the implemented builder still emitted legacy `mod.json`/DLL/bundle shaped packages that current envelope-only runtime disables. That made the practical question "Unity or what program, and what files do I need?" under-answered.
+
+Solution: Add a non-destructive `Create External Starter Kit` action to `ModdingSdkHubWindow`. It creates `ModdingSDK/ExternalStarterKit/` with `README.md`, `mod.h8manifest.json`, `mod.json`, `Content/assets.h8manifest.json`, `Graphs/main.h8graph.json`, `Tables/settings.h8table.json`, `Locales/en.h8loc.json`, `Generated/`, `Reports/`, and `Reference/` copies of `allowed_opcodes.csv` plus `kernel_tuning_profiles.csv`. Add `Docs/Modding/External_Starter_Kit_File_Contract.md` and schema revision 66 proof so the validator checks that the starter kit documents no-full-Unity-project authoring and the envelope-only runtime boundary.
+
+Rejected Alternatives: Telling public modders to use the full HECTON-8 Unity project was rejected because it is not a sane public workflow and exposes source-project assumptions. Making managed DLL/BepInEx/Harmony the normal answer was rejected because current runtime authority is envelope-only. Shipping only a Markdown file was rejected because the SDK Hub needed an executable creation point. Overwriting existing starter-kit files was rejected because public authors must not lose edits when refreshing references.
+
+Scalability potential: Low tier authoring works with text files and emits no runtime packets until validation. Middle tier authors can use the Unity SDK Hub for starter-kit creation and static validation. High tier can layer Workbench graph/table/asset UI over the same file contract. Ultra tier can add package diff, simulation, preview, and visual-overkill diagnostics without widening runtime authority beyond validated envelopes.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is editor/offline tooling only. Runtime gameplay tick, packet layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, and Burst/job paths are unchanged.
+
+## Decision 55 - Starter kit must validate without Unity or source-project access
+
+Problem: The external starter kit gave public authors a folder layout, but still did not provide a local check that works without the HECTON-8 Unity project. A random internet author could edit JSON, leave a managed entry enabled, change graph runtime away from envelope-only, delete reference CSVs, or miss a required file and only discover the problem later inside internal tooling.
+
+Solution: Generate `Tools/validate_structure.ps1` and `Tools/README.md` as part of `Create External Starter Kit`. The validator is self-contained PowerShell: it checks required directories/files, JSON parseability, `mod.h8manifest.json` `Compatibility.Runtime = envelope-only`, graph runtime `envelope-only`, API version floor, empty `EntryAssembly`, empty `EntryType`, asset/settings/locale shape, and presence of opcode/tuning reference CSVs. Schema revision 67 and static validation prove these checks exist in the generator and docs.
+
+Rejected Alternatives: Requiring Unity for first-pass starter validation was rejected because it contradicts the public authoring answer. Depending only on the project static validator was rejected because it needs source-project access and validates the SDK, not a copied starter folder. Allowing non-empty managed entry fields in starter templates was rejected because it implies a runtime right that envelope-only mode disables.
+
+Scalability potential: Low tier authors can validate with a text editor and PowerShell before any heavy tools. Middle tier can still use the Unity SDK Hub. High tier can have Workbench call the same structure checks before graph compile. Ultra tier can add package simulation and visual diagnostics after the same cheap fail-fast structure gate.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline validation only. No gameplay tick, packet layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, or Burst/job path changed.
+
+## Decision 56 - External starter validation must match loader identity rules
+
+Problem: The schema 67 starter kit validator checked structure and envelope-only safety, but did not enforce the same package identity rules as `ModLoader` and `ModBuilderWindow`. A public author could ship mismatched `mod.h8manifest.json`/`mod.json` IDs, use uppercase/path-ish/reserved filesystem device names, or add invalid dependency IDs and only hit failure later in project tooling.
+
+Solution: Extend generated `Tools/validate_structure.ps1` with `Validate-ModId` and reserved segment checks matching the loader/builder contract: lowercase letters/digits separated by single `.`, `_`, or `-`, no whitespace, no leading/trailing/repeated separators, and no `con`, `prn`, `aux`, `nul`, `com1..com9`, or `lpt1..lpt9` segments. The validator now requires authoring/runtime ID parity and validates non-empty runtime dependency IDs. Schema revision 68 and the static validator prove the source, docs, schema, and playbook evidence.
+
+Rejected Alternatives: Leaving ID validation only in the loader was rejected because random external authors need fail-fast no-Unity feedback. Lowercasing IDs automatically was rejected because package identity must be explicit and stable. Allowing mismatched authoring/runtime IDs was rejected because it creates one package with two identities and breaks deterministic ownership, save keys, reports, and dependency resolution.
+
+Scalability potential: Low tier authors catch identity mistakes in a text-folder workflow before any Unity or Workbench cost. Middle tier can use the SDK Hub and local validator with the same contract. High tier can have Workbench call the same identity gate before package compilation. Ultra tier can add richer diagnostics and package diffing without changing runtime authority or identity ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is editor/offline validation only. Runtime gameplay tick, packet layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, and Burst/job paths are unchanged.
+
+## Decision 57 - Public starter kit must exist as a versioned folder
+
+Problem: The SDK Hub could generate `ModdingSDK/ExternalStarterKit/`, but the repository did not contain that folder as an actual public artifact. That still forces an external author without Unity to depend on someone inside the source project running an editor action before the starter kit can be copied or zipped.
+
+Solution: Add `ModdingSDK/ExternalStarterKit/` as a versioned template with manifests, graph/table/content/locale drafts, reports/generated/reference/tool folders, copied opcode/tuning CSVs, and `Tools/validate_structure.ps1`. Extend `Validate_Mod_API_Static.ps1` to run the template's own local validator and require `ExternalStarterKitTemplateVersioned=True` plus `ExternalStarterKitTemplatePassesLocalValidator=True` in schema revision 69.
+
+Rejected Alternatives: Keeping only the Unity generator was rejected because it contradicts the no-Unity authoring path for random public authors. Duplicating a separate docs-only template was rejected because one file contract must have one route. Shipping a ZIP binary was rejected because a versioned text folder is auditable and diffable.
+
+Scalability potential: Low tier authors can copy the folder and run one PowerShell script with no Unity install. Middle tier can still refresh it through the SDK Hub. High tier Workbench can consume the same layout. Ultra tier can add simulation/package diff layers over the same template without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is repository/offline authoring material only. Runtime gameplay tick, FutureCommandEnvelope layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, and Burst/job paths are unchanged.
+
+## Decision 58 - Starter reference CSVs must prove source parity
+
+Problem: The versioned starter kit copies `allowed_opcodes.csv` and `kernel_tuning_profiles.csv`, but copied reference files can silently drift from the authoritative docs. A public author using stale opcode/tuning references would get false authoring guidance even though the runtime validator source is correct.
+
+Solution: Extend `Validate_Mod_API_Static.ps1` to normalize line endings and compare `ModdingSDK/ExternalStarterKit/Reference/allowed_opcodes.csv` plus `kernel_tuning_profiles.csv` against `Docs/Modding/allowed_opcodes.csv` and `Docs/Modding/kernel_tuning_profiles.csv`. Schema revision 70 records `ExternalStarterKitTemplateReferenceCsvsMatchSource=True`.
+
+Rejected Alternatives: Trusting the copied files was rejected because duplicated facts need a proof gate. Removing copied references was rejected because external authors need an offline starter folder. Making the local no-Unity validator depend on project docs was rejected because the copied starter kit must validate outside the source project.
+
+Scalability potential: Low tier authors get correct offline reference data. Middle tier SDK Hub refresh keeps missing files available. High tier Workbench can surface the same authoritative references. Ultra tier can add richer opcode previews while this parity gate prevents stale public data.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is static/offline validation only. Runtime allowlist loading, command envelope layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, and Burst/job paths are unchanged.
+
+## Decision 59 - Starter review handoff needs deterministic file hashes
+
+Problem: The external starter kit could validate structure, IDs, envelope-only flags, and copied CSV parity, but a public author still had no no-Unity handoff artifact that answers "what exact files am I submitting?" A reviewer or future Workbench would need ad hoc folder inspection, and `Reports/` existed without a concrete report producer.
+
+Solution: Add `Tools/build_review_manifest.ps1` to the versioned starter kit and SDK Hub generator. The script runs `Tools/validate_structure.ps1` first, then writes `Reports/review_manifest.json` with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root mod id, sorted relative file paths, byte counts, and lowercase SHA-256 hashes. It excludes `Generated/` and `Reports/` so reports/package outputs cannot hash themselves. Schema revision 71 and `Validate_Mod_API_Static.ps1` now prove the builder exists, passes on the versioned template, hashes required authoring/tool files, and excludes output folders.
+
+Rejected Alternatives: A ZIP packer was rejected for this pass because runtime package ingestion is still envelope-only and not verified; shipping a binary artifact would obscure the text contract. A timestamped report was rejected because it would make the proof nondeterministic. Hashing `Reports/` was rejected because a report should not include itself or previous reports as source truth.
+
+Scalability potential: Low tier authors can validate and produce a review manifest with PowerShell and a text editor. Middle tier SDK Hub users get the same tool generated non-destructively. High tier Workbench can ingest the JSON manifest as a stable review input. Ultra tier can add diff, simulation, visual preview, and overkill diagnostics while preserving the same file/hash route.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring/report generation only. Runtime gameplay tick, FutureCommandEnvelope layout, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, and Burst/job paths are unchanged.
+
+## Decision 60 - Starter kit needs editor-readable JSON Schemas
+
+Problem: The starter kit had JSON examples and a PowerShell validator, but schema-aware editors had no local schema mapping. A random public author could typo field names, forget envelope-only constants, or misunderstand required manifest fields while editing, then only discover the problem after running a script. That is avoidable friction in the no-Unity path.
+
+Solution: Add `Schemas/*.schema.json` for authoring manifest, runtime manifest, graph, assets, settings table, and locale drafts, plus `.vscode/settings.json` mapping those schemas to starter files. Extend `Tools/validate_structure.ps1` to require the schema directory, parse every schema, require `$schema`, `title`, object type, and require the editor `json.schemas` mapping. Schema revision 72 and static validation prove generator output, versioned template presence, schema parseability, and editor mapping.
+
+Rejected Alternatives: Relying only on Markdown was rejected because docs do not give inline field validation. Depending on an online schema URL was rejected because the starter kit must work offline after copying. Making schemas authoritative runtime validation was rejected because runtime authority still belongs to the envelope validator and loader, not editor hints.
+
+Scalability potential: Low tier authors get autocomplete/error hints in a cheap text editor with no Unity install. Middle tier authors get the same hints plus local PowerShell validation. High tier Workbench can reuse the schema files as UI field contracts. Ultra tier can layer rich graph/table editors and visual diagnostics on the same schema route without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline editor assistance and validation metadata only. Runtime gameplay tick, FutureCommandEnvelope layout, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, and Burst/job paths are unchanged.
+
+## Decision 61 - Starter identity edits need one offline route
+
+Problem: The external starter kit had two identity-bearing manifests (`mod.h8manifest.json` and `mod.json`). A public modder copying the folder still had to manually edit id/name/author/version in both places, then discover mismatches only after running validation. That is a predictable failure mode for random external authors and it weakens one-owner identity discipline.
+
+Solution: Add `Tools/set_mod_identity.ps1` to the versioned starter kit and SDK Hub generator. The tool validates the canonical mod id with the same lowercase separator/reserved-device rules as the starter validator, writes matching identity fields to both manifests, then runs `Tools/validate_structure.ps1`. Schema revision 73 and `Validate_Mod_API_Static.ps1` now prove the generated tool exists, the template contains it, a temp-copy positive probe updates both manifests, and malformed ids are rejected.
+
+Rejected Alternatives: Leaving identity edits to documentation was rejected because two manually edited files create deterministic drift. Auto-normalizing uppercase or path-like ids was rejected because package identity must remain explicit, stable, and reviewable. Making the Unity SDK Hub the only identity editor was rejected because the public starter path must work without the full Unity project.
+
+Scalability potential: Low tier authors copy the starter folder, run one PowerShell command, and validate with no Unity install. Middle tier authors can still refresh the same tool from SDK Hub. High tier Workbench can call this same identity route before graph/table UI opens. Ultra tier can add package diff and identity migration previews over the same route without changing runtime authority. Toaster path is text files plus PowerShell; high-end path can spend extra cycles on visual diagnostics after the same identity gate.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring only. It removes review/build churn and prevents identity mismatch packages before runtime loader, FutureCommandEnvelope, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job paths are touched.
+
+## Decision 62 - Starter bootstrap must be one command and shell-portable
+
+Problem: The starter kit had separate identity, validation, and review-manifest tools, but the happy path still required a public author to run commands in the right order. The tools also spawned nested `powershell`, which is Windows-specific and brittle for authors running PowerShell 7 as `pwsh` on macOS/Linux.
+
+Solution: Add `Tools/prepare_mod.ps1` as the one-command no-Unity bootstrap. It calls `set_mod_identity.ps1`, `validate_structure.ps1`, and `build_review_manifest.ps1` in order through in-process script calls, not nested Windows PowerShell. Update the SDK Hub generator, versioned starter kit, docs, schema revision 74, and static validator. The validator now proves the prepare tool exists, updates identity on a temp copy, builds `Reports/review_manifest.json`, includes `Tools/prepare_mod.ps1` in the review hash list, excludes output folders, and verifies public tools do not contain nested `& powershell` child calls.
+
+Rejected Alternatives: Leaving three separate commands as the main workflow was rejected because random external authors will run them out of order. Keeping nested `powershell -File` calls was rejected because it couples copied kits to Windows PowerShell instead of the current host, blocking the intended `pwsh` path. Building a real `.h8mod` packer here was rejected because runtime package ingestion proof is still pending and would imply shipping authority that the current envelope-only playbook has not verified.
+
+Scalability potential: Low tier authors get one command and text files with no Unity install. Middle tier authors can still use the Unity SDK Hub to refresh missing files. High tier Workbench can call the same prepare route before richer UI opens. Ultra tier can add package diff, simulation, and visual diagnostics after the same deterministic review manifest is produced. Weak-device path stays command-line and offline; high-end path spends extra cycles only after the same proof artifact exists.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring and report generation only. Runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, and Burst/job paths are unchanged.
+
+## Decision 63 - Starter portability claims need path proof, not prose
+
+Problem: Public starter docs advised `pwsh` on macOS/Linux, but the copied-kit tools still used Windows backslash child paths for internal tool lookup. The local validator also accepted any `.vscode/settings.json` with a `json.schemas` property, so a copied kit could lose exact schema mappings and still pass.
+
+Solution: Add `Join-StarterPath` to all public starter scripts and to SDK Hub script generation. Child tool paths and review output paths now normalize `\` to `/` and then compose platform-native path segments through `Join-Path`. Tighten `validate_structure.ps1` to require exact schema URL/fileMatch pairs for all six starter file families. Schema revision 75 and static validation now prove both properties.
+
+Rejected Alternatives: Keeping the `pwsh` advice as documentation only was rejected because it made a portability promise without source proof. Removing macOS/Linux guidance was rejected because the copied starter kit should remain no-Unity and text-editor friendly. Checking only `json.schemas` existence was rejected because it does not protect actual editor usability.
+
+Scalability potential: Low tier authors keep the cheapest path: copied text folder plus one PowerShell command. Middle tier uses the same local validator before SDK Hub/Workbench. High tier can add richer schema-aware editors over the same `.vscode` and JSON Schema contract. Ultra tier can add simulation/package diff tooling after the same deterministic review manifest; runtime authority remains envelope-only.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring tooling only. Runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, and Burst/job paths are unchanged.
+
+## Decision 64 - Review manifests need bounded source hashing
+
+Problem: `Tools/build_review_manifest.ps1` validated structure before hashing, but then walked every non-output source file without an explicit file count or byte ceiling. A copied starter kit could accidentally contain a large binary dump or bulk folder and turn a cheap no-Unity review step into an unbounded local hashing job.
+
+Solution: Add explicit cold authoring limits to the versioned starter script and SDK Hub generator: max `256` hashed source files, max `4194304` bytes per source file, and max `33554432` total source bytes. The manifest now records `TotalBytes` and `Limits`, and oversized source files fail before hashing. Static validation runs a temp-copy oversized-file probe and records schema revision 76 proof.
+
+Rejected Alternatives: Leaving the report unbounded was rejected because public starter kits are for random external authors, not trusted internal folders. Building a `.h8mod` packer here was rejected because runtime package ingestion remains envelope-only and not verified. Hashing outputs was still rejected because reports and generated binaries must not become their own source proof.
+
+Scalability potential: Low tier authors keep a bounded text-folder workflow that cannot become a surprise bulk-ingest tool. Middle tier SDK Hub refreshes the same bounded script. High tier Workbench can ingest the same review manifest with predictable report size. Ultra tier can add package diff, simulation, and visual diagnostics after the same limits; runtime authority remains envelope-only.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring/report generation only. It prevents cold tool stalls and accidental large-file hashing before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job paths are touched.
+
+## Decision 65 - Starter graph opcode validation must fail before Workbench/runtime
+
+Problem: `Graphs/main.h8graph.json` had a JSON schema `Opcode` string but the copied-kit validator did not prove the string belonged to `Reference/allowed_opcodes.csv`. It also did not reject duplicate/missing node IDs, missing opcodes, or graph `MaxEnvelopesPerFrame` above `mod.h8manifest.json` `Budgets.MaxEnvelopesPerFrame`. A public author could submit a review manifest that looked structurally valid while the graph contained an opcode the runtime allowlist would never accept.
+
+Solution: Extend `Tools/validate_structure.ps1` and the SDK Hub generated validator to read `Reference/allowed_opcodes.csv`, accept hex tokens plus first-word comment aliases such as `SpawnItem`, reject invalid CSV tokens, reject null/duplicate/missing graph nodes, reject unsupported node opcodes, and enforce graph budget parity. Tighten `Schemas/h8graph.schema.json` so non-empty node objects require `Id` and `Opcode`. Extend schema revision 77, static validation, runtime playbook, and public docs with temp-copy invalid opcode rejection proof.
+
+Rejected Alternatives: Hardcoding opcode names inside the JSON schema was rejected because the CSV is the copied offline authority and must stay source-compared to `Docs/Modding/allowed_opcodes.csv`. Deferring errors to a future Workbench graph compiler was rejected because the current public path is a no-Unity text folder. Allowing arbitrary aliases was rejected because comments in `allowed_opcodes.csv` are documentation, not unbounded public authority.
+
+Scalability potential: Low tier authors get immediate text-folder validation with no Unity install. Middle tier SDK Hub refresh produces the same local gate. High tier Workbench can call the same validator before visual graph compile. Ultra tier can add package diff, simulation, and graph visual diagnostics after the same allowlist/budget proof; runtime authority remains envelope-only.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring validation only. It prevents invalid graph submissions before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job paths are touched.

@@ -1003,7 +1003,7 @@ def main() -> int:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
     for _ in range(3):
-        OUTPUT.write_text(build_markdown(data, generated_at, atlas_check), encoding="utf-8")
+        OUTPUT.write_text(build_markdown(data, generated_at, atlas_check), encoding="utf-8-sig")
         JSON_OUTPUT.write_text(
             json.dumps(build_json_payload(data, generated_at, atlas_check), indent=2),
             encoding="utf-8",
@@ -1017,7 +1017,7 @@ def main() -> int:
             break
         atlas_check = next_check
 
-    OUTPUT.write_text(build_markdown(data, generated_at, atlas_check), encoding="utf-8")
+    OUTPUT.write_text(build_markdown(data, generated_at, atlas_check), encoding="utf-8-sig")
     JSON_OUTPUT.write_text(
         json.dumps(build_json_payload(data, generated_at, atlas_check), indent=2),
         encoding="utf-8",

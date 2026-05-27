@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
@@ -11,7 +12,7 @@ namespace Hecton8.Modding
     /// Bindable slider row for a mod-owned float setting.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ModMenuSettingSliderView : MonoBehaviour
+    public sealed class ModMenuSettingSliderView : MonoBehaviour, IPointerUpHandler, ISubmitHandler
     {
         [Header("UI")]
         [SerializeField] private TMP_Text label;
@@ -22,6 +23,7 @@ namespace Hecton8.Modding
         private string _modId;
         private string _settingName;
         private UnityAction<float> _cachedValueChangedAction;
+        private bool _hasPendingPersist;
         // COLD ALLOC: char[16] — cached slider value formatting buffer — owner: ModMenuSettingSliderView
         private readonly char[] _valueLabelBuffer = new char[16];
 
@@ -37,8 +39,14 @@ namespace Hecton8.Modding
 
         private void OnDestroy()
         {
+            CommitPendingPersist();
             if (slider != null)
                 slider.onValueChanged.RemoveListener(_cachedValueChangedAction);
+        }
+
+        private void OnDisable()
+        {
+            CommitPendingPersist();
         }
 
         /// <summary>
@@ -71,7 +79,27 @@ namespace Hecton8.Modding
             if (valueLabel != null)
                 SetValueLabel(value);
 
-            ModSettingsRegistry.TryApplySlider(_modId, _settingName, value);
+            if (ModSettingsRegistry.TryApplySlider(_modId, _settingName, value, persist: false))
+                _hasPendingPersist = true;
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            CommitPendingPersist();
+        }
+
+        public void OnSubmit(BaseEventData eventData)
+        {
+            CommitPendingPersist();
+        }
+
+        private void CommitPendingPersist()
+        {
+            if (!_hasPendingPersist)
+                return;
+
+            if (ModSettingsRegistry.TryPersistSetting(_modId, _settingName))
+                _hasPendingPersist = false;
         }
 
         private void SetValueLabel(float value)

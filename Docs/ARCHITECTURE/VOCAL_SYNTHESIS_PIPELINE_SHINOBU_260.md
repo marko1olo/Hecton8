@@ -43,7 +43,8 @@ Legacy warning route:
 - `Tools/h8bin_validator.py` routes magic `H8VB` before Data Monolith parsing.
 - Vocal sidecar schema gates: 64-byte header, 32-byte sorted records, FNV bank hash, 16-byte payload starts.
 - Additional gates: zeroed inter-record padding, contiguous aligned payload ranges, mono/sample-rate lanes, runtime codec set, H8ADPCM block headers.
-- Current gate proof for the generated bank is `H8VB_SCHEMA_VALIDATED`; the remaining global validator failure is the unrelated missing `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
+- Current sidecar proof for the generated bank remains `H8VB_SCHEMA_VALIDATED`.
+- 2026-05-28 scoped payload validator recheck also validates the current `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`; this is Python schema/payload proof only, not Unity boot or audio-runtime proof.
 
 ## Runtime Memory
 
@@ -66,7 +67,9 @@ Rejected range: `71860..71869`, already occupied by `SHINOBU_160` telemetry expo
 
 The manager stores generation handles and audio-thread raw pointers derived from Vault views.
 
-It owns no persistent `NativeArray` allocations. MMF release is fenced by an audio-callback in-flight counter, so hot-swap/teardown cannot release a mapped view during the Burst function pointer.
+It owns no persistent `NativeArray` allocations.
+MMF release is fenced by an audio-callback in-flight counter.
+Hot-swap/teardown cannot release a mapped view during the Burst function pointer.
 
 ## Dear Lie Radio Filter
 
@@ -82,7 +85,19 @@ It owns no persistent `NativeArray` allocations. MMF release is fenced by an aud
 
 ## Rollback Boundary
 
-Voice playback is presentation-only. It must not enter StateRingBuffer, save Merkle, WAL, deterministic gameplay authority, or network rollback truth. Proof is the 300-frame black-box dump at `Docs/AgentLogs/Dump_SHINOBU_260.bin`.
+Voice playback is presentation-only.
+
+Forbidden authority lanes:
+
+- StateRingBuffer
+- save Merkle
+- WAL
+- deterministic gameplay authority
+- network rollback truth
+
+Fault proof target: `Docs/AgentLogs/Dump_SHINOBU_260.bin`.
+
+No current dump file exists in active AgentLogs.
 
 ## Static Verification
 
@@ -92,5 +107,7 @@ Voice playback is presentation-only. It must not enter StateRingBuffer, save Mer
 - `python -B Tools\test_h8bin_validator.py` passed 52 tests.
 - `python Tools\AudioClip_Reference_Scanner.py` reported zero director/protagonist managed voice suspects.
 - Static residual-VWS scan found no `RenderVocalWarningSample`, `TryActivatePendingVocalWarning`, VWS pending buffer fields, or VWS clip sample Vault handles in `PlayerCriticalProceduralAudioRenderer`.
-- `python -B Tools\h8bin_validator.py --target-dir Assets\StreamingAssets` reported `H8VB_SCHEMA_VALIDATED`; the command still fails globally on unrelated runtime text-loading findings and missing `DataMonolith/static_data.h8bin`.
+- Historical `python -B Tools\h8bin_validator.py --target-dir Assets\StreamingAssets` reported `H8VB_SCHEMA_VALIDATED` while the Data Monolith payload was still absent.
+- 2026-05-28 scoped h8bin recheck returned `PASS`, `files=2`, `structs=32`, `mb=1.0495`, `seconds=0.491846`.
+- Report: `Docs\Reports\DOC_ROOT_ARCH_AUDIT_h8bin_validator_narrow_20260528.json`.
 - `dotnet`/Unity compile was not launched because CPU sampled at 100 percent, above the explicit 50 percent build gate.

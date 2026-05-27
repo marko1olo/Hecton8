@@ -222,6 +222,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private string _dumpPath;
         private long _csvLastWriteTicks;
         private long _jobScheduleTimestamp;
+        private JobHandle _simulationHandle;
         private int _lockedBufferMask;
         private int _vertexGpuUploadBufferIndex;
         private int _indirectArgsGpuUploadBufferIndex;
@@ -411,6 +412,7 @@ namespace Hecton8.VFX.PlasmaBeam
 
             _shutdown = true;
             Application.quitting -= ShutdownActive;
+            CompleteSimulationForLifecycle();
             UnlockJobBuffers();
             TryUnregisterHotSwapListener();
             UnregisterDispatcherPhases();
@@ -477,10 +479,13 @@ namespace Hecton8.VFX.PlasmaBeam
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            if (_simulationScheduled)
+            IDataVault nextVault = currentService as IDataVault;
+            if (ReferenceEquals(_vault, nextVault))
                 return;
 
-            _vault = currentService as IDataVault;
+            CompleteSimulationForLifecycle();
+            UnlockJobBuffers();
+            _vault = nextVault;
             _vaultInitialized = false;
             _defaultsInitialized = false;
         }
@@ -518,6 +523,15 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
         {
+            if (_simulationScheduled)
+            {
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                    return JobHandle.CombineDependencies(dependsOn, _simulationHandle);
+
+                _simulationScheduled = false;
+                UnlockJobBuffers();
+            }
+
             IDataVault vault = ResolveVault();
             if (vault == null || !EnsureVaultState(vault))
                 return dependsOn;
@@ -578,6 +592,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 JobHandle handle = argsJob.Schedule(meshHandle);
 
                 _simulationScheduled = true;
+                _simulationHandle = handle;
                 _jobScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 H8Memory.RegisterActiveJob(OwnerSystemId, handle);
                 return handle;
@@ -598,6 +613,9 @@ namespace Hecton8.VFX.PlasmaBeam
                 UnlockJobBuffers();
                 return;
             }
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                return;
 
             _simulationScheduled = false;
 
@@ -633,6 +651,16 @@ namespace Hecton8.VFX.PlasmaBeam
                 }
             }
 
+            UnlockJobBuffers();
+        }
+
+        private void CompleteSimulationForLifecycle()
+        {
+            if (!_simulationScheduled)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+            _simulationScheduled = false;
             UnlockJobBuffers();
         }
 

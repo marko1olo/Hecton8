@@ -73,6 +73,7 @@ namespace Hecton8.Core.Data
             if (ReferenceEquals(_dataVault, dataVault))
                 return;
 
+            ReleaseVaultHandles(_dataVault);
             _dataVault = dataVault;
             _blackBoxHandle = default;
             _blackBoxCursorHandle = default;
@@ -329,11 +330,32 @@ namespace Hecton8.Core.Data
         public void Shutdown()
         {
             CloseFile();
+            ReleaseVaultHandles(_dataVault);
             _blackBoxHandle = default;
             _blackBoxCursorHandle = default;
             _btreeTelemetryHandle = default;
             _btreeTelemetryCursorHandle = default;
             _btreeTelemetryAccumulatorHandle = default;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _blackBoxHandle);
+            ReleaseVaultHandle(vault, ref _blackBoxCursorHandle);
+            ReleaseVaultHandle(vault, ref _btreeTelemetryHandle);
+            ReleaseVaultHandle(vault, ref _btreeTelemetryCursorHandle);
+            ReleaseVaultHandle(vault, ref _btreeTelemetryAccumulatorHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static long ToNanoseconds(long stopwatchTicks)

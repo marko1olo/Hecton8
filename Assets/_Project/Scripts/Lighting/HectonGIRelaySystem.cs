@@ -448,8 +448,7 @@ namespace Hecton8.Lighting
 
         private void CacheDataVaultCold()
         {
-            if (_vault == null)
-                _vault = GlobalRegistry.DataVault;
+            RebindDataVault(GlobalRegistry.DataVault);
         }
 
         private void RefreshColdRuntimeDependencies()

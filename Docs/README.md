@@ -1,8 +1,8 @@
 ﻿# HECTON-8 Documentation Index
 
-Date: 2026-05-26
+Date: 2026-05-28
 Status: STATIC INDEX
-Owner: DOCS_ACTUALIZATION
+Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE
 
 Purpose: stable read map for active documentation. This is not a current-work digest.
@@ -25,6 +25,8 @@ Dated reports and archived files are evidence snapshots. They are not active sys
 | Need | Read |
 |---|---|
 | Project baseline and documentation boundaries | `Docs/PROJECT_BASELINE.md` |
+| Current runtime topology, scene spine, and source owner map | `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` |
+| Domain-to-architecture coverage matrix | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` |
 | Root file policy | `Docs/ROOT_DOCS_REFERENCE.md` |
 | Documentation update rules | `Docs/DOC_GOVERNANCE.md` |
 | Evidence and acceptance gates | `Docs/QUALITY_GATES.md` |
@@ -57,6 +59,8 @@ Architecture spine:
 
 - `Docs/ARCHITECTURE/README.md`
 - `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`
+- `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`
 - `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
 - `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`
 - `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`
@@ -64,6 +68,11 @@ Architecture spine:
 - `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`
 - `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
 - `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`
+- `Docs/ARCHITECTURE/BOOT_SEQUENCE_TOPOLOGY.md`
+- `Docs/ARCHITECTURE/DISPATCH_PIPELINE.md`
+- `Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`
+- `Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md`
+- `Docs/ARCHITECTURE/PLATFORM_PORTABILITY_PROOF_LADDER.md`
 - `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
 - `Docs/ARCHITECTURE/SCALABILITY_MATRIX.md`
 - `Docs/ARCHITECTURE/AUP_PRECISION_STANDARDS.md`

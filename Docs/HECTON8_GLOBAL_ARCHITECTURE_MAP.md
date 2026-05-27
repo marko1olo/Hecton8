@@ -1,16 +1,31 @@
 ﻿# HECTON-8 Global Architecture Map
 
-Date: 2026-05-26
+Date: 2026-05-28
 Status: PENDING VERIFICATION
 Evidence class: STATIC_DOC / STATIC_SOURCE
 
-Purpose: stable architecture orientation for source owners, domains, and global authority routes. Current proof snapshots live in `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+Purpose: stable architecture orientation for source owners, domains, and global authority routes. Current proof snapshots live in `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`; current scene/source topology lives in `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`; domain coverage lives in `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`.
 
 ## Authority Boundary
 
 - Active only where it agrees with `AGENTS.md`, `.agents-skills/`, `Docs/PROJECT_BASELINE.md`, `Docs/ARCHITECTURE`, and current source.
 - This map is not compile, Unity import, Play Mode, profiler, GC, player-build, save/load, shader, platform, or visual proof.
 - Exact source counters are snapshot data. Recapture before using counts as gates.
+
+## Current Static Topology
+
+Static source/filesystem check on 2026-05-28:
+
+- Unity editor: `6000.4.1f1`.
+- First-party root: `Assets/_Project`.
+- Enabled scene spine: `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`.
+- Load-game resume may enter `02_HECTON_WORLD` directly from `01_MAIN_MENU`.
+- First-party asmdefs under `Assets/_Project`: `167`.
+- Data Monolith payload exists at `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`, `1,064,384` bytes.
+
+Do not treat these facts as route proof. They only state what current project files expose.
+
+Scene authority drift remains open: `AGENTS.md` still contains older no-orbit handoff wording. `PROJECT_RUNTIME_TOPOLOGY.md` records the current static conflict and proof boundary.
 
 ## Runtime Authority Flow
 

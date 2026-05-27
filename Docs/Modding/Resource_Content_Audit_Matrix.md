@@ -41,6 +41,7 @@ SDK authoring details are in [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Int
 | Raw PNG max bytes | `8388608` | Raw texture fallback is capped at 8 MB before `File.ReadAllBytes`. |
 | Raw PNG max dimension | `2048` | Width or height above 2048 is rejected. |
 | Raw PNG read failure | fail closed | Inaccessible, IO-failed, or invalid raw file reads return null with a warning. |
+| AssetBundle lookup | exact asset names only | Runtime legacy loader does not call `AssetBundle.GetAllAssetNames()` or suffix-match asset names; SDK/workbench must write exact names or hash manifests. |
 
 ## Public Resource Methods
 
@@ -86,4 +87,4 @@ Public content method count: `6`.
 
 ## Static Drift Gate
 
-`Docs/Modding/Validate_Mod_API_Static.ps1` must fail if resource method count, content method count, resource kind count, registry capacity, internal asset loader count, raw texture caps, or raw texture fail-closed read handling drift without this audit and schema being updated.
+`Docs/Modding/Validate_Mod_API_Static.ps1` must fail if resource method count, content method count, resource kind count, registry capacity, internal asset loader count, raw texture caps, raw texture fail-closed read handling, or AssetBundle exact-name-only lookup drift without this audit and schema being updated.

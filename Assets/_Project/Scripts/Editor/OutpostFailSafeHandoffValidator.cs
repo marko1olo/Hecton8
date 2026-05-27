@@ -803,6 +803,7 @@ namespace Hecton8.Editor.Validation
             return Path.GetFullPath(Path.Combine(assetsPath, ".."));
         }
 
+#pragma warning disable CS0649
         [Serializable]
         private sealed class HandoffRoot
         {
@@ -891,6 +892,7 @@ namespace Hecton8.Editor.Validation
             public float unpoweredSealedCriticalReadCapSeconds;
             public string rule;
         }
+#pragma warning restore CS0649
     }
 }
 #endif

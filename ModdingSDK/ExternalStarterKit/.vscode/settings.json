@@ -1,0 +1,28 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["/mod.h8manifest.json"],
+      "url": "./Schemas/h8mod.authoring.schema.json"
+    },
+    {
+      "fileMatch": ["/mod.json"],
+      "url": "./Schemas/runtime.mod.schema.json"
+    },
+    {
+      "fileMatch": ["/Graphs/*.h8graph.json"],
+      "url": "./Schemas/h8graph.schema.json"
+    },
+    {
+      "fileMatch": ["/Content/*.h8manifest.json"],
+      "url": "./Schemas/assets.schema.json"
+    },
+    {
+      "fileMatch": ["/Tables/*.h8table.json"],
+      "url": "./Schemas/settings_table.schema.json"
+    },
+    {
+      "fileMatch": ["/Locales/*.h8loc.json"],
+      "url": "./Schemas/locale.schema.json"
+    }
+  ]
+}

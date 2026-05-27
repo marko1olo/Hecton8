@@ -153,13 +153,7 @@ namespace Hecton8.VFX.Parasites
                 _hotSwapRegistered = false;
             }
 
-            if (_targetSelectionPending)
-            {
-                // Teardown-only fence; hot path consumes completed work one frame late.
-                DispatcherJobFence.TryComplete(ref _targetSelectionHandle, forceComplete: true);
-                _targetSelectionPending = false;
-            }
-
+            CompleteTargetSelectionForLifecycle();
             ReleaseTargetWriteLocks();
             _playerContext = null;
             if (_renderCameraRuntimeResolved)
@@ -174,6 +168,12 @@ namespace Hecton8.VFX.Parasites
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RebindDataVaultForLifecycle(currentService as IDataVault);
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
                 CachePlayerContext(currentService as IPlayerRuntimeContext);
         }
@@ -252,6 +252,45 @@ namespace Hecton8.VFX.Parasites
             vault.TryGetGenerationHandle(BufferID.ShinobuParasiteTuning, out _tuningHandle);
             vault.TryGetGenerationHandle(BufferID.ShinobuParasiteTelemetryRing, out _telemetryHandle);
             vault.TryGetGenerationHandle(BufferID.ShinobuParasiteTelemetryCursor, out _telemetryCursorHandle);
+        }
+
+        private void ClearVaultDescriptors()
+        {
+            _targetsHandle = default;
+            _candidatesHandle = default;
+            _targetCountHandle = default;
+            _tuningHandle = default;
+            _telemetryHandle = default;
+            _telemetryCursorHandle = default;
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            CompleteTargetSelectionForLifecycle();
+            ReleaseTargetWriteLocks();
+            ClearVaultDescriptors();
+            _vault = vault;
+            _lastResolvedTargetCount = 0;
+
+            if (_vault == null)
+                return;
+
+            ParasiteSwarmContracts.EnsureVaultBuffers(_vault);
+            BindVaultDescriptors(_vault);
+            SeedTuningIfEmpty();
+        }
+
+        private void CompleteTargetSelectionForLifecycle()
+        {
+            if (!_targetSelectionPending)
+                return;
+
+            // Lifecycle-only fence. The hot path consumes target extraction one frame late.
+            DispatcherJobFence.TryComplete(ref _targetSelectionHandle, forceComplete: true);
+            _targetSelectionPending = false;
         }
 
 #if UNITY_EDITOR

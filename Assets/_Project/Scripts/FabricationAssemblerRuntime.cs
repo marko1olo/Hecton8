@@ -238,7 +238,9 @@ namespace Hecton8.Crafting
         private bool _registeredHotSwap;
         private bool _vaultInitialized;
         private bool _shutdown;
+        private bool _simulationScheduled;
         private bool _payloadDirty;
+        private JobHandle _simulationHandle;
         private int _gpuWriteIndex;
         private int _telemetryCursor;
         private int _activeUploadCount;
@@ -768,6 +770,7 @@ namespace Hecton8.Crafting
             _shutdown = true;
             Application.quitting -= ShutdownActive;
             TryUnregisterHotSwapListener();
+            CompleteSimulationForLifecycle();
             UnregisterDispatcherPhases();
             ReleaseBuffer(ref _gpuPayloadBufferA);
             ReleaseBuffer(ref _gpuPayloadBufferB);
@@ -825,8 +828,13 @@ namespace Hecton8.Crafting
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
+            IDataVault nextVault = currentService as IDataVault;
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            CompleteSimulationForLifecycle();
             ReleaseVaultHandles(previousService as IDataVault ?? _vault);
-            _vault = currentService as IDataVault;
+            _vault = nextVault;
             _vaultInitialized = false;
         }
 
@@ -1008,6 +1016,14 @@ namespace Hecton8.Crafting
 
         private JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
         {
+            if (_simulationScheduled)
+            {
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                    return JobHandle.CombineDependencies(dependsOn, _simulationHandle);
+
+                _simulationScheduled = false;
+            }
+
             if (!EnsureVaultState())
                 return dependsOn;
 
@@ -1047,11 +1063,21 @@ namespace Hecton8.Crafting
             }.Schedule(progressHandle);
 
             H8Memory.RegisterActiveJob(OwnerSystemId, signalHandle);
+            _simulationHandle = signalHandle;
+            _simulationScheduled = true;
             return signalHandle;
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
         {
+            if (_simulationScheduled)
+            {
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                    return;
+
+                _simulationScheduled = false;
+            }
+
             if (!EnsureVaultState())
                 return;
 
@@ -1134,6 +1160,15 @@ namespace Hecton8.Crafting
 
             if (faultFlags != 0u)
                 DumpTelemetry(vault, telemetry, faultFlags);
+        }
+
+        private void CompleteSimulationForLifecycle()
+        {
+            if (!_simulationScheduled)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+            _simulationScheduled = false;
         }
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)

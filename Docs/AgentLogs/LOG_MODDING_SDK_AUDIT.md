@@ -1147,3 +1147,502 @@ Verification:
 - PASS: touched-file trailing whitespace scan.
 - PASS: `dotnet build Assembly-CSharp.csproj -v:minimal` -> Build succeeded, 45 warnings, 0 errors. Warnings are existing/non-domain: MSB3246 reference metadata warnings, MoreMountains demo type conflict, and Candice unused-field warnings.
 - NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 38
+
+What was wrong:
+- `ModAssetManager.LoadAsset<TAsset>` exact AssetBundle lookup fell back to `AssetBundle.GetAllAssetNames()` and suffix matching.
+- The fallback allocated the bundle asset-name array on lookup miss and could resolve the wrong asset when suffixes collided.
+- Schema 61 documented raw texture read safety but did not prove AssetBundle exact-name lookup.
+
+What was done:
+- Removed `AssetBundle.GetAllAssetNames()` fallback from `ModAssetManager`.
+- Removed `EndsWithAssetPath`.
+- Kept exact `bundle.LoadAsset<TAsset>(assetName)` lookup.
+- Updated `Signal_Schema.json` to schema revision `62`.
+- Updated `README.md`, `Mod_API_Specification.md`, `Resource_Content_Audit_Matrix.md`, and `Runtime_Verification_Playbook.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove `AssetBundleSuffixFallbackDisabled=True` and `AssetBundleGetAllAssetNamesForbidden=True`.
+
+Cinematic cheats used:
+- No physical simulation cheat. The SDK/content cheat is exact-name or hash-manifest asset addressing instead of runtime suffix guessing.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Removed risk: cold `string[]` allocation from `GetAllAssetNames()` on legacy AssetBundle lookup miss.
+- Removed correctness risk: ambiguous suffix match.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `62`, `AssetBundleSuffixFallbackDisabled=True`, `AssetBundleGetAllAssetNamesForbidden=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `62`, `resourceContentAudit.assetBundleSuffixFallbackDisabled=True`, `resourceContentAudit.assetBundleGetAllAssetNamesForbidden=True`, and matching last static validation snapshot flags.
+- PASS: source scan found no `GetAllAssetNames`, no `EndsWithAssetPath`, and exact `bundle.LoadAsset<TAsset>(assetName)` still present.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 39
+
+What was wrong:
+- Current implemented SDK UX was scattered: only `Hecton/Modding/Mod Builder` existed as a tool, while core docs, sample, playbook, and validator were separate files.
+- A mod developer did not have one obvious Unity Editor entry point for authoring, validation, and support docs.
+- `ModBuilderWindow.CollectBundleAssetPaths` used `AssetDatabase.FindAssets`, allocating a full GUID array for the selected folder before any package asset cap.
+
+What was done:
+- Added `Assets/_Project/Scripts/Editor/ModdingSDK/ModdingSdkHubWindow.cs` and `.meta`.
+- Added menu `Hecton/Modding/SDK Hub`.
+- Hub opens Mod Builder, local `Mods/` folder, README, API spec, authoring plan, product blueprint, sample mod, runtime playbook, and runs `Validate_Mod_API_Static.ps1`.
+- Reworked Mod Builder bundle asset collection to use bounded filesystem enumeration, deterministic sort, and `MaxBundleBuildAssetCount=512`.
+- Removed non-ASCII punctuation from touched editor C# comments.
+- Updated `Signal_Schema.json` to schema revision `63`.
+- Updated `README.md`, `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md`, and `SDK_Authoring_Interface_Plan.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove SDK hub presence/actions, docs links, envelope-only warning, builder asset cap, and bounded builder asset discovery.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: make the current SDK path a single Editor hub while preserving envelope-only runtime; heavy Workbench/CLI stays planned, not faked as runtime permission.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Editor/package-time risk reduction: selected bundle folders cap at 512 bundle-eligible files and avoid `AssetDatabase.FindAssets` GUID-array discovery.
+- No gameplay tick, SignalBus, NativeQueue, DataVault, save, or Burst path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `63`, `ModdingSdkHubPresent=True`, `ModdingSdkHubOpensBuilder=True`, `ModdingSdkHubLinksCoreDocs=True`, `ModdingSdkHubRunsStaticValidator=True`, `ModdingSdkHubShowsEnvelopeOnlyBoundary=True`, `MaxBundleBuildAssetCount=512`, `BundleBuildAssetDiscoveryUsesBoundedEnumeration=True`, `AssetBundleSuffixFallbackDisabled=True`, `AssetBundleGetAllAssetNamesForbidden=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `63`, `sdkAuthoringAudit.hubMenuPath=Hecton/Modding/SDK Hub`, `maxBundleBuildAssetCount=512`, and last static validation snapshot `bundleBuildAssetDiscoveryUsesBoundedEnumeration=True`.
+- PASS: source scan found `ModdingSdkHubWindow` menu, `RunStaticValidator`, docs links, `ModBuilderWindow.ShowWindow()`, `MaxBundleBuildAssetCount=512`, bounded `Directory.EnumerateFiles`, and no `AssetDatabase.FindAssets` bundle collection.
+- PASS: stale schema-62/current-text scan found no stale current revision or false SDK/AssetBundle closure flags in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check` for tracked touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan after schema 63, including new SDK hub `.cs` and `.meta`.
+- PASS: touched editor C# non-ASCII scan reported `NonAsciiByteCount=0`.
+- DEFERRED: dotnet compile was not launched because CPU sampled 73.99 percent, 58.28 percent, then 27.66 percent while active `dotnet.exe` PID 21868 was present.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 40
+
+What was wrong:
+- `ModBuilderWindow` had no explicit SDK-side cap matching the loader's 32 top-level managed DLL package cap.
+- Duplicate selected DLL file names could collide in the output package.
+- UI validation could perform deep asset and DLL metadata scans from repaint paths.
+- Stale output DLL cleanup used an unbounded top-level file array.
+
+What was done:
+- Added `MaxManagedAssemblyInputCount=32` and UI/build-time rejection above that cap.
+- Added duplicate selected DLL filename rejection before package output.
+- Split shallow UI validation from Build Mod deep asset/DLL validation.
+- Made configured empty asset folders fail explicitly during bundle build.
+- Added `MaxStaleAssemblyCleanupScanCount=128` and bounded stale DLL cleanup enumeration.
+- Updated `Signal_Schema.json` to schema revision `64`.
+- Updated README, Mod API spec, runtime playbook, loader/save matrix, SDK authoring plan, and static validator proof.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: keep the current SDK builder bounded and deterministic instead of pretending runtime managed DLL execution is supported.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Editor/package-time risk reduction: selected DLLs cap at 32, stale output DLL cleanup caps at 128, and UI repaint avoids deep filesystem/metadata scans.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `64`, `MaxManagedAssemblyInputCount=32`, `MaxStaleAssemblyCleanupScanCount=128`, `BuilderManagedAssemblyInputCapMatchesLoader=True`, `BuilderSkipsExpensiveValidationDuringOnGUI=True`, `StaleDllCleanupUsesBoundedEnumeration=True`, `BuilderRejectsDuplicateManagedAssemblyFileNames=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `64` and matching SDK authoring audit flags.
+- PASS: stale schema-63 scan found no stale current revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check`, touched-file trailing whitespace scan, and editor C# non-ASCII scan.
+- DEFERRED: dotnet compile was not launched because CPU sampled 72.78 percent and active `dotnet.exe` PID 14740 was present.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 41
+
+What was wrong:
+- `ModKernelInspectorWindow` still exposed `FutureCommandOpcodes.SubtitleCue` through an Inject Subtitle button.
+- That contradicted the reserved subtitle alias contract: `TriggerSubtitleCue` and `SubtitleCue` must not appear in runtime allowlists or editor runtime opcode tools until localization-owner proof exists.
+- The validator only checked `ModApiSandboxTunerWindow`, so the inspector leak was not covered by static proof.
+
+What was done:
+- Removed the Inject Subtitle button from `ModKernelInspectorWindow`.
+- Changed unknown inspector opcode injection to return without payload generation.
+- Extended `Validate_Mod_API_Static.ps1` to load `ModKernelInspectorWindow.cs` and reject both reserved subtitle aliases in editor runtime opcode tools.
+- Updated `Signal_Schema.json` to schema revision `65` with `EditorRuntimeOpcodeTunersRejectReservedSubtitleAliases=True`.
+- Updated README, Mod API spec, runtime playbook, and command audit matrix.
+
+Cinematic cheats used:
+- No physical simulation cheat. Authority cheat: keep subtitle support as offline/reserved authoring data until a real localization owner provides proof, instead of letting an editor injector imply runtime support.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Removed risk: editor tooling no longer exposes an unowned subtitle opcode injection path.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `65`, `FutureSubtitleCueAliasesReserved=True`, `EditorRuntimeOpcodeTunersRejectReservedSubtitleAliases=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: source scan found no `FutureCommandOpcodes.TriggerSubtitleCue` or `FutureCommandOpcodes.SubtitleCue` in `ModKernelInspectorWindow.cs` or `ModApiSandboxTunerWindow.cs`.
+- PASS: `Signal_Schema.json` parsed with schema revision `65`, command API subtitle editor-tool rejection flag `True`, and matching last static validation snapshot flag.
+- PASS: stale schema-64 scan found no stale current revision text in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check`, touched-file trailing whitespace scan, and editor C# non-ASCII scan.
+- DEFERRED: dotnet compile was not launched because CPU sampled 63.33 percent and active `dotnet.exe` PID 60456 was present.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 42
+
+What was wrong:
+- The SDK Hub was useful inside the Unity project, but did not answer the public-modder workflow concretely.
+- A random external author still had no generated file layout, no explicit "Unity is not required for normal authoring" answer, and no current starter contract separate from future Workbench/CLI plans.
+- The current Mod Builder can produce legacy-shaped packages while runtime envelope-only mode disables managed DLL and loose content ingestion, so documentation needed to stop implying that those are active public runtime rights.
+
+What was done:
+- Extended `ModdingSdkHubWindow` with `Create External Starter Kit` and `Open External Starter Kit`.
+- The generator writes missing files only under `ModdingSDK/ExternalStarterKit/`.
+- Generated starter kit includes `README.md`, `mod.h8manifest.json`, `mod.json`, `Content/assets.h8manifest.json`, `Graphs/main.h8graph.json`, `Tables/settings.h8table.json`, `Locales/en.h8loc.json`, `Generated/README.md`, `Reports/README.md`, `Reference/README.md`, `Reference/allowed_opcodes.csv`, and `Reference/kernel_tuning_profiles.csv`.
+- Added `Docs/Modding/External_Starter_Kit_File_Contract.md`.
+- Updated README, Mod API spec, SDK authoring plan, SDK product blueprint, runtime playbook, schema, and static validator.
+- Advanced `Signal_Schema.json` to schema revision `66`.
+- Extended `Validate_Mod_API_Static.ps1` to prove starter kit generator presence, required manifest outputs, folder README outputs, copied opcode references, no-full-Unity-project guidance, and envelope-only boundary guidance.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: provide a concrete generated external file skeleton now, while keeping Workbench/CLI as future tooling over the same contract instead of pretending managed runtime code is supported.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Editor/offline risk reduction: public author onboarding no longer depends on unbounded source-project discovery or legacy DLL/bundle assumptions.
+- No gameplay tick, SignalBus, NativeQueue, DataVault, save, physics, rendering, packet layout, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `66`, `ExternalStarterKitGeneratorPresent=True`, `ExternalStarterKitWritesAuthoringManifest=True`, `ExternalStarterKitWritesRuntimeManifest=True`, `ExternalStarterKitWritesFolderReadmes=True`, `ExternalStarterKitCopiesOpcodeReferences=True`, `ExternalStarterKitDocumentsNoUnityProjectRequirement=True`, `ExternalStarterKitDocumentsEnvelopeOnlyBoundary=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `66`, `sdkAuthoringAudit.externalStarterKitOutputPath=ModdingSDK/ExternalStarterKit`, and matching last static validation snapshot flags.
+- PASS: stale schema-65 scan found no stale current-revision text in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check`; Git line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- PASS: CPU/process gate before compile: average CPU `29.63`, no `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` process present.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal` -> Build succeeded, 45 warnings, 0 errors. Warnings are existing/non-domain: MSB3246 reference metadata warnings, MoreMountains demo type conflict, and Candice unused-field warnings.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 43
+
+What was wrong:
+- The external starter kit had a concrete layout, but a copied kit still had no local validation script that works without Unity and without the source project.
+- A public author could accidentally enable managed entry fields, change runtime away from envelope-only, delete reference CSVs, or break JSON and only discover it later inside internal tooling.
+
+What was done:
+- Extended `CreateExternalStarterKit` to write `Tools/README.md` and `Tools/validate_structure.ps1`.
+- The generated validator checks required directories/files, JSON parseability, authoring manifest `Compatibility.Runtime = envelope-only`, graph runtime `envelope-only`, API version floor, empty `EntryAssembly`, empty `EntryType`, asset/settings/locale shape, and `Reference/allowed_opcodes.csv` plus `Reference/kernel_tuning_profiles.csv`.
+- Updated `External_Starter_Kit_File_Contract.md`, README, Mod API spec, SDK authoring plan, SDK product blueprint, runtime playbook, schema, and static validator.
+- Advanced `Signal_Schema.json` to schema revision `67`.
+- Extended `Validate_Mod_API_Static.ps1` to prove local structure validator generation and required-file/envelope-only/managed-entry-disabled checks.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: add a cheap fail-fast local validator before Workbench/CLI exists, instead of requiring Unity or pretending the starter folder is runtime-verified.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Offline authoring risk reduction: malformed starter folders fail before pack/sim/runtime ingestion.
+- No gameplay tick, SignalBus, NativeQueue, DataVault, save, physics, rendering, packet layout, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `67`, `ExternalStarterKitWritesLocalStructureValidator=True`, `ExternalStarterKitValidatorChecksRequiredFiles=True`, `ExternalStarterKitValidatorChecksEnvelopeOnly=True`, `ExternalStarterKitValidatorChecksManagedEntryDisabled=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `67` and matching SDK authoring audit local validator flags.
+- PASS: stale schema-66 scan found no stale current-revision text in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check`; Git line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched after this C# edit because build-process gate found active `VBCSCompiler` PID `55184` on two samples. CPU averages were `23.97` and `44.04`.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 44
+
+What was wrong:
+- The schema 67 local starter validator did not enforce the same package identity contract as `ModLoader` and `ModBuilderWindow`.
+- External authors could use non-canonical package IDs, reserved filesystem device segments, mismatched `mod.h8manifest.json`/`mod.json` IDs, or invalid dependency IDs and only fail later.
+
+What was done:
+- Extended generated `Tools/validate_structure.ps1` with `Validate-ModId`.
+- Added reserved segment rejection for `con`, `prn`, `aux`, `nul`, `com1..com9`, and `lpt1..lpt9`.
+- Added authoring/runtime manifest ID parity and runtime dependency ID validation.
+- Updated README, Mod API spec, SDK authoring plan, SDK product blueprint, runtime playbook, external starter kit contract, schema, and static validator.
+- Advanced `Signal_Schema.json` to schema revision `68`.
+- Extended `Validate_Mod_API_Static.ps1` to prove canonical ID, manifest ID parity, and dependency ID validator coverage.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: fail identity errors in the text-folder authoring gate before package bake instead of adding runtime repair, guessing, or source-project dependency.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Offline authoring risk reduction: identity errors fail before pack/sim/runtime ingestion.
+- No gameplay tick, `FutureCommandEnvelope` layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `68`, `ExternalStarterKitValidatorChecksCanonicalIds=True`, `ExternalStarterKitValidatorChecksManifestIdParity=True`, `ExternalStarterKitValidatorChecksDependencyIds=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `68` and matching SDK authoring audit identity validator flags.
+- PASS: stale schema-67 fixed-string scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check`; Git line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched after this C# edit because build-process gate first found average CPU `58.5` with active `dotnet.exe` PID `47780`, then re-sample found active `csc.exe` PID `43064` and `dotnet.exe` PID `47780`.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 45
+
+What was wrong:
+- The SDK Hub could generate `ModdingSDK/ExternalStarterKit/`, but the folder itself was not present as a versioned public artifact.
+- A random external author without Unity still depended on an internal editor action before the starter kit could be copied, zipped, or validated.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/` as a versioned folder.
+- Included authoring/runtime manifests, graph/table/content/locale drafts, `Generated/`, `Reports/`, `Reference/`, `Tools/`, copied opcode/tuning CSVs, and `Tools/validate_structure.ps1`.
+- Updated `Validate_Mod_API_Static.ps1` to require all template files and execute the template's own validator.
+- Advanced `Signal_Schema.json` to schema revision `69`.
+- Updated README, API spec, SDK authoring plan, SDK product blueprint, runtime playbook, and external starter kit contract to state the versioned template path.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: ship a diffable text starter folder instead of a binary package or Unity-only generation step.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Offline authoring risk reduction: external authors can validate the starter folder without Unity or source-project access.
+- No gameplay tick, `FutureCommandEnvelope` layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/Tools/validate_structure.ps1 -Root ModdingSDK/ExternalStarterKit` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `69`, `ExternalStarterKitTemplateVersioned=True`, `ExternalStarterKitTemplatePassesLocalValidator=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `69` and matching starter template flags.
+- PASS: stale schema-68 fixed-string scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check`; Git line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan including starter template files and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build-process gate found average CPU `96.5` and active `dotnet.exe` PID `47780`.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 46
+
+What was wrong:
+- The versioned starter kit copied `allowed_opcodes.csv` and `kernel_tuning_profiles.csv`, but copied files can drift from authoritative docs.
+- A public author could receive stale opcode/tuning guidance while the runtime/source validator used newer data.
+
+What was done:
+- Extended `Validate_Mod_API_Static.ps1` to compare starter reference CSVs against `Docs/Modding/allowed_opcodes.csv` and `Docs/Modding/kernel_tuning_profiles.csv`.
+- Normalized line endings for the comparison.
+- Advanced `Signal_Schema.json` to schema revision `70`.
+- Updated README, API spec, SDK authoring plan, SDK product blueprint, runtime playbook, and external starter kit contract to state source parity.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: keep external references as simple copied text files, but enforce source parity in static validation instead of adding runtime lookup or source-project dependency to the portable starter kit.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Offline authoring risk reduction: copied opcode/tuning references cannot silently drift from authoritative docs.
+- No runtime allowlist loading, command envelope layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `70`, `ExternalStarterKitTemplateReferenceCsvsMatchSource=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `70` and matching starter reference parity flag.
+- PASS: stale schema-69 fixed-string scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check`; Git line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan including starter template files and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because final build-process gate found average CPU `98.5` and active `dotnet.exe` PID `14348`.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 47
+
+What was wrong:
+- The external starter kit gave public modders a no-Unity folder contract and structure validator, but no deterministic review/submission artifact.
+- `Reports/` existed as a folder role but had no concrete report producer, so future review depended on manual folder inspection or untracked Workbench assumptions.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/build_review_manifest.ps1`.
+- Updated `ModdingSdkHubWindow` so `Create External Starter Kit` writes the same review manifest builder non-destructively for generated starter kits.
+- Updated `Tools/validate_structure.ps1` required-file checks so a copied starter folder cannot silently lose the review manifest builder.
+- Generated `ModdingSDK/ExternalStarterKit/Reports/review_manifest.json` as proof: schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, `14` hashed files.
+- Extended `Validate_Mod_API_Static.ps1` to run the review manifest builder and prove `ExternalStarterKitWritesReviewManifestBuilder`, `ExternalStarterKitReviewManifestPasses`, `ExternalStarterKitReviewManifestHashesFiles`, and `ExternalStarterKitReviewManifestExcludesReports`.
+- Updated `Signal_Schema.json` to schema revision `71` and synchronized README/spec/authoring plan/product blueprint/runtime playbook/external starter contract.
+
+Cinematic cheats used:
+- No runtime simulation added. Product cheat: deterministic offline hashing with a sorted file list and SHA-256 instead of heavy package simulation or Unity import.
+- `Generated/` and `Reports/` are excluded so build artifacts do not become source truth.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Offline authoring risk reduction: no measured microsecond claim; review handoff no longer requires manual file enumeration.
+- No gameplay tick, `FutureCommandEnvelope` layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/Tools/validate_structure.ps1 -Root ModdingSDK/ExternalStarterKit`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/Tools/build_review_manifest.ps1 -Root ModdingSDK/ExternalStarterKit`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `71`, all review manifest flags true.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=71`.
+- PASS: stale schema-70 current-text scan, scoped `git diff --check`, trailing whitespace scan, and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because average CPU was `55.37` and active `dotnet.exe` PID `14348` existed.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 48
+
+What was wrong:
+- The external starter kit had JSON examples and a no-Unity validator, but no local JSON Schemas or editor mapping.
+- A public author using VS Code or another schema-aware editor had no autocomplete/error hints before running PowerShell validation.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Schemas/*.schema.json` for authoring manifest, runtime manifest, command graph, asset declaration, settings table, and locale files.
+- Added `ModdingSDK/ExternalStarterKit/.vscode/settings.json` mapping starter JSON files to local schemas.
+- Updated `ModdingSdkHubWindow` so generated starter kits receive the same schema files and editor mapping.
+- Updated `Tools/validate_structure.ps1` to require and parse schema files and verify `.vscode/settings.json` has `json.schemas`.
+- Updated `Validate_Mod_API_Static.ps1` to prove generator output, versioned template presence, schema parseability, editor mapping, and review-manifest inclusion.
+- Advanced `Signal_Schema.json` to schema revision `72` and synchronized README/spec/authoring plan/product blueprint/runtime playbook/external starter contract.
+
+Cinematic cheats used:
+- No runtime simulation added. Product cheat: local JSON Schema autocomplete catches authoring mistakes before Unity, Workbench, package bake, or runtime validation.
+- Schemas are editor hints and offline validation metadata only; they do not grant runtime authority.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Offline authoring risk reduction: no measured microsecond claim; field-name and constant mistakes can be flagged while editing.
+- No gameplay tick, `FutureCommandEnvelope` layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/Tools/validate_structure.ps1 -Root ModdingSDK/ExternalStarterKit`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/Tools/build_review_manifest.ps1 -Root ModdingSDK/ExternalStarterKit`.
+- PASS: schema files under `ModdingSDK/ExternalStarterKit/Schemas/*.schema.json` and `.vscode/settings.json` parse as JSON.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `72`, JSON schema/editor mapping flags true.
+- PASS: `Reports/review_manifest.json` includes schema files and `.vscode/settings.json`, excludes `Reports/review_manifest.json`, and hashes `21` files.
+- PASS: stale schema-71 current-text scan, scoped `git diff --check`, trailing whitespace scan, and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because average CPU was `79.29`.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+## 2026-05-28 - MODDING_SDK_AUDIT - Pass 49 - Schema 73 Starter Identity Helper
+
+What was wrong:
+- External authors had a concrete no-Unity starter kit, schemas, validator, and review manifest, but identity setup still required manual edits in two files: `mod.h8manifest.json` and `mod.json`.
+- The validator caught mismatch after the fact, but there was no single public authoring route for setting id/name/author/version safely.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/set_mod_identity.ps1`.
+- Added the same generated tool to `Assets/_Project/Scripts/Editor/ModdingSDK/ModdingSdkHubWindow.cs` so `Hecton/Modding/SDK Hub -> Create External Starter Kit` refreshes missing identity tooling.
+- The tool validates canonical mod IDs, rejects reserved filesystem device segments, writes matching identity values to both manifests, and immediately runs `Tools/validate_structure.ps1`.
+- Updated starter README, Tools README, external starter contract, runtime playbook, schema revision 73, and static validator proof.
+- Regenerated `ModdingSDK/ExternalStarterKit/Reports/review_manifest.json`; it now hashes 22 files and includes `Tools/set_mod_identity.ps1`.
+
+Cinematic Cheats used:
+- None in runtime. This is offline authoring tooling. Runtime remains envelope-only; no managed DLL execution, no loose AssetBundle authority, no loose PNG authority, no localization injection right.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame claimed. No gameplay tick, FutureCommandEnvelope layout, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job path changed.
+- Authoring cold path: exact runtime microseconds not applicable. Practical saving is eliminating a two-manifest manual identity drift class before package review/load.
+
+Verification:
+- PASS: starter validator -> `PASS HECTON-8 external starter structure`.
+- PASS: review manifest builder -> `PASS HECTON-8 review manifest: Reports/review_manifest.json`.
+- PASS: review manifest parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, 22 hashed files, identity tool included, self-report excluded.
+- PASS: static validator -> schema revision 73 with `ExternalStarterKitWritesIdentityTool=True`, `ExternalStarterKitIdentityToolValidatesCanonicalId=True`, `ExternalStarterKitIdentityToolPasses=True`.
+- PASS: temp-copy invalid identity probe using `Bad Id` rejected with exit code 1.
+- PASS: stale schema-72 scan, scoped `git diff --check`, trailing whitespace scan, and editor C# ASCII scan.
+- DEFERRED: dotnet/Unity compile by resource rule. CPU sample was `100`, with active `csc.exe` PID `4764` and `dotnet.exe` PID `34204`.
+
+## 2026-05-28 - MODDING_SDK_AUDIT - Pass 50 - Schema 74 One-Command Starter Prepare Tool
+
+What was wrong:
+- The copied starter kit still required public authors to run identity setup, validation, and review manifest generation as separate commands in the correct order.
+- Public tools spawned nested `powershell`, which is a Windows-specific child shell and a bad portability assumption for authors using PowerShell 7 as `pwsh` on macOS/Linux.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/prepare_mod.ps1`.
+- Updated `Tools/build_review_manifest.ps1` and `Tools/set_mod_identity.ps1` to chain local scripts in-process.
+- Updated `Assets/_Project/Scripts/Editor/ModdingSDK/ModdingSdkHubWindow.cs` to generate the prepare tool and the in-process chaining scripts.
+- Updated starter README, Tools README, external starter contract, runtime playbook, spec, authoring plan, product blueprint, schema revision 74, and static validator proof.
+- Regenerated `ModdingSDK/ExternalStarterKit/Reports/review_manifest.json`; it now hashes 23 files and includes `Tools/prepare_mod.ps1`.
+
+Cinematic Cheats used:
+- None in runtime. Authoring cheat: one deterministic command produces the same proof artifact instead of relying on human command ordering.
+- Runtime remains envelope-only; no managed DLL execution, loose AssetBundle runtime authority, loose PNG authority, or localization injection right was added.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame claimed. No gameplay tick, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job path changed.
+- Authoring cold path: exact runtime microseconds not applicable. The practical saving is fewer invalid review submissions and no Windows-only nested shell dependency in copied kits.
+
+Verification:
+- PASS: starter validator -> `PASS HECTON-8 external starter structure`.
+- PASS: temp-copy `prepare_mod.ps1` -> `PASS HECTON-8 starter prepared: com.validation.prepared`; generated review manifest included `Tools/prepare_mod.ps1`.
+- PASS: review manifest builder -> `PASS HECTON-8 review manifest: Reports/review_manifest.json`.
+- PASS: review manifest parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, 23 hashed files, prepare tool included, output folders excluded.
+- PASS: static validator -> schema revision 74 with `ExternalStarterKitWritesPrepareTool=True`, `ExternalStarterKitToolsAvoidNestedPowerShell=True`, `ExternalStarterKitPrepareToolPasses=True`.
+- PASS: stale schema-73 scan, nested `& powershell` scan, scoped `git diff --check`, trailing whitespace scan, and editor C# ASCII scan.
+- DEFERRED: dotnet/Unity compile by resource rule. CPU sample was `100`, with active `csc.exe` PID `14520` and `dotnet.exe` PID `17744`.
+
+## Pass 51 - Schema 75 Starter Tool Path Portability And Exact Editor Mapping
+
+What was wrong:
+- Public docs told copied starter-kit authors to use `pwsh` on macOS/Linux, but internal tool lookup used Windows backslash child paths. That is not a proven portable workflow.
+- `Tools/validate_structure.ps1` accepted `.vscode/settings.json` when `json.schemas` merely existed; exact schema URL/fileMatch pairs could be broken and still pass local validation.
+
+What was done:
+- Added `Join-StarterPath` to all public starter scripts and to SDK Hub script generation.
+- Changed prepare/identity/review/validator paths to normalize separators and compose child paths through `Join-Path` segments.
+- Tightened the local validator to require exact mappings for authoring manifest, runtime manifest, graph, assets, settings table, and locale files.
+- Updated schema revision 75, static validator proof, runtime playbook, README, spec, authoring plan, product blueprint, external starter contract, and starter README/tool README.
+- Regenerated `ModdingSDK/ExternalStarterKit/Reports/review_manifest.json`.
+
+Cinematic Cheats used:
+- None in runtime. Authoring cheat: text-folder + deterministic script validation stays cheaper than forcing Unity/Workbench just to catch file path and editor mapping defects.
+- Runtime remains envelope-only; no managed DLL execution, loose AssetBundle runtime authority, loose PNG authority, localization injection right, or new hot lane was added.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame claimed. No gameplay tick, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job path changed.
+- Authoring cold path: exact runtime microseconds not applicable. The practical saving is preventing copied-kit false passes and platform-specific script failure before review.
+
+Verification:
+- PASS: starter validator -> `PASS HECTON-8 external starter structure`.
+- PASS: review manifest builder -> `PASS HECTON-8 review manifest: Reports/review_manifest.json`.
+- PASS: temp-copy broken `.vscode/settings.json` fileMatch probe was rejected with missing schema mapping for `./Schemas/h8mod.authoring.schema.json -> /mod.h8manifest.json`.
+- PASS: static validator -> schema revision 75 with `ExternalStarterKitToolsUsePortableJoinPath=True` and `ExternalStarterKitValidatorChecksEditorSchemaMappings=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision 75 and matching sdkAuthoringAudit/staticValidation snapshot flags.
+- PASS: stale schema-74 scan, public-tool backslash child path scan, scoped `git diff --check`, trailing whitespace scan, and editor C# ASCII scan.
+- DEFERRED: dotnet/Unity compile by resource rule. CPU sample was `97.29`, with active `dotnet.exe` PID `17744`; no `Temp/UnityLockfile` existed at sample time.
+
+## 2026-05-28 - MODDING_SDK_AUDIT - Pass 52 - Schema 76 Bounded Review Manifest
+
+What was wrong:
+- The external starter review manifest builder validated structure first, but source hashing itself had no explicit count or byte ceiling.
+- A random public author could accidentally drop a bulk binary/source folder into a copied kit and get a slow or harmful no-Unity review pass instead of a precise fail-fast error.
+
+What was done:
+- Added review source limits to `ModdingSDK/ExternalStarterKit/Tools/build_review_manifest.ps1`: `256` files, `4194304` bytes per file, `33554432` total bytes.
+- Added the same limits to `Assets/_Project/Scripts/Editor/ModdingSDK/ModdingSdkHubWindow.cs` so SDK Hub generated kits match the versioned template.
+- `Reports/review_manifest.json` now records `TotalBytes` and `Limits`.
+- Extended `Docs/Modding/Validate_Mod_API_Static.ps1` with generated-limit checks and a temp-copy oversized-file rejection probe.
+- Updated schema revision 76 plus README/spec/authoring plan/product blueprint/runtime playbook/external starter contract/starter README/tool README wording.
+- Regenerated `ModdingSDK/ExternalStarterKit/Reports/review_manifest.json`.
+
+Cinematic Cheats used:
+- None in runtime. Authoring cheat: fail-fast source byte limits are cheaper and more predictable than letting a review/report tool behave like a general bulk package scanner.
+- Runtime remains envelope-only; no managed DLL execution, loose AssetBundle runtime authority, loose PNG authority, localization injection right, or new hot lane was added.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame claimed. No gameplay tick, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job path changed.
+- Authoring cold path: exact runtime microseconds not applicable. The practical saving is bounding worst-case local report generation and rejecting accidental bulk files before hashing.
+
+Verification:
+- PASS: starter validator -> `PASS HECTON-8 external starter structure`.
+- PASS: review manifest builder -> `PASS HECTON-8 review manifest: Reports/review_manifest.json`.
+- PASS: review manifest parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, 23 hashed files, `29729` total bytes, limits `256/4194304/33554432`, build tool included, output folders excluded.
+- PASS: manual temp-copy oversized file probe rejected `Content/oversized_review_source.bin` at `4194305` bytes with `Review file exceeds max bytes`.
+- PASS: static validator -> schema revision 76 with `ExternalStarterKitReviewManifestHasLimits=True` and `ExternalStarterKitReviewManifestRejectsOversizedFile=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision 76 and matching sdkAuthoringAudit/staticValidation snapshot flags.
+- PASS: stale schema-75 scan, public limit source scan, scoped `git diff --check`, trailing whitespace scan, and editor C# ASCII scan.
+- DEFERRED: dotnet/Unity compile by resource rule. CPU sample was `87`; no active dotnet/csc/MSBuild process and no `Temp/UnityLockfile` existed at sample time.
+
+## 2026-05-28 - MODDING_SDK_AUDIT - Pass 53 - Schema 77 Graph Opcode And Budget Validation
+
+What was wrong:
+- The external starter graph schema accepted an `Opcode` string, but the local no-Unity validator did not prove it was in `Reference/allowed_opcodes.csv`.
+- `Graphs/main.h8graph.json` node IDs could be missing/duplicated and graph `MaxEnvelopesPerFrame` could drift above the authoring manifest budget before later tooling caught it.
+- That was bad UX for random public authors: a copied kit could produce a review manifest while carrying an impossible graph.
+
+What was done:
+- Added `Read-AllowedGraphOpcodeTokens()` to the versioned starter validator and SDK Hub generated validator.
+- The validator now accepts CSV hex tokens and first-word comment aliases, rejects invalid CSV tokens, missing/duplicate node IDs, missing opcodes, unsupported opcodes, and graph budget drift.
+- Tightened `Schemas/h8graph.schema.json` so graph node objects require `Id` and `Opcode` and constrain opcode shape.
+- Updated starter README/tool README, SDK Hub generated text, schema revision 77, static validator proof, runtime playbook, README, spec, authoring plan, product blueprint, and external starter contract.
+- Regenerated `ModdingSDK/ExternalStarterKit/Reports/review_manifest.json`.
+
+Cinematic Cheats used:
+- None in runtime. Authoring cheat: local fail-fast CSV validation is cheaper and clearer than forcing Unity/Workbench just to discover unsupported graph opcodes.
+- Runtime remains envelope-only; no managed DLL execution, loose AssetBundle runtime authority, loose PNG authority, localization injection right, or new hot lane was added.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame claimed. No gameplay tick, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job path changed.
+- Authoring cold path: exact runtime microseconds not applicable. The practical saving is preventing invalid graph review handoff before package/runtime tooling.
+
+Verification:
+- PASS: starter validator -> `PASS HECTON-8 external starter structure`.
+- PASS: review manifest builder -> `PASS HECTON-8 review manifest: Reports/review_manifest.json`.
+- PASS: review manifest parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, 23 hashed files, `32609` total bytes, limits `256/4194304/33554432`, validator included, graph schema included.
+- PASS: manual temp-copy graph probe with `Opcode = SpawnItem` and graph/manifest budget `1` passed local validation.
+- PASS: manual temp-copy graph probe with `Opcode = DefinitelyNotAllowed` failed with `node Opcode is not in Reference/allowed_opcodes.csv`.
+- PASS: static validator -> schema revision 77 with `ExternalStarterKitValidatorChecksGraphOpcodes=True`, `ExternalStarterKitValidatorChecksGraphBudget=True`, `ExternalStarterKitValidatorRejectsInvalidGraphOpcode=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision 77 and matching sdkAuthoringAudit/staticValidation snapshot flags.
+- PASS: stale schema-76 scan, scoped `git diff --check`, trailing whitespace scan, and editor C# ASCII scan.
+- DEFERRED: dotnet/Unity compile by resource rule. CPU sample was `60`, with active `dotnet.exe` PID `43436`; no `Temp/UnityLockfile` existed at sample time.

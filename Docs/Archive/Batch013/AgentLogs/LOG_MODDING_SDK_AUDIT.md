@@ -1,0 +1,1430 @@
+# LOG_MODDING_SDK_AUDIT
+
+Top = old, bottom = new.
+
+## 2026-05-26 MODDING_SDK_AUDIT
+
+What was wrong:
+- `ModBuilderWindow.ModManifestData` emitted only 7 manifest fields. `ModLoader.ModManifest` requires 9 fields and disables packages with `RequiredAPIVersion <= 0`. SDK-built packages were structurally invalid unless manually repaired.
+- `Validate_Mod_API_Static.ps1` failed on valid source because `ModAupResponse` layout size was expressed as `ModSpatialContractLayout.AupResponseStrideBytes`, while the validator accepted only numeric literal sizes.
+- The signal inventory gate read `Assets/_Project/Scripts/Core/GlobalSignals.cs`, now a compatibility shell. Real payloads live in `Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads*.cs`; schema/audit counts were stale.
+
+What was done:
+- Updated `Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.cs` to emit `RequiredAPIVersion` and `ModPriority`, validate API version against loader API `2`, and warn that managed DLL entries are legacy/internal under envelope-only runtime.
+- Extended `Docs/Modding/Validate_Mod_API_Static.ps1` to prove SDK builder manifest parity against `ModLoader.ModManifest`, resolve constant-based `ModAupResponse` layout size, and read `GlobalSignalPayloads*.cs` with a stricter `ISignal` regex.
+- Updated `Signal_Schema.json`, `Signal_Audit_Matrix.md`, `README.md`, `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md`, and `Loader_Save_Audit_Matrix.md` to schema revision `17`, `173` source signals, `2` projected signals, and `171` denied-by-default signals.
+
+Cinematic cheats used:
+- None. This pass touched editor packaging contracts and static verification only. No physical simulation, water, light, deformation, or presentation fake was added.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame. No runtime code path changed.
+- Cold package/load path: not measured; no microsecond saving claimed. The real gain is fail-closed SDK output and restored static proof.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1`
+- PASS: scoped `git diff --check` for touched source/docs.
+- DEFERRED: Unity/dotnet compile was not launched because CPU sampled at 77.7 percent; project rule forbids dotnet build above 50 percent CPU. No `dotnet`/`csc` process was active at sample time.
+
+## MODDING_SDK_AUDIT - 2026-05-26 - pass 2
+
+What was wrong:
+- `SurvivalOverride`, `HapticPulse`, and `SubtitleCue` were documented as reserved/not-public kernels, but `allowed_opcodes.csv` listed them and `GenerateEmergencyOpcodeMap()` inserted them into runtime opcode records.
+- The static validator treated every `FutureCommandOpcodes` constant as public API. That made future hash reservations indistinguishable from active runtime ingress.
+- Public `HectonAPI` exposed `ItemData`, `RecipeData`, and `BuildableData` in public signatures. Those are `ScriptableObject` handles, contradicting `directUnityObjectReferencesForMods=false`.
+
+What was done:
+- Removed reserved kernel activation from `FutureCommandSandboxValidator.GenerateEmergencyOpcodeMap()`.
+- Added `IsRuntimeAllowedFutureCommandOpcode()` and made editor CSV ingest reject hashes outside the explicit runtime allowlist.
+- Removed reserved kernel hashes from `Docs/Modding/allowed_opcodes.csv`.
+- Updated `Validate_Mod_API_Static.ps1` so `allowed_opcodes.csv` must match `GenerateEmergencyMockOpcodes()` and must not contain reserved hashes.
+- Converted `HectonAPI.Items.RegisterCustomItem`, `TryFindItem`, `HectonAPI.Crafting.RegisterRecipe`, `HectonAPI.Construction.RegisterBuildable`, and `TryFindBuildable` to internal forbidden guards that throw `IllegalContractException`.
+- Updated schema/docs to revision `19`: public API methods `30`, internal forbidden methods `14`, public content methods `9`, future allowed opcodes `9`, kernel tuning profiles `3`.
+
+Cinematic cheats used:
+- None. This was API authority cleanup and static validation. No simulation or presentation fake was added.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Reserved kernel spam now fails before reserved kernel routing; no profiler measurement was run, so no numeric savings are claimed.
+- Public Unity-object retention risk removed from the mod facade; memory lifetime gain is qualitative until runtime/player proof exists.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1`
+- PASS: scoped `git diff --check` for touched source/docs.
+- PASS: trailing whitespace scan for touched source/docs.
+- DEFERRED: Unity/dotnet compile was not launched because CPU sampled at 97.7 percent on the final check; project rule forbids dotnet build above 50 percent CPU. No `dotnet`/`csc` process was active at sample time.
+
+## MODDING_SDK_AUDIT - 2026-05-26 - pass 3
+
+What was wrong:
+- `HectonAPI.Crafting.RegisterRecycleYield`, `HectonAPI.Recycling.ProcessRecycle`, and `HectonAPI.Ecosystem.RegisterBiomeMutation` were public direct owner mutation/overlay routes without mod ownership, unload revocation, or runtime proof.
+- `Input.GetButtonMask`, UI notification/settings, and `World.TryGetPlayerEntityHash` could be called without active `ModExecutionScope`, creating anonymous reads/writes/settings.
+- `HectonEventBus` was public, and public `HectonAPI.Events` methods could pass nullable or mismatched `subscriberId` values into bus subscriptions if managed callbacks are reopened.
+
+What was done:
+- Converted `RegisterRecycleYield`, `ProcessRecycle`, and `RegisterBiomeMutation` to internal forbidden guards that throw `IllegalContractException`.
+- Added active-scope helpers in `HectonAPI` and guarded Input, UI, World, and public event subscribe/publish/unsubscribe paths.
+- Made `HectonEventBus` internal first-party infrastructure. Public event access is now only `HectonAPI.Events`.
+- Extended `Validate_Mod_API_Static.ps1` to fail if `HectonEventBus` becomes public or if event/Input/UI/World active-scope guards are removed.
+- Updated schema/docs to revision `22`, including event route ownership, subscriber scope rules, public API methods `27`, internal forbidden methods `17`, public content methods `6`.
+
+Cinematic cheats used:
+- None. This pass changed API authority and managed-boundary validation only.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed in current envelope-only mode.
+- Future managed event reopen path: one cold subscription-time active-scope branch/string compare; no profiler saving claimed.
+- Risk removed: anonymous event subscribers and ownerless facade calls no longer survive as a latent route.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `22`.
+- PASS: scoped `git diff --check` for touched source/docs.
+- PASS: trailing whitespace scan for touched source/docs.
+- DEFERRED: Unity/dotnet compile was not launched because CPU sampled at 100 percent; project rule forbids dotnet build above 50 percent CPU. No `dotnet`/`csc` process was active at sample time.
+
+## MODDING_SDK_AUDIT - 2026-05-26 - pass 4
+
+What was wrong:
+- `HectonAPI.Mods.GetLoadedMods` was public and returned all-package `ModRuntimeInfo`, including loader path/status diagnostics.
+- `FutureCommandSandboxValidator` was public and exposed engine control-plane methods: raw stream ingress, external queue drain, tuning, thermal pressure, approved asset registration, opcode gates, telemetry snapshot, CSV reload, self-audit, and blackbox dump.
+- `HectonModHooks` and `IModCommandKernel` were public dormant symbols, implying direct lifecycle event publication and managed command kernel extension points.
+- `HectonAPI.Commands.RequestFuture` accepted envelopes without active mod scope or `ModderSignature` ownership check.
+
+What was done:
+- Made `HectonAPI.Mods.GetLoadedMods` internal diagnostics only.
+- Made `FutureCommandSandboxValidator` internal and sealed related control-plane structs: tuning, opcode records, modder counters/leases, approved asset records, ring/telemetry records, mock queue, and malicious injection job.
+- Made `HectonModHooks` and `IModCommandKernel` internal first-party infrastructure.
+- Added `RequestFuture` active-scope and signature match guard.
+- Extended `Validate_Mod_API_Static.ps1` to fail on public diagnostics/control-plane/hook/kernel regressions and missing `RequestFuture` ownership guard.
+- Updated modding docs/schema to revision `26`.
+
+Cinematic cheats used:
+- None. This pass was API authority/control-plane cleanup. No simulation, water, lighting, deformation, or visual fake changed.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Public managed `RequestFuture` adds one scope check and one uint compare; estimated low microseconds per managed call, not a Burst/hot simulation path.
+- Removed risk: mods cannot mutate sandbox budgets, enqueue through raw/native bypasses, forge envelope ownership, or publish first-party lifecycle events through public symbols.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `26`.
+- PASS: scoped `git diff --check` for touched source/docs.
+- PASS: trailing whitespace scan for touched source/docs.
+- DEFERRED: Unity/dotnet compile was not launched because CPU sampled at 96.9 percent; project rule forbids dotnet build above 50 percent CPU. No `dotnet`/`csc` process was active at sample time.
+
+## MODDING_SDK_AUDIT - 2026-05-26 - pass 5
+
+What was wrong:
+- `HectonAPI.Resources`, `Telemetry`, `Localization`, and `SaveState` did not all prove active `ModExecutionScope` at the public facade boundary. Direct `HectonAPI.Resources.Proxy` calls could rely on lower-level behavior instead of owning the check at the route edge.
+- `ModRuntimeInfo` and `ModLoadStatus` remained public after the loader diagnostics facade was made internal. The descriptor contains package root and AssetBundle paths, so the type itself was still a false SDK contract.
+- FutureCommand output SignalBus DTOs remained public while the validator/control-plane was internal. That implied direct lane payload access instead of the single `FutureCommandEnvelope` ingress.
+
+What was done:
+- Added `ThrowIfNoActiveMod` guards to public resource resolution, telemetry publish, localization injection, and save-state methods.
+- Added direct active-scope checks inside `ModResourceProxy` before envelope-only fallback.
+- Made `ModRuntimeInfo` and `ModLoadStatus` internal, and changed `ModMenuModEntryView.Bind(ModRuntimeInfo)` to internal.
+- Made FutureCommand output signal DTOs internal: spawn request, asset reference, acoustic, damage, dev-null, survival override, haptic pulse, and subtitle cue.
+- Extended `Validate_Mod_API_Static.ps1` to fail on missing active-scope guards, public loader diagnostics DTOs, public FutureCommand output DTOs, and direct proxy guard order drift.
+- Updated modding docs/schema to revision `29`.
+
+Cinematic cheats used:
+- None. This pass was SDK authority/surface cleanup. No physical simulation or visual fake changed.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed in current envelope-only mode.
+- Added cost: low microseconds per cold managed SDK call for active-scope branch checks.
+- Removed risk: no anonymous resource/save/telemetry/localization route, no public package-path DTO contract, no public FutureCommand output lane DTOs.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `29`.
+- PASS: scoped `git diff --check` for touched source/docs.
+- PASS: trailing whitespace scan for touched source/docs.
+- PASS: static public-leak scan for `ModRuntimeInfo`, `ModLoadStatus`, and FutureCommand output DTO declarations. The remaining `public ModLoadStatus Status` text is inside the internal `ModRuntimeInfo` struct.
+- DEFERRED: Unity/dotnet compile was not launched because CPU sampled at 83.0 percent; project rule forbids dotnet build above 50 percent CPU. No `dotnet`/`csc` process was active at sample time.
+
+## MODDING_SDK_AUDIT - 2026-05-26 - pass 6
+
+What was wrong:
+- `ModRegistryEventType`, `ModRegistryEventPayload`, and `IModRegistryEventListener` were public even though they are engine registry invalidation infrastructure.
+- `ModSettingKind` and `ModSettingView` were public even though they are menu snapshot DTOs built from facade-registered settings.
+- `ModMenuSettingToggleView.Bind(ModSettingView)`, `ModMenuSettingSliderView.Bind(ModSettingView)`, `ModMenuUIController.OnModRegistryEvent`, and `Fabricator.OnModRegistryEvent` exposed those internal DTOs through public members.
+
+What was done:
+- Made registry event and menu setting snapshot types internal.
+- Converted `ModMenuUIController` and `Fabricator` listener methods to explicit `IModRegistryEventListener` implementations.
+- Changed setting view bind methods to internal.
+- Extended `Validate_Mod_API_Static.ps1` to fail if these DTO/listener routes become public again.
+- Updated modding docs/schema to revision `30`.
+
+Cinematic cheats used:
+- None. This pass changed SDK surface authority and first-party UI route isolation only.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: 0 us/frame; visibility and explicit interface changes do not add frame-path work.
+- Removed risk: mods cannot treat engine registry invalidation or menu snapshot DTOs as a supported SDK route.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `30`.
+- PASS: scoped `git diff --check` for touched source/docs.
+- PASS: touched-file trailing whitespace scan. A wider directory scan hit pre-existing whitespace in `Assets/_Project/Scripts/ModdingAPI/Editor.meta`; that file was not touched.
+- PASS: public-leak scan for `ModRegistryEvent*`, `IModRegistryEventListener`, `ModSettingKind`, `ModSettingView`, public `Bind(ModSettingView)`, and public `OnModRegistryEvent`.
+- DEFERRED: Unity/dotnet compile was not launched because CPU sampled at 81 percent; project rule forbids dotnet build above 50 percent CPU. No `dotnet`/`csc` process was active at sample time.
+
+## MODDING_SDK_AUDIT - 2026-05-26 - pass 7
+
+What was wrong:
+- `HectonAPI.Resources.Proxy` was a public property that returned the proxy object without first proving an active mod execution scope.
+- `HectonAPI.World.IsGameReady` was a public property that read bootstrap readiness without active mod attribution.
+- Static gates covered method guards and direct proxy method guards, but did not prove public property routes were guarded.
+
+What was done:
+- Routed `Resources.Proxy` through `GetProxy()` and `World.IsGameReady` through `GetIsGameReady()`.
+- Added `ThrowIfNoActiveMod("Resources.Proxy")` and `ThrowIfNoActiveMod("World.IsGameReady")`.
+- Extended `Validate_Mod_API_Static.ps1` to fail if either property bypasses the guarded accessor.
+- Updated modding docs/schema to revision `31`.
+
+Cinematic cheats used:
+- None. This pass changed cold SDK facade ownership only.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: low microseconds per managed property call on the cold mod facade.
+- Removed risk: no anonymous resource proxy handle acquisition and no anonymous world readiness read through the public SDK facade.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `31`.
+- PASS: scoped `git diff --check` for touched source/docs.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: Unity/dotnet compile was not launched because CPU sampled at 59 percent; project rule forbids dotnet build above 50 percent CPU. No `dotnet`/`csc` process was active at sample time.
+
+## MODDING_SDK_AUDIT - 2026-05-26 - pass 8
+
+What was wrong:
+- `HectonAPI.Events.Unsubscribe(subscription)` validated active mod ownership, but direct public `HectonEventSubscription.Dispose()` called channel `Unsubscribe` without owner proof.
+- Docs and samples already use direct token disposal from `IHectonMod.OnUnload`, so `Dispose` was a public lifetime route and could not rely on facade-only validation.
+- Static gates proved that `Dispose` existed, but did not prove owner-scope validation or constructor call parity.
+
+What was done:
+- Added an internal owner-scope requirement bit to `HectonEventSubscription`.
+- Direct `Dispose` now validates active mod ownership and ordinal subscriber-id match before channel unsubscribe for mod-owned tokens.
+- Internal/first-party tokens created outside active mod scope remain disposable without a mod owner requirement.
+- Updated all 4 token creation sites to pass `ModExecutionScope.HasActiveMod`.
+- Extended `Validate_Mod_API_Static.ps1` to prove constructor shape, stored owner-scope bit, direct `Dispose` guard, active scope check, and constructor-call parity.
+- Updated modding docs/schema to revision `32`.
+
+Cinematic cheats used:
+- None. This pass changed cold SDK lifetime ownership only.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: low microseconds per mod-owned subscription disposal; one branch and one ordinal string compare on a cold teardown path.
+- Removed risk: no direct public subscription token can unsubscribe another mod's handler outside the owning active execution scope.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `32`.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: static scan found constructor owner-scope parameter, `ThrowIfOwnerScopeMismatch()` in direct `Dispose`, and all 4 constructor call sites passing `ModExecutionScope.HasActiveMod`.
+- DEFERRED: Unity/dotnet compile was not launched because final pre-compile CPU sampling included 85.13 and 53.18 percent; project rule forbids compile launch above 50 percent CPU. No `Unity`, `dotnet`, or `csc` process was active.
+
+## MODDING_SDK_AUDIT - 2026-05-26 - pass 9
+
+What was wrong:
+- `HectonAPI.World.SpawnPersistentPrefab` and `DespawnPersistentInstance` were internal forbidden methods, but the concrete backing service `ModWorldPersistenceManager` was public.
+- `GlobalRegistry.ModWorldPersistence`, `RegisterModWorldPersistenceRuntime`, and `UnregisterModWorldPersistenceRuntime` exposed that concrete engine save/spawn service publicly.
+- This created an accidental SDK/control-plane route around the facade quarantine.
+
+What was done:
+- Made `ModWorldPersistenceManager` internal.
+- Made `GlobalRegistry.ModWorldPersistence`, `RegisterModWorldPersistenceRuntime`, and `UnregisterModWorldPersistenceRuntime` internal.
+- Preserved same-assembly bootstrap, loader, and save-owner access.
+- Extended `Validate_Mod_API_Static.ps1` to fail if the concrete service or registry route becomes public again.
+- Updated modding docs/schema to revision `33`.
+
+Cinematic cheats used:
+- None. This pass changed cold engine service visibility and SDK route ownership only.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: 0 us/frame; visibility changes do not add runtime work.
+- Removed risk: runtime mods cannot treat engine persistent spawn/save service or its GlobalRegistry route as a supported SDK surface.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `33`.
+- PASS: static leak scan found no public `ModWorldPersistenceManager`, `GlobalRegistry.ModWorldPersistence`, `RegisterModWorldPersistenceRuntime`, or `UnregisterModWorldPersistenceRuntime` route.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- BLOCKED: Unity batchmode compile was attempted after CPU/dotnet/csc gate allowed it, but failed in pre-existing core contract dependencies: `Assets/_Project/Scripts/Core/Contracts/PhysicsImpactContracts.cs` and `Assets/_Project/Scripts/Core/Contracts/Physics/HabitatFluidIncursionContracts.cs` cannot resolve `Hecton8.Core.Memory`, `BinaryBlittableSafe`, `AbsoluteUniversePosition`, and `AbsoluteUniversePositionBlit`. Log: `Logs/MODDING_SDK_AUDIT_UnityCompile.log`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 10
+
+What was wrong:
+- Public mod event payloads `ModPlayerSpawnedEvent` and `ModBiomeChangedEvent` used default sequential layout with no fixed size. `ModBiomeChangedEvent` had no explicit padding and would not satisfy the 8-byte-aligned public DTO rule.
+- Payload docs/schema still claimed several mod spatial/result payloads were `Sequential` or `source-defined`, while source already used explicit fixed-size layouts.
+- The static validator only checked `ModEventDto`, `ModCommand`, and `ModAupResponse`; it did not prove the rest of the public mod-facing payload layout contract.
+
+What was done:
+- Made `ModPlayerSpawnedEvent` explicit 24 bytes with offsets `PlayerId@0`, `AbsoluteUniversePosition@8`, `BiomeId@20`.
+- Made `ModBiomeChangedEvent` explicit 24 bytes with offsets `PreviousBiomeId@0`, `CurrentBiomeId@4`, `AbsoluteUniversePosition@8`, `_pad0@20`.
+- Updated `Signal_Schema.json` to schema revision `34`.
+- Updated `Payload_Layout_Audit_Matrix.md`, `Mod_API_Specification.md`, `Event_Subscription_Audit_Matrix.md`, `Runtime_Verification_Playbook.md`, and `README.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove explicit source sizes, event field offsets, schema `payloadLayouts`, schema snapshot size fields, and payload audit entries.
+
+Cinematic cheats used:
+- None. This pass changed ABI/layout contract proof only.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: 0 us/frame; attributes and padding do not add frame work.
+- Removed risk: mod callback/result payloads no longer depend on implicit compiler/platform sequential layout or stale documentation.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `34`; event/spatial payload sizes `24, 24, 120, 64, 80, 48, 16, 24`.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: stale layout text scan found no `Sequential`, `source-defined`, or `sizeBytes: null` claims in the mod payload docs/schema set.
+- DEFERRED: Unity/dotnet compile was not launched after schema `34` because CPU samples included 81.18 percent and 89.18 percent. No active `Unity`, `dotnet`, or `csc` process was found.
+- PREVIOUS BLOCKER STILL EXISTS: Last Unity compile attempt failed in unrelated core contract dependencies: `Assets/_Project/Scripts/Core/Contracts/PhysicsImpactContracts.cs` and `Assets/_Project/Scripts/Core/Contracts/Physics/HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 11
+
+What was wrong:
+- `HectonAPI.Events.Publish<TPayload>` had an active mod scope check, but no payload ownership check.
+- The docs said `Publish<TPayload>` is for mod-owned unmanaged coordination only, while source allowed engine-owned DTO types to be published if managed events are reopened.
+- A mod could impersonate engine-owned lifecycle/projection/result/command payload lanes such as `ModEventDto`, `ModPlayerSpawnedEvent`, `ModBiomeChangedEvent`, `ModAupResponse`, `ModInteractionRejectedPayload`, or `FutureCommandEnvelope`.
+
+What was done:
+- Added `ThrowIfEngineOwnedPublishPayload<TPayload>` in `HectonAPI.cs`.
+- `Events.Publish<TPayload>` now rejects 11 engine-owned payload types before `HectonEventBus.Publish`.
+- Updated `Signal_Schema.json` to schema revision `35` with `publishEngineOwnedPayloadsForbidden=true` and forbidden payload count `11`.
+- Extended `Validate_Mod_API_Static.ps1` to prove the source helper, the publish call, all forbidden payload type checks, schema entries, static snapshot entries, and event audit wording.
+- Updated `README.md`, `Mod_API_Specification.md`, `API_Surface_Audit_Matrix.md`, `Event_Subscription_Audit_Matrix.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This pass changed cold managed SDK boundary ownership only.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: 0 us/frame in current envelope-only mode because `ThrowIfEnvelopeOnly()` rejects before the payload guard.
+- Future managed-event mode: legal mod-owned publish pays low microseconds for type comparisons on a cold managed API path; illegal publish exits before bus dispatch and callback fanout.
+- Removed risk: engine command/result/projection/lifecycle DTOs cannot be published by mods through the public event facade.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `35`, `PublishRejectsEngineOwnedPayloads=True`, `EngineOwnedPublishForbiddenPayloadCount=11`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=35`, `publishEngineOwnedPayloadsForbidden=True`, and `engineOwnedPublishForbiddenPayloadCount=11`.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: stale schema-34 closure scan found no old revision claims in modding docs/schema.
+- DEFERRED: Unity/dotnet compile was not launched because CPU samples were 20.26, 22.98, and 91.33 percent. No active `Unity`, `dotnet`, or `csc` process was found.
+- PREVIOUS BLOCKER STILL EXISTS: Last Unity compile attempt failed in unrelated core contract dependencies: `Assets/_Project/Scripts/Core/Contracts/PhysicsImpactContracts.cs` and `Assets/_Project/Scripts/Core/Contracts/Physics/HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 12
+
+What was wrong:
+- `HectonAPI.Commands.Request`, `RequestAup`, and `RequestRenderInstance` were public legacy command facades.
+- They returned quarantine `false` in envelope-only mode but did not require active `ModExecutionScope`.
+- That left anonymous public write-surface probes in the SDK boundary, even though `RequestFuture` and other public facades were already owner-scoped.
+
+What was done:
+- Added `ThrowIfNoActiveMod("Commands.Request")`, `ThrowIfNoActiveMod("Commands.RequestAup")`, and `ThrowIfNoActiveMod("Commands.RequestRenderInstance")`.
+- Kept the obsolete signatures and quarantine `false` result for active-owner legacy calls.
+- Updated `Signal_Schema.json` to schema revision `36` with `legacyCommandFacadesRequireActiveScope=true`.
+- Extended `Validate_Mod_API_Static.ps1` to require the three guards and schema snapshot flag.
+- Updated `README.md`, `Mod_API_Specification.md`, `API_Surface_Audit_Matrix.md`, `Command_Audit_Matrix.md`, `Mod_API_Sandbox_Quarantine.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This pass changed cold command facade ownership only.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: low microseconds only when a legacy managed command facade is called.
+- Removed risk: external code cannot anonymously probe legacy command availability through public SDK methods.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `36`, `LegacyCommandFacadesRequireActiveScope=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=36`, `commandApi.legacyCommandFacadesRequireActiveScope=True`, and snapshot flag `True`.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: stale schema-35/R36 closure scan found no old revision claims in modding docs.
+- BLOCKED: Unity batchmode compile was launched after CPU/process gate allowed it. Compile still fails in unrelated Core contract dependencies: `PhysicsImpactContracts.cs` unresolved `Hecton8.Core.Memory`, `BinaryBlittableSafe`, `AbsoluteUniversePosition`; `HabitatFluidIncursionContracts.cs` unresolved `AbsoluteUniversePositionBlit`. No modding-file errors were reported before this wall. Log: `Logs/MODDING_SDK_AUDIT_UnityCompile.log`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 13
+
+What was wrong:
+- Public `HectonAPI.Events` subscribe/publish facades checked envelope-only quarantine before active owner proof.
+- Anonymous callers could probe event surface availability and receive quarantine status without proving `ModExecutionScope`.
+- This violated the same active-scope-first rule already applied to command facades and left a dormant managed-event reopening trap.
+
+What was done:
+- Reordered public `Events.Subscribe<TPayload>`, `SubscribeNative`, `SubscribeProjected`, `OnPlayerSpawned`, and `OnBiomeChanged` so `RequireSubscriberScope(...)` runs before `ThrowIfEnvelopeOnly()`.
+- Reordered public `Events.Publish<TPayload>` so `ThrowIfNoActiveMod("Events.Publish")` runs before `ThrowIfEnvelopeOnly()`.
+- Kept internal first-party typed event routes unchanged; they are not public SDK facades.
+- Updated `Signal_Schema.json` to schema revision `37` with `publicEventFacadesRequireScopeBeforeEnvelopeOnly=true`.
+- Extended `Validate_Mod_API_Static.ps1` to prove ordering for public event subscribe/publish facades and schema snapshot drift.
+- Updated `README.md`, `Mod_API_Specification.md`, `API_Surface_Audit_Matrix.md`, `Event_Subscription_Audit_Matrix.md`, `Runtime_Verification_Playbook.md`, and `Mod_API_Sandbox_Quarantine.md`.
+
+Cinematic cheats used:
+- None. This pass changed cold SDK boundary ownership/order only.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: low microseconds only when cold managed SDK event facades are called.
+- Removed risk: anonymous code cannot learn event quarantine state before active mod ownership is proven.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `37`, `PublicEventFacadesRequireScopeBeforeEnvelopeOnly=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=37`, event audit flag `True`, and snapshot flag `True`.
+- PASS: public event facade ordering source scan showed `RequireSubscriberScope` or `ThrowIfNoActiveMod` before `ThrowIfEnvelopeOnly` for every public subscribe/publish route.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: stale schema-36/R37/event wording scan found no old revision claims in modding docs.
+- DEFERRED: Unity/dotnet compile was not launched because CPU gate failed: 63, 64, 99, and 88 percent samples. No active `Unity`, `dotnet`, or `csc` process was found. Last known Unity compile wall remains the unrelated Core contract dependency failure in `PhysicsImpactContracts.cs` and `HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 14
+
+What was wrong:
+- `FutureCommandSandboxConstants` was public while it contained sandbox pending/staging capacities, tracked modder limits, asset caps, telemetry capacity, command budget floors, fault hashes, kernel profile caps, and fallback flags.
+- `FutureCommandSandboxValidator` was already internal, but the public constants still implied stable SDK authority over internal runtime budgets and tuning.
+- Modders only need one public binary fact here: the 64-byte envelope size.
+
+What was done:
+- Made `FutureCommandSandboxConstants` internal.
+- Added public `FutureCommandEnvelope.SizeBytes` so SDK/source authors still have the fixed 64-byte packet size without seeing sandbox control-plane constants.
+- Updated `Signal_Schema.json` to schema revision `38` with `futureCommandSandboxConstantsPublic=false` and `futureCommandEnvelopeExposesSizeBytes=true`.
+- Extended `Validate_Mod_API_Static.ps1` to reject public `FutureCommandSandboxConstants` and require `FutureCommandEnvelope.SizeBytes`.
+- Updated `README.md`, `Mod_API_Specification.md`, `API_Surface_Audit_Matrix.md`, `Command_Audit_Matrix.md`, `Runtime_Verification_Playbook.md`, and `Mod_API_Sandbox_Quarantine.md`.
+
+Cinematic cheats used:
+- None. This pass changed cold SDK/source contract exposure only.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: 0 us/frame; constants and visibility do not change runtime execution.
+- Removed risk: public mods cannot couple to internal quality, thermal, budget, capacity, fault-hash, or kernel-tuning constants.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `38`, `FutureCommandSandboxConstantsPublic=False`, `FutureCommandEnvelopeExposesSizeBytes=True`.
+- PASS: `Signal_Schema.json` parsed with schema and snapshot flags for internal constants and public envelope size.
+- PASS: stale schema-37/R38/public-constants scan found no old revision or public constants claims in modding docs/source.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: Unity/dotnet compile was not launched because CPU gate failed at 99 percent. No active `Unity`, `dotnet`, or `csc` process was found. Last known Unity compile wall remains the unrelated Core contract dependency failure in `PhysicsImpactContracts.cs` and `HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 15
+
+What was wrong:
+- `IModRegistryEventListener` was internal, but public `Fabricator` and `ModMenuUIController` still declared it in their base lists.
+- That risks C# inconsistent-accessibility compile failure and exposes an engine-only invalidation route through public component signatures.
+
+What was done:
+- Removed `IModRegistryEventListener` from public `Fabricator` and `ModMenuUIController` base lists.
+- Added private `ModRegistryEventAdapter` bridges that register with `ModRegistryEvents` and forward to owner-private handlers.
+- Updated `Signal_Schema.json` to schema revision `39` with `modRegistryListenersUsePrivateAdapters=true`.
+- Extended `Validate_Mod_API_Static.ps1` to reject public listener base-list exposure, reject `Register(this)`/`Unregister(this)`, and require private adapters.
+- Updated `README.md`, `Mod_API_Specification.md`, `API_Surface_Audit_Matrix.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This pass preserved the existing coalesced internal NativeQueue invalidation lane instead of creating public event traffic or UI polling.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: one cold adapter allocation per component instance.
+- Removed risk: public components no longer leak internal registry listener types or depend on public/internal accessibility mismatch.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `39`, `ModRegistryListenersUsePrivateAdapters=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=39` and adapter snapshot flag `True`.
+- PASS: public-base leak scan found no public `Fabricator` or `ModMenuUIController` base-list exposure of `IModRegistryEventListener`, and no `ModRegistryEvents.Register(this)` / `Unregister(this)` route.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: stale schema-38/R39 listener scan found no old revision or public-listener claims in modding docs/source.
+- DEFERRED: Unity/dotnet compile was not launched because CPU gate failed at 100 percent. No active `Unity`, `dotnet`, or `csc` process was found. Last known Unity compile wall remains the unrelated Core contract dependency failure in `PhysicsImpactContracts.cs` and `HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 16
+
+What was wrong:
+- `AssemblyInfo.cs` grants internals to first-party friend assemblies, including `Hecton8.Plugins`.
+- The loader and SDK builder accepted managed DLLs with arbitrary file names and metadata identities.
+- Current public runtime UGC is envelope-only, but a future managed-mod reopening could let a Mods-root DLL claim a reserved engine assembly identity and spoof a friend/internal route.
+
+What was done:
+- Added reserved managed assembly identity guards to `ModLoader`.
+- Loader now disables packages whose manifest entry name, resolved DLL filename, or `AssemblyName.GetAssemblyName()` metadata identity is reserved.
+- Loader managed factory registration rejects reserved assembly factories loaded from the Mods root, with fail-closed path handling for reserved factories.
+- Added the same reserved identity validation to `ModBuilderWindow` before DLL copy/package generation.
+- Updated `Signal_Schema.json` to schema revision `40` with `managedAssemblyIdentityReservedNamesBlocked=true`.
+- Extended `Validate_Mod_API_Static.ps1` to prove loader, SDK builder, schema, audit matrix, and change-control checklist coverage.
+- Updated `README.md`, `Mod_API_Specification.md`, `Loader_Save_Audit_Matrix.md`, `Runtime_Verification_Playbook.md`, `Change_Control_Checklist.md`, `Mod_API_Sandbox_Quarantine.md`, and `SDK_Authoring_Interface_Plan.md`.
+
+Cinematic cheats used:
+- None. This is cold package/SDK validation, not simulation or presentation.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: cold package discovery/editor validation only, from file-name checks and assembly metadata read.
+- Removed risk: external packages cannot claim `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, or `netstandard` identities to imply first-party/internal authority.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `40`, `ManagedAssemblyIdentityReservedNamesBlocked=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=40`, loader flag `True`, and last static validation snapshot flag `True`.
+- PASS: stale schema-39/R40 scan found no old revision or stale closure text in modding docs/source.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: Unity/dotnet compile was not launched because CPU samples were 100, 99.06, and 59.44 percent, and two active `dotnet.exe` processes were present. Last known Unity compile wall remains the unrelated Core contract dependency failure in `PhysicsImpactContracts.cs` and `HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 17
+
+What was wrong:
+- `SubscribeNative` exposes callback-scoped byte payloads for Interaction and Crafting lanes.
+- Schema/docs recorded the native event kinds but did not prove source payload layouts, sizes, or field offsets.
+- That left a future managed-event reopening with an undocumented byte ABI despite the public SDK callback route.
+
+What was done:
+- Updated `Signal_Schema.json` to schema revision `41`.
+- Added schema payload layouts for `InteractionEventPayload` (`32` bytes) and `CraftingEventPayload` (`64` bytes), including source files and field offsets.
+- Extended `eventSubscriptionAudit`, `payloadLayoutAudit`, and `lastStaticValidationSnapshot` with `nativeBytePayloadLayoutsChecked=true`.
+- Extended `Validate_Mod_API_Static.ps1` to read `InteractionEvents.cs` and `CraftingEvents.cs`, prove explicit layouts, sizes, offsets, schema entries, audit docs, and native byte event metadata.
+- Updated `README.md`, `Payload_Layout_Audit_Matrix.md`, `Event_Subscription_Audit_Matrix.md`, `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md`, and `Change_Control_Checklist.md`.
+
+Cinematic cheats used:
+- None. This pass added static ABI proof only; it did not add simulation, presentation, polling, queue traffic, or event dispatch.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: 0 us/frame; static validator/doc/schema work only.
+- Removed risk: mods cannot decode `SubscribeNative` bytes against undocumented or drifting source layouts if managed callbacks are reopened.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `41`, `NativeBytePayloadLayoutsChecked=True`, `NativeInteractionEventPayloadSizeBytes=32`, `NativeCraftingEventPayloadSizeBytes=64`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=41`, native byte layout snapshot flag `True`, and payload sizes `32/64`.
+- PASS: stale schema-40/R41 scan found no old revision or stale closure text in modding docs/source.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: Unity/dotnet compile was not launched because CPU samples were 82.56, 60.19, and 33.08 percent. No active `Unity`, `dotnet`, or `csc` process was found. Last known Unity compile wall remains the unrelated Core contract dependency failure in `PhysicsImpactContracts.cs` and `HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 18
+
+What was wrong:
+- Loader reserved-identity validation covered manifest `EntryAssembly` and the resolved primary DLL path, but not every top-level DLL beside `mod.json`.
+- In envelope-only mode that package still could not execute, but the documented reserved-DLL identity proof was false for loose/stale support DLLs.
+- `ModBuilderWindow` removed only a stale previous primary `EntryAssembly`; support DLLs could remain in `Mods/[ModId]` after a later manifest-only rebuild.
+
+What was done:
+- Added `ResolveManagedAssemblyIdentityScanPaths` to `ModLoader`.
+- Loader now scans every top-level package DLL for reserved file name and `AssemblyName` metadata identity before candidate activation.
+- Any top-level DLL now marks the package as a managed-entry candidate while keeping runtime `EntryAssemblyPath` empty in envelope-only mode.
+- Added `RemoveStaleAssemblies` to `ModBuilderWindow` so each build deletes top-level output DLLs not selected in the current DLL list.
+- Updated `Signal_Schema.json` to schema revision `42` with `managedAssemblyIdentityScansAllPackageDlls=true`.
+- Extended `Validate_Mod_API_Static.ps1` to prove loader scan, builder cleanup, schema snapshot, audit docs, spec, and runtime playbook coverage.
+- Updated `README.md`, `Mod_API_Specification.md`, `Loader_Save_Audit_Matrix.md`, `Mod_API_Sandbox_Quarantine.md`, `Runtime_Verification_Playbook.md`, `SDK_Authoring_Interface_Plan.md`, `SDK_Product_Blueprint.md`, and `Change_Control_Checklist.md`.
+
+Cinematic cheats used:
+- None. This is cold package/SDK validation, not physical simulation or presentation. The chosen cheat is architectural: reject stale/unsafe DLL package shapes before runtime instead of adding any frame-time policing path.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: cold package discovery/editor validation only: top-level `Directory.GetFiles` plus assembly metadata identity read.
+- Removed risk: stale/support DLLs cannot carry reserved `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, or `netstandard` identities through the package boundary without the validator seeing them.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `42`, `ManagedAssemblyIdentityReservedNamesBlocked=True`, `ManagedAssemblyIdentityScansAllPackageDlls=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=42`, loader scan flag `True`, and last static validation snapshot flag `True`.
+- PASS: stale schema-41 scan found no old revision or stale closure text in modding docs/source.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: stale removed-code scan found no `ReadExistingManifest`, `previousManifest`, or obsolete contiguous identity-check route.
+- DEFERRED: Unity/dotnet compile was not launched because CPU samples were 100, 100, and 62 percent, with active `csc.exe` and `dotnet.exe` processes; a later retry sampled 100, 100, and 100 percent CPU with 9 active `dotnet.exe` processes. Last known Unity compile wall remains the unrelated Core contract dependency failure in `PhysicsImpactContracts.cs` and `HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 19
+
+What was wrong:
+- Builder mod-id validation accepted separator-only ids like `.`, `..`, and `---`.
+- Builder validated `modId.Trim()` but still used raw `_modId` for `Mods/[ModId]` and manifest `Id`.
+- Loader accepted any non-whitespace manifest `Id`, did not validate dependency ids, and let `EntryAssembly` remain path-like before package-local path resolution.
+
+What was done:
+- Added canonical mod id validation to `ModLoader` and `ModBuilderWindow`.
+- Valid ids now use lowercase letters/digits separated by single `.`, `_`, or `-`; no whitespace, leading/trailing/repeated separators, separator-only ids, or reserved filesystem device segments.
+- Loader validates manifest `Id` before hash/path use.
+- Loader validates dependency ids before load-order resolution.
+- Loader restricts `EntryAssembly` to a package-local `.dll` file name and clears invalid values before any path combine or metadata scan.
+- Builder validates dependency ids and writes canonical trimmed `modId` to output path, bundle name, and manifest `Id`.
+- Updated `Signal_Schema.json` to schema revision `43` with `modIdentifierCanonicalForm=true`, `dependencyIdentifiersValidated=true`, and `entryAssemblyPathRestrictedToFileName=true`.
+- Extended `Validate_Mod_API_Static.ps1` and updated `README.md`, `Mod_API_Specification.md`, `Loader_Save_Audit_Matrix.md`, `Mod_API_Sandbox_Quarantine.md`, `Runtime_Verification_Playbook.md`, `SDK_Authoring_Interface_Plan.md`, `SDK_Product_Blueprint.md`, and `Change_Control_Checklist.md`.
+
+Cinematic cheats used:
+- None. This is cold package identity validation. The design rejects ambiguous package identities before runtime instead of spending frame-time on defensive routing.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: cold string validation during package discovery/editor build only.
+- Removed risk: package ids cannot alias filesystem tokens or unstable owner hashes; `EntryAssembly` cannot express an external path through the manifest.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `43`, `ModIdentifierCanonicalForm=True`, `DependencyIdentifiersValidated=True`, `EntryAssemblyPathRestrictedToFileName=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `43` and all package identity flags true in loader-save audit and last static validation snapshot.
+- PASS: stale schema-42/path-unsafe scan found no old revision, raw builder mod-id path, raw manifest id assignment, or contiguous unsafe EntryAssembly validation route.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: Unity/dotnet compile was not launched because CPU samples were 57, 90, and 40 percent. No active `dotnet.exe`, `csc.exe`, or Unity process was found. Last known Unity compile wall remains the unrelated Core contract dependency failure in `PhysicsImpactContracts.cs` and `HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 20
+
+What was wrong:
+- Public facade ownership checks depend on `ModExecutionScope.HasActiveMod`.
+- `ModExecutionScope.Enter(null)` or blank owner input previously opened an active `"anonymous"` scope.
+- `CurrentModId` also synthesized `"anonymous"` outside a real owner, so active-scope proof could be satisfied without canonical mod id or non-zero owner hash.
+
+What was done:
+- `ModExecutionScope` now rejects blank owner ids before opening scope.
+- Scope creation resolves or requires a non-zero owner hash.
+- `HasActiveMod` now requires positive scope depth, non-empty current mod id, and non-zero hash.
+- `CurrentModId` returns empty outside a real scope instead of synthesizing `"anonymous"`.
+- Updated `Signal_Schema.json` to schema revision `44` with `modExecutionScopeRejectsAnonymousOwner=true`.
+- Extended `Validate_Mod_API_Static.ps1` to prove source guards, schema snapshot, loader audit, spec, runtime playbook, and change-control checklist coverage.
+- Updated `README.md`, `Mod_API_Specification.md`, `Loader_Save_Audit_Matrix.md`, `Mod_API_Sandbox_Quarantine.md`, `Runtime_Verification_Playbook.md`, and `Change_Control_Checklist.md`.
+
+Cinematic cheats used:
+- None. This is ownership-contract hardening, not simulation or presentation. The architectural cheat is fail-fast scope creation: reject ownerless managed execution before any facade, event, command, save, or telemetry path can spend frame-time work.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: low microseconds only when a managed mod execution scope is opened; envelope-only runtime hot paths are unchanged.
+- Removed risk: public facade guards cannot be bypassed by a synthetic `"anonymous"` owner during future managed bridge or harness execution.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `44`, `ModExecutionScopeRejectsAnonymousOwner=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `44`, loader-save audit scope flag `True`, and last static validation snapshot scope flag `True`.
+- PASS: stale schema-43 scan found no stale current-revision text in touched modding docs/schema; remaining `43` occurrences are event hash literals `0x43444D47`.
+- PASS: removed-code scan found no `ModExecutionScope` anonymous active owner fallback or `_scopeDepth > 0`-only `HasActiveMod` route.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: Unity/dotnet compile was not launched because CPU samples were 100, 100, and 100 percent with multiple active `dotnet.exe` processes. Last known Unity compile wall remains the unrelated Core contract dependency failure in `PhysicsImpactContracts.cs` and `HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 21
+
+What was wrong:
+- `SubtitleCue` was treated as a reserved future localization kernel, but `TriggerSubtitleCue` still existed in the runtime default future-envelope allowlist.
+- The same alias also remained in `allowed_opcodes.csv` and the editor sandbox tuner opcode list.
+- Result: a subtitle/localization alias could route toward `ModSubtitleCueSignal` without localization owner proof, zero-GC subtitle path proof, quota telemetry, rejection behavior, unload behavior, or Unity runtime playbook evidence.
+
+What was done:
+- Removed `TriggerSubtitleCue` from `GenerateEmergencyMockOpcodes()` and `IsRuntimeAllowedFutureCommandOpcode()`.
+- Removed `0xBCEE082A # TriggerSubtitleCue` from `Docs/Modding/allowed_opcodes.csv`.
+- Removed `FutureCommandOpcodes.TriggerSubtitleCue` and `TRIGGER_SUBTITLE_CUE_OP` from `ModApiSandboxTunerWindow`.
+- Kept the public hash constant as reserved metadata; no packet layout or source hash changed.
+- Updated `Signal_Schema.json` to schema revision `45` with `futureCommandAllowedOpcodeCount=8`, `futureSubtitleCueAliasesReserved=true`, and `runtimeForbiddenFutureCommandOpcodes`.
+- Extended `Validate_Mod_API_Static.ps1` to reject alias re-entry into default runtime map, CSV, or editor runtime tuner.
+- Updated `Command_Audit_Matrix.md`, `Future_Command_Kernel_Reservations.md`, `Runtime_Verification_Playbook.md`, `README.md`, `Mod_API_Specification.md`, `Mod_API_Sandbox_Quarantine.md`, and `Change_Control_Checklist.md`.
+
+Cinematic cheats used:
+- None. This is authority pruning, not simulation. The practical cheat is fail-fast opcode rejection: do not simulate or present unowned subtitle behavior until the localization owner supplies proof.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: static/editor validation only.
+- Removed risk: illegal subtitle cue envelopes fail before runtime signal routing and cannot consume localization/presentation budget through an alias.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `45`, `FutureCommandAllowedOpcodeCount=8`, `FutureSubtitleCueAliasesReserved=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `45`, subtitle alias flag `True`, and forbidden future opcode list containing `TriggerSubtitleCue`.
+- PASS: stale schema/count/alias scan found no schema-44 current text, `FutureCommandAllowedOpcodeCount = 9`, `TRIGGER_SUBTITLE_CUE_OP`, or allowed-opcode `0xBCEE082A # TriggerSubtitleCue` text.
+- PASS: forbidden runtime exposure scan found no `FutureCommandOpcodes.TriggerSubtitleCue` in the editor runtime tuner or `allowed_opcodes.csv`; remaining source references are the hash constant and reserved/internal routing checks.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: Unity/dotnet compile was not launched because CPU samples were 100, 100, and 100 percent, with eight active `dotnet.exe` processes and one `VBCSCompiler.exe` process. Last known Unity compile wall remains the unrelated Core contract dependency failure in `PhysicsImpactContracts.cs` and `HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 22
+
+What was wrong:
+- `HectonGameEvents.cs` legacy managed event payload classes were internal, but many constructors and properties were still `public`.
+- Some public members carried first-party handles: `ItemData`, `BuildableData`, `HectonSurvivalSystem`, `SurvivalDeathRecord`.
+- Current external exposure was blocked by internal containing classes, but the member visibility was stale contract debt and a future publicening trap.
+- `Validate_Mod_API_Static.ps1` also had a blind spot: subscription constructor coverage used undefined `$modEventProjectionBridgeSource` instead of the already-read projection bridge source, so it did not prove `ModEventProjectionBridge` token constructors.
+
+What was done:
+- Changed all `HectonGameEvents` constructors and properties from public to internal.
+- Preserved same-assembly first-party access; no runtime route or payload layout was changed.
+- Updated `Signal_Schema.json` to schema revision `46` with `gameEventPayloadMembersInternalOnly=true`.
+- Extended `Validate_Mod_API_Static.ps1` to read `HectonGameEvents.cs`, reject any line-level `public` member in that file, and require schema/docs/playbook evidence.
+- Fixed the subscription constructor scan to use `$projectionSource`, so `ModEventProjectionBridge` token constructors are covered.
+- Updated `Event_Subscription_Audit_Matrix.md`, `API_Surface_Audit_Matrix.md`, `README.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This is API-boundary hardening. The practical cheat is keeping legacy managed event payloads first-party only instead of paying runtime complexity to redact object handles after exposure.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: static validation only.
+- Removed risk: future managed-event reopening cannot accidentally expose Unity object, authored asset, survival-system, or survival-record handles through legacy payload members.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `46`, `GameEventPayloadMembersInternalOnly=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `46`, event audit flag `True`, and last static validation snapshot flag `True`.
+- PASS: `rg -n "^\s*public\s+" Assets/_Project/Scripts/ModdingAPI/HectonGameEvents.cs` returned no matches.
+- PASS: stale validator-variable scan found no `$modEventProjectionBridgeSource` reference.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: Unity/dotnet compile was not launched because CPU samples were 74.3, 90.26, and 74.27 percent, with active `dotnet.exe` and `VBCSCompiler.exe` processes. Last known Unity compile wall remains the unrelated Core contract dependency failure in `PhysicsImpactContracts.cs` and `HabitatFluidIncursionContracts.cs`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 23
+
+What was wrong:
+- `ModRuntimeInfo` and `ModLoadStatus` were internal engine diagnostics, but `ModRuntimeInfo` still had public fields.
+- Those fields include `DirectoryPath`, `AssetBundlePath`, load status, and loader status text.
+- Current external exposure was blocked by the internal type, but public fields were dormant SDK leak debt if the descriptor is ever made public again.
+
+What was done:
+- Changed every `ModRuntimeInfo` field from public to internal.
+- Kept `ModMetadata` public because it is package-declared metadata, not runtime path/status diagnostics.
+- Updated `Signal_Schema.json` to schema revision `47` with `modRuntimeInfoMembersInternalOnly=true`.
+- Extended `Validate_Mod_API_Static.ps1` so `ModRuntimeInfo` field count still audits declared fields but any public member in `ModRuntimeInfo.cs` fails the gate.
+- Updated `Loader_Save_Audit_Matrix.md`, `API_Surface_Audit_Matrix.md`, `README.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This is cold diagnostics boundary hardening. The practical cheat is keeping full path diagnostics internal instead of creating a redaction layer before a real public diagnostics requirement exists.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: static validation only.
+- Removed risk: package root paths, AssetBundle paths, load status, and loader failure text cannot become accidental SDK fields through the existing runtime descriptor.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `47`, `ModRuntimeInfoMembersInternalOnly=True`, `GameEventPayloadMembersInternalOnly=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `47`, loader-save audit flag `True`, and last static validation snapshot flag `True`.
+- PASS: `rg -n "^\s*public\s+" Assets/_Project/Scripts/ModdingAPI/ModRuntimeInfo.cs` returned no matches.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- BLOCKED: `dotnet build Assembly-CSharp.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` failed before modding compile proof on external package references in `CandiceSQLiteProvider.cs`: missing `Mono.Data` and `SqliteDataReader`.
+- DEFERRED: Unity batchmode was not launched because `Temp/UnityLockfile` exists. The lockfile was not deleted.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 24
+
+What was wrong:
+- `HectonEventBus` was internal, but four direct bus methods were still `public static`: unmanaged subscribe, native subscribe, projected subscribe, and unmanaged publish.
+- Current external exposure was blocked by the internal class, but the public members created dormant SDK leak debt and a future second event route.
+- Docs claimed `HectonAPI.Events` is the only public route, but the static gate only proved the class-level `internal` keyword.
+
+What was done:
+- Changed the direct `HectonEventBus` bus methods from public to internal.
+- Kept all public mod-facing event methods on `HectonAPI.Events`; public event method count remains `7`.
+- Updated `Signal_Schema.json` to schema revision `48` with `hectonEventBusPublicStaticMembersForbidden=true`.
+- Extended `Validate_Mod_API_Static.ps1` to fail on any line-level `public static` member in `HectonEventBus.cs`.
+- Updated `README.md`, `Event_Subscription_Audit_Matrix.md`, `API_Surface_Audit_Matrix.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This is API-boundary hardening. The practical cheat is keeping one public facade instead of supporting a duplicate event route with extra ownership checks.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: static validation only.
+- Removed risk: future managed-event reopening cannot accidentally expose direct bus subscribe/publish methods outside the facade.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `48`, `HectonEventBusPublicStaticMembersForbidden=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `48`, event audit flag `True`, and last static validation snapshot flag `True`.
+- PASS: `rg -n "^\s*public\s+static\s+" Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs` returned no matches.
+- PASS: stale schema-47 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- BLOCKED: `dotnet build Assembly-CSharp.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` failed before modding compile proof on external package references in `CandiceSQLiteProvider.cs`: missing `Mono.Data` and `SqliteDataReader`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 25
+
+What was wrong:
+- `FutureCommandSandboxValidator` was internal, but its static control-plane methods were still public.
+- Public methods covered lifecycle, public request, raw byte stream ingress, external queue drain, validation scheduling/finalization, tuning, opcode toggles, approved asset registration, CSV reload, telemetry snapshots, CRC, self-audit, integrity hash, kernel telemetry, and blackbox dumping.
+- `MockModQueue.Wrap` was also public static.
+- This contradicted the existing contract that mods submit packets through `HectonAPI.Commands.RequestFuture` and do not call the validator directly.
+
+What was done:
+- Changed validator static control-plane methods from public to internal.
+- Changed `MockModQueue.Wrap` from public static to internal static.
+- Preserved public `FutureCommandOpcodes` and `FutureCommandEnvelope.SizeBytes` as the public packet/hash facts.
+- Updated `Signal_Schema.json` to schema revision `49` with `futureCommandSandboxPublicStaticMembersForbidden=true`.
+- Extended `Validate_Mod_API_Static.ps1` to inspect the validator class body and `MockModQueue.Wrap` without rejecting intended public opcode constants.
+- Updated `README.md`, `API_Surface_Audit_Matrix.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This is control-plane boundary hardening. The practical cheat is keeping rich editor/tuning/telemetry controls same-assembly only instead of creating public redaction wrappers without runtime proof.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: static validation only.
+- Removed risk: future SDK/public assembly changes cannot accidentally expose raw stream ingress, tuning, CSV reload, telemetry copy, or blackbox dump methods as mod APIs.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `49`, `FutureCommandSandboxPublicStaticMembersForbidden=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `49`, command API flag `True`, and last static validation snapshot flag `True`.
+- PASS: targeted source scan found `ValidatorPublicStaticMatches=0` and `MockWrapPublic=False`; the only remaining file-level public static line is `public static class FutureCommandOpcodes`.
+- PASS: stale schema-48 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet/Unity compile was not launched because CPU sampled 68 percent and an active `dotnet.exe` process was present.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 26
+
+What was wrong:
+- `HectonModHooks` was internal, but `PublishPlayerSpawned` and `PublishBiomeChanged` were still `public static`.
+- `ModCommandDispatcher` was internal, but legacy queue ingress and float-packing helpers were still `public static`.
+- This repeated the dormant SDK leak pattern: current access was blocked by internal containing types, but member visibility preserved direct command/event routes if assembly or class visibility drifts later.
+
+What was done:
+- Changed `HectonModHooks.PublishPlayerSpawned` and `PublishBiomeChanged` to internal.
+- Changed `ModCommandDispatcher.Request`, `RequestAup`, `RequestRenderInstance`, `PackSequentialFloat2`, and `PackSequentialFloat3` to internal.
+- Kept public mod-facing access on `HectonAPI.Events` and `HectonAPI.Commands`.
+- Updated `Signal_Schema.json` to schema revision `50` with `hectonModHooksPublicStaticMembersForbidden=true` and `modCommandDispatcherPublicStaticMembersForbidden=true`.
+- Extended `Validate_Mod_API_Static.ps1` with gates for direct hook publication methods and dispatcher public static members.
+- Updated `README.md`, `Mod_API_Specification.md`, `API_Surface_Audit_Matrix.md`, `Event_Subscription_Audit_Matrix.md`, `Command_Audit_Matrix.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This is cold API-boundary hardening. The practical cheat is refusing a duplicate public dispatcher/helper layer and keeping one public facade route.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: static validation only.
+- Removed risk: direct first-party command/event infrastructure cannot become accidental SDK API through public static members inside internal types.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `50`, `HectonModHooksPublicStaticMembersForbidden=True`, `ModCommandDispatcherPublicStaticMembersForbidden=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `50`, event/command flags `True`, and matching last static validation snapshot flags.
+- PASS: targeted source scan found zero public hook publication methods and zero public static members inside `ModCommandDispatcher`.
+- PASS: stale schema-49 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- BLOCKED: `dotnet build Assembly-CSharp.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` failed outside this domain on `CandiceSQLiteProvider.cs`: missing `Mono.Data` and `SqliteDataReader`.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 27
+
+What was wrong:
+- Public event facade methods required active `ModExecutionScope`, but internal unmanaged/native/projected event bridge routes could still resolve blank subscriber ids from `ModExecutionScope.CurrentModId`.
+- `ModEventProjectionBridge.Subscribe` still had an explicit `"anonymous"` fallback before creating a `HectonEventSubscription`.
+- That contradicted the current owner-proof contract and preserved an anonymous projected callback route if same-assembly code bypassed the public facade.
+
+What was done:
+- Added active-scope and subscriber-id match enforcement to `HectonEventBus` unmanaged, native, and projected subscription routes.
+- Added the same ownership check to `ModEventProjectionBridge.SubscribeProjected`.
+- Removed the projected bridge `"anonymous"` fallback; token creation now requires a concrete mod subscriber id.
+- Updated `Signal_Schema.json` to schema revision `51` with `projectedEventBridgeRejectsAnonymousSubscribers=true`.
+- Extended `Validate_Mod_API_Static.ps1` to reject missing bridge ownership guards or the old anonymous fallback.
+- Updated `README.md`, `Mod_API_Specification.md`, `Event_Subscription_Audit_Matrix.md`, `API_Surface_Audit_Matrix.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This is cold API-boundary hardening. The practical cheat is failing anonymous subscriptions before token creation instead of adding runtime cull/redaction complexity.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: low microseconds only on cold subscription calls.
+- Removed risk: projected managed callbacks cannot be created under an anonymous subscriber id if managed event projections are reopened.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `51`, `ProjectedEventBridgeRejectsAnonymousSubscribers=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `51`, event audit flag `True`, and matching last static validation snapshot flag.
+- PASS: targeted bridge scan found `BusRequireScopeRoutes=3`, `ProjectionAnonymousFallback=False`, and bridge active-scope/concrete-id guards present.
+- PASS: stale schema-50 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet/Unity compile was not launched after schema 51 because CPU sampled 100 percent and active `dotnet.exe` / `VBCSCompiler.exe` processes were present.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 28
+
+What was wrong:
+- `MockModQueue` was internal, but it still exposed a public `NativeQueue<FutureCommandEnvelope>` field and public instance control methods.
+- That did not make the queue external today, but it preserved a dormant native-handle SDK leak if type visibility or assembly boundaries drift later.
+- The previous validator gate only covered sandbox public static methods, so this instance-level leak could return unnoticed.
+
+What was done:
+- Changed `MockModQueue.Queue` to private `_queue`.
+- Changed `GetIsCreated` and `Attach` to internal.
+- Changed `Dispose` to explicit `IDisposable.Dispose`, removing the public instance dispose method from the struct surface.
+- Updated `Signal_Schema.json` to schema revision `52` with `mockModQueueMembersInternalOnly=true`.
+- Extended `Validate_Mod_API_Static.ps1` with a body scan that rejects public queue handles or public instance control methods in `MockModQueue`.
+- Updated `README.md`, `Mod_API_Specification.md`, `API_Surface_Audit_Matrix.md`, `Command_Audit_Matrix.md`, `Mod_API_Sandbox_Quarantine.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This is cold control-plane boundary hardening. The practical cheat is keeping batch queue plumbing first-party only instead of building public redaction wrappers for native queue handles.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: static validation only.
+- Removed risk: public SDK cannot accidentally gain a `NativeQueue` ingress helper; runtime mods keep the single owned `HectonAPI.Commands.RequestFuture` route.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `52`, `MockModQueueMembersInternalOnly=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `52`, command API flag `True`, and last static validation snapshot flag `True`.
+- PASS: targeted `MockModQueue` body scan found `PublicMembers=0`, `PrivateQueue=True`, `InternalAttach=True`, `ExplicitDispose=True`.
+- PASS: stale schema-49/50/51 scan found no stale current-revision text in modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet/Unity compile was not launched because CPU sampled 85 percent and active `dotnet.exe` / `VBCSCompiler.exe` processes were present.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 29
+
+What was wrong:
+- `HectonAPI.Resources` passed the active mod id, but `ModResourceRegistry.TryRegister` accepted any non-empty `modId` while any mod scope was active.
+- A same-assembly caller could register a hash under a forged resource owner before hash creation.
+- The validator did not prove owner-id equality inside the registry primitive.
+
+What was done:
+- Added an ordinal `modId == ModExecutionScope.CurrentModId` guard in `ModResourceRegistry.TryRegister`.
+- Updated `Signal_Schema.json` to schema revision `53` with `resourceRegistryRejectsForgedOwner=true`.
+- Extended `Validate_Mod_API_Static.ps1` to prove the equality guard, schema flags, resource audit wording, and runtime playbook output.
+- Updated `README.md`, `Resource_Content_Audit_Matrix.md`, `API_Surface_Audit_Matrix.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This is cold owner-proof hardening. The practical cheat is rejecting forged resource ids before asset resolution instead of adding runtime revoke/rewrite machinery later.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: one ordinal string comparison on cold resource registration.
+- Removed risk: hash-only resources cannot be attributed to a different mod owner through the internal registry helper.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `53`, `ResourceRegistryRejectsForgedOwner=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `53`, resource audit flag `True`, and last static validation snapshot flag `True`.
+- PASS: targeted source scan found the `modId` / `ModExecutionScope.CurrentModId` ordinal equality guard and rejection message.
+- PASS: stale schema-50/51/52 scan found no stale current-revision text in modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet/Unity compile was not launched because CPU sampled 99 percent. No active dotnet/csc/Unity process was present, but CPU gate failed.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 30
+
+What was wrong:
+- The projected event bridge source used a smooth continuous cap curve, but the runtime playbook still documented a linear `GlobalQualityWeight` cap.
+- `Signal_Schema.json` had low/high cap numbers but no curve formula or snapshot flag proving continuous scaling.
+- `Validate_Mod_API_Static.ps1` could pass while the QA playbook and runtime source disagreed.
+
+What was done:
+- Changed `ModEventProjectionBridge.ResolveProjectionCap` to call the existing `Smooth01` helper instead of duplicating the polynomial inline.
+- Updated `Signal_Schema.json` to schema revision `54` with `projectedEventCapUsesSmoothContinuousCurve=true`, `projectionCapCurve`, and `projectionCapFormula`.
+- Extended `Validate_Mod_API_Static.ps1` to prove low/high cap constants, finite saturation, `Smooth01` use, schema fields, snapshot flag, event audit text, and runtime playbook formula.
+- Updated `README.md`, `Mod_API_Specification.md`, `Event_Subscription_Audit_Matrix.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- Continuous cadence scaling. Low devices keep a reduced projected callback budget; higher devices spend the saved budget on richer mod-facing presentation/diagnostics without changing gameplay truth.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: static validation only.
+- Source behavior: equivalent cap arithmetic, no new allocation, no new native buffer, no new public route.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `54`, `ProjectedEventCapUsesSmoothContinuousCurve=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `54`, projection curve text, formula text, and last static validation snapshot flag `True`.
+- PASS: targeted source/doc scan found `Smooth01(qualityWeight01)` cap use and the smoothstep formula in schema/playbook/audit/spec.
+- PASS: stale schema-53/linear-cap scan found no stale current-revision or old linear cap text in modding docs/source.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet/Unity compile was not launched because CPU sampled 82 percent. No active dotnet/csc/Unity process was present, but CPU gate failed.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 31
+
+What was wrong:
+- `Mod_API_Specification.md` still said the current static closure was schema revision `53`, while `Signal_Schema.json` had advanced beyond it.
+- `Validate_Mod_API_Static.ps1` checked the README schema line but did not prove the spec closure paragraph matched the schema revision.
+- The runtime playbook omitted the `ProjectedEventCapUsesSmoothContinuousCurve = True` result even though the validator emitted it.
+
+What was done:
+- Updated `Signal_Schema.json` to schema revision `55` with `modApiSpecCurrentClosureRevisionMatchesSchema=true`.
+- Updated `Mod_API_Specification.md` current closure to revision `55` and included the smooth continuous projected event cap proof in that closure.
+- Extended `Validate_Mod_API_Static.ps1` to fail when the spec closure revision does not match `Signal_Schema.json.schemaRevision`.
+- Updated `README.md` and `Runtime_Verification_Playbook.md` for schema 55 output.
+
+Cinematic cheats used:
+- None. This is proof-chain hygiene. The practical cheat is making the static gate catch stale contract text instead of paying runtime complexity for ambiguous SDK behavior.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: static validation only.
+- Removed risk: the public mod API spec can no longer silently claim an old schema closure while the README/schema advance.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `55`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`, `ProjectedEventCapUsesSmoothContinuousCurve=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `55`, spec closure parity flag `True`, and projected cap curve flag `True`.
+- PASS: stale schema closure scan found no stale current-closure or README schema revision `50-54` text in touched modding contract files.
+- PASS: scoped `git diff --check` for touched schema 55 files. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- NOT RUN: dotnet/Unity compile was not launched because this pass did not change C# runtime/editor source. CPU/process gate was sampled at 21 percent CPU with zero active dotnet/csc/VBCSCompiler/Unity processes.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 32
+
+What was wrong:
+- `HectonEventBus` private channel implementations still synthesized `"anonymous"` subscriber ids.
+- The public facade and projected bridge had owner checks, but the actual token factory could still create ownerless `HectonEventSubscription` tokens if a same-class route passed a blank subscriber id.
+- `Validate_Mod_API_Static.ps1` proved the outer guards but did not prove private channel bodies rejected anonymous fallback logic.
+
+What was done:
+- Added `RequireConcreteSubscriberId` in `HectonEventBus`.
+- Routed managed, unmanaged, and native channel subscriptions through that guard before token creation.
+- Updated `Signal_Schema.json` to schema revision `56` with `eventChannelsRejectAnonymousSubscribers=true`.
+- Extended `Validate_Mod_API_Static.ps1` to prove the source guard, schema flags, event audit wording, spec closure, and runtime playbook output.
+- Updated `README.md`, `Event_Subscription_Audit_Matrix.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+
+Cinematic cheats used:
+- None. This is cold route hardening. The practical cheat is failing ownerless subscriptions immediately instead of adding runtime revoke scans for anonymous callback tokens.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: one cold branch/string check on subscription creation.
+- Removed risk: anonymous event tokens cannot survive into unload/callback ownership paths.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `56`, `EventChannelsRejectAnonymousSubscribers=True`, `ProjectedEventBridgeRejectsAnonymousSubscribers=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `56`, event channel anonymous rejection flag `True`, and last static validation snapshot flag `True`.
+- PASS: source anonymous-literal scan found no `"anonymous"` fallback in `HectonEventBus.cs` or `ModEventProjectionBridge.cs`.
+- PASS: stale schema-55 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- BLOCKED: `dotnet build Assembly-CSharp.csproj -v:minimal` was attempted after CPU/process gate allowed it and failed on external Candice SQLite dependency errors: `CandiceSQLiteProvider.cs(1,12): CS0234 Mono.Data missing` and `CandiceSQLiteProvider.cs(489,60): CS0246 SqliteDataReader missing`.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 33
+
+What was wrong:
+- `ModSaveStateStore` still had a lower-level scope-less fallback that derived persistence ownership from arbitrary save keys.
+- Public `HectonAPI.SaveState` facade calls were scoped, but same-assembly store callers could bypass that proof.
+- `ModWorldPersistenceManager` relied on the fallback for the internal `hecton.internal.mod_world_spawns` payload.
+
+What was done:
+- Removed the `ResolvePersistenceOwnerHash` key-hash fallback from public mod store calls.
+- Added active-scope enforcement to `SetModString` / `GetModString`.
+- Added explicit engine-owned `SetEngineString` / `GetEngineString` restricted to `hecton.internal.` keys and reserved owner id `hecton.internal.engine_save_owner`.
+- Moved `ModWorldPersistenceManager` to the explicit engine route while preserving legacy read compatibility for old key-hash payloads.
+- Updated `Signal_Schema.json` to schema revision `57`.
+- Updated `README.md`, `Loader_Save_Audit_Matrix.md`, `API_Surface_Audit_Matrix.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove source guards, schema flags, audit docs, spec text, and playbook output.
+
+Cinematic cheats used:
+- None. This is save ownership hardening. The practical cheat is an explicit cold engine route instead of adding runtime owner-reconciliation scans or save migration work on every frame.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: cold save/load branch and string-prefix checks only.
+- Removed risk: arbitrary keys cannot mint mod save owners from same-assembly code.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `57`, `SaveStateStoreRequiresScopedOrEngineOwner=True`, `SaveStatePublicMethods=2`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `57`, `loaderSaveAudit.saveStateStoreRequiresScopedOrEngineOwner=True`, `engineSaveStateKeyPrefix=hecton.internal.`, `engineSaveStateOwnerId=hecton.internal.engine_save_owner`, and last static validation snapshot flag `True`.
+- PASS: legacy fallback scan found no `ResolvePersistenceOwnerHash`, no `SetModString(SaveKey`, and no `GetModString(SaveKey` in touched SaveState source.
+- PASS: stale schema-56 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet compile was not launched because CPU sampled 100 percent and an active `dotnet.exe` process was present. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 34
+
+What was wrong:
+- `ModLoader.TryReadManifest` read `mod.json` with `File.ReadAllText` before any byte cap.
+- A hostile oversized manifest could allocate a large managed string during cold package discovery before canonical id, dependency, EntryAssembly, API version, or reserved assembly checks.
+- The static proof chain did not record a manifest byte cap.
+- Concurrent source drift changed `MockModQueue` shape and renamed the acoustic sandbox output signal; the validator needed to follow the real no-public-route contract without reverting other-agent changes.
+
+What was done:
+- Added `MaxManifestBytes = 32768` and `TryValidateManifestFileSize` in `ModLoader`.
+- The loader now rejects missing, empty, or `>32768` byte `mod.json` before `File.ReadAllText`.
+- Updated `Signal_Schema.json` to schema revision `58`.
+- Updated `README.md`, `Loader_Save_Audit_Matrix.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove manifest byte cap, pre-read ordering, schema snapshot, audit docs, spec text, and playbook output.
+- Adjusted the validator to accept current `internal ref struct MockModQueue` if all queue/control members remain non-public, to track `SandboxMockAcousticSignal`, and to exclude root cold registry cache hooks from the internal-forbidden facade method count.
+- Updated `Command_Audit_Matrix.md` for `SandboxMockAcousticSignal`.
+
+Cinematic cheats used:
+- No physical simulation cheat. The practical SDK cheat is bounding the small runtime manifest and pushing richer authoring data into separate bounded artifacts instead of letting JSON grow unbounded.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: one cold `FileInfo` allocation and length checks per discovered manifest.
+- Removed risk: large managed string allocation during mod discovery from oversized `mod.json`.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `58`, `ManifestMaxBytes=32768`, `ManifestByteCapEnforcedBeforeRead=True`, `SaveStateStoreRequiresScopedOrEngineOwner=True`, `MockModQueueMembersInternalOnly=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `58`, manifest byte cap `32768`, and last static validation snapshot `manifestByteCapEnforcedBeforeRead=True`.
+- PASS: source ordering scan found `TryValidateManifestFileSize(manifestPath)` before `File.ReadAllText(manifestPath)`.
+- PASS: stale schema-57 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet compile was not launched because CPU sampled 69 percent and active `dotnet.exe` process `61052` was present.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 35
+
+What was wrong:
+- `ModLoader.DiscoverAndLoadMods` recursively called `Directory.GetFiles(..., SearchOption.AllDirectories)` and allocated the full manifest path array before any package count cap.
+- The schema 58 byte cap protected each `mod.json` read, but package discovery count was still controlled by filesystem contents.
+- Candidate list capacity was derived from the unbounded path array length.
+
+What was done:
+- Added `MaxDiscoveredManifestCount = 64` and `MaxDiscoveredManifestCountLabel = "64"` in `ModLoader`.
+- Replaced recursive `Directory.GetFiles` discovery with `CollectManifestPaths`, lazy `Directory.EnumerateFiles`, capped collection, and explicit warning on cap hit or discovery exceptions.
+- Allocated `List<ModCandidate>` from the bounded collected count instead of an unbounded path array.
+- Updated `Signal_Schema.json` to schema revision `59`.
+- Updated `README.md`, `Loader_Save_Audit_Matrix.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove discovery cap, lazy enumeration, removal of recursive manifest `Directory.GetFiles`, ordering before candidate allocation, schema snapshot, audit docs, spec text, and playbook output.
+
+Cinematic cheats used:
+- No physical simulation cheat. The practical SDK cheat is a fixed runtime discovery ceiling while richer package browsing belongs in SDK/workbench tooling, not in the game boot crawl.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: cold directory enumeration and up to 64 collected manifest path strings.
+- Removed risk: full recursive path-array allocation and candidate-list sizing from arbitrary Mods directory contents.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `59`, `ManifestMaxBytes=32768`, `ManifestByteCapEnforcedBeforeRead=True`, `ManifestDiscoveryMaxCount=64`, `ManifestDiscoveryUsesBoundedEnumeration=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `59`, manifest discovery cap `64`, and last static validation snapshot `manifestDiscoveryUsesBoundedEnumeration=True`.
+- PASS: source scan found lazy `Directory.EnumerateFiles`, no recursive manifest `Directory.GetFiles`, and `CollectManifestPaths` before candidate allocation.
+- PASS: stale schema-58 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet compile was not launched because CPU sampled 100 percent and active `dotnet.exe` process `61052` was present. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 36
+
+What was wrong:
+- `ModLoader` still used top-level `Directory.GetFiles` arrays for managed DLL identity scan, legacy `.bundle` fallback, and `lang_*.json` fallback.
+- A package folder could force cold managed path-array allocation even after recursive manifest discovery was capped.
+- Managed DLL identity discovery needed a fail-closed package outcome when the top-level DLL cap is exceeded or discovery fails.
+
+What was done:
+- Added top-level package file caps in `ModLoader`: `32` managed assemblies, `4` bundles, `16` localization files.
+- Replaced the remaining top-level package `Directory.GetFiles` calls with `CollectTopLevelFiles`, lazy `Directory.EnumerateFiles`, bounded lists, deterministic sort, and cap/failure warnings.
+- Made managed assembly discovery over-cap or discovery failure set the manifest contract error, disabling the package before load.
+- Updated `Signal_Schema.json` to schema revision `60`.
+- Updated `README.md`, `Loader_Save_Audit_Matrix.md`, `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md`, and `Mod_API_Sandbox_Quarantine.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove bounded top-level package file discovery, caps `32/4/16`, fail-closed DLL over-cap behavior, schema snapshot, audit docs, spec text, and playbook output.
+
+Cinematic cheats used:
+- No physical simulation cheat. The practical SDK cheat is a strict runtime package envelope: rich browsing and package analysis belong in SDK/workbench tools, while game boot discovery stays bounded and predictable.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: cold bounded list allocation and sort for up to 32 DLL paths, 4 bundle paths, or 16 localization paths.
+- Removed risk: unbounded top-level package path-array allocation and partial trust after failed managed DLL identity discovery.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `60`, `ManagedAssemblyIdentityScanUsesBoundedEnumeration=True`, `MaxTopLevelManagedAssemblyCount=32`, `ExcessTopLevelManagedAssembliesDisablePackage=True`, `MaxTopLevelBundleCount=4`, `MaxLocalizationFileCount=16`, `TopLevelContentDiscoveryUsesBoundedEnumeration=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `60`, loader/save audit caps `32/4/16`, and last static validation snapshot top-level discovery flags.
+- PASS: source scan found old top-level DLL/bundle/localization `Directory.GetFiles` calls removed, bounded top-level `Directory.EnumerateFiles` present, and DLL cap/failure package disable reasons present.
+- PASS: stale schema-59/current-text scan found no stale current revision or old unbounded top-level DLL wording in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet compile was not launched because active `dotnet.exe` process `52044` was present, despite CPU sampling 33.95 percent. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 37
+
+What was wrong:
+- `ModAssetManager.LoadRawTexture` enforced file size before `File.ReadAllBytes`, but the read catch covered only `IOException`.
+- `UnauthorizedAccessException` or other invalid filesystem/read failures after the byte gate could escape from the dormant legacy raw PNG path.
+- Resource/content schema and audits recorded raw texture caps, but not fail-closed read behavior.
+
+What was done:
+- Added `System.UnauthorizedAccessException`, `IOException`, and `System.Exception` catch blocks around `File.ReadAllBytes`.
+- Kept the pre-read raw PNG byte cap and dimension cap unchanged: `8388608` bytes and `2048` px.
+- Updated `Signal_Schema.json` to schema revision `61`.
+- Updated `README.md`, `Mod_API_Specification.md`, `Resource_Content_Audit_Matrix.md`, and `Runtime_Verification_Playbook.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove raw texture byte cap before read, fail-closed catch coverage, schema snapshot, audit docs, spec closure revision, and playbook output.
+
+Cinematic cheats used:
+- No physical simulation cheat. The practical content-ingress cheat is fail-closed legacy file reads while real runtime UGC remains on CRC-approved `FutureCommandEnvelope` asset references.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: exception-path catch handling only around cold raw texture file reads.
+- Removed risk: unhandled raw PNG filesystem exception after the byte cap.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `61`, `RawTextureMaxBytes=8388608`, `RawTextureMaxDimension=2048`, `RawTextureByteCapEnforcedBeforeRead=True`, `RawTextureReadFailsClosed=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `61`, raw texture pre-read byte gate `True`, fail-closed read handling `True`, and matching last static validation snapshot flags.
+- PASS: source scan found `TryValidateRawTextureFile(filePath)` before `File.ReadAllBytes(filePath)`, plus `System.UnauthorizedAccessException`, `IOException`, and `System.Exception` catch blocks.
+- PASS: stale schema-60 scan found no stale current revision or false raw texture closure flags in touched modding docs/schema/validator.
+- PASS: scoped unstaged and cached `git diff --check` for touched source/docs. No whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal` -> Build succeeded, 45 warnings, 0 errors. Warnings are existing/non-domain: MSB3246 reference metadata warnings, MoreMountains demo type conflict, and Candice unused-field warnings.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 38
+
+What was wrong:
+- `ModAssetManager.LoadAsset<TAsset>` exact AssetBundle lookup fell back to `AssetBundle.GetAllAssetNames()` and suffix matching.
+- The fallback allocated the bundle asset-name array on lookup miss and could resolve the wrong asset when suffixes collided.
+- Schema 61 documented raw texture read safety but did not prove AssetBundle exact-name lookup.
+
+What was done:
+- Removed `AssetBundle.GetAllAssetNames()` fallback from `ModAssetManager`.
+- Removed `EndsWithAssetPath`.
+- Kept exact `bundle.LoadAsset<TAsset>(assetName)` lookup.
+- Updated `Signal_Schema.json` to schema revision `62`.
+- Updated `README.md`, `Mod_API_Specification.md`, `Resource_Content_Audit_Matrix.md`, and `Runtime_Verification_Playbook.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove `AssetBundleSuffixFallbackDisabled=True` and `AssetBundleGetAllAssetNamesForbidden=True`.
+
+Cinematic cheats used:
+- No physical simulation cheat. The SDK/content cheat is exact-name or hash-manifest asset addressing instead of runtime suffix guessing.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Removed risk: cold `string[]` allocation from `GetAllAssetNames()` on legacy AssetBundle lookup miss.
+- Removed correctness risk: ambiguous suffix match.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `62`, `AssetBundleSuffixFallbackDisabled=True`, `AssetBundleGetAllAssetNamesForbidden=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `62`, `resourceContentAudit.assetBundleSuffixFallbackDisabled=True`, `resourceContentAudit.assetBundleGetAllAssetNamesForbidden=True`, and matching last static validation snapshot flags.
+- PASS: source scan found no `GetAllAssetNames`, no `EndsWithAssetPath`, and exact `bundle.LoadAsset<TAsset>(assetName)` still present.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 39
+
+What was wrong:
+- Current implemented SDK UX was scattered: only `Hecton/Modding/Mod Builder` existed as a tool, while core docs, sample, playbook, and validator were separate files.
+- A mod developer did not have one obvious Unity Editor entry point for authoring, validation, and support docs.
+- `ModBuilderWindow.CollectBundleAssetPaths` used `AssetDatabase.FindAssets`, allocating a full GUID array for the selected folder before any package asset cap.
+
+What was done:
+- Added `Assets/_Project/Scripts/Editor/ModdingSDK/ModdingSdkHubWindow.cs` and `.meta`.
+- Added menu `Hecton/Modding/SDK Hub`.
+- Hub opens Mod Builder, local `Mods/` folder, README, API spec, authoring plan, product blueprint, sample mod, runtime playbook, and runs `Validate_Mod_API_Static.ps1`.
+- Reworked Mod Builder bundle asset collection to use bounded filesystem enumeration, deterministic sort, and `MaxBundleBuildAssetCount=512`.
+- Removed non-ASCII punctuation from touched editor C# comments.
+- Updated `Signal_Schema.json` to schema revision `63`.
+- Updated `README.md`, `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md`, and `SDK_Authoring_Interface_Plan.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove SDK hub presence/actions, docs links, envelope-only warning, builder asset cap, and bounded builder asset discovery.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: make the current SDK path a single Editor hub while preserving envelope-only runtime; heavy Workbench/CLI stays planned, not faked as runtime permission.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Editor/package-time risk reduction: selected bundle folders cap at 512 bundle-eligible files and avoid `AssetDatabase.FindAssets` GUID-array discovery.
+- No gameplay tick, SignalBus, NativeQueue, DataVault, save, or Burst path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `63`, `ModdingSdkHubPresent=True`, `ModdingSdkHubOpensBuilder=True`, `ModdingSdkHubLinksCoreDocs=True`, `ModdingSdkHubRunsStaticValidator=True`, `ModdingSdkHubShowsEnvelopeOnlyBoundary=True`, `MaxBundleBuildAssetCount=512`, `BundleBuildAssetDiscoveryUsesBoundedEnumeration=True`, `AssetBundleSuffixFallbackDisabled=True`, `AssetBundleGetAllAssetNamesForbidden=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `63`, `sdkAuthoringAudit.hubMenuPath=Hecton/Modding/SDK Hub`, `maxBundleBuildAssetCount=512`, and last static validation snapshot `bundleBuildAssetDiscoveryUsesBoundedEnumeration=True`.
+- PASS: source scan found `ModdingSdkHubWindow` menu, `RunStaticValidator`, docs links, `ModBuilderWindow.ShowWindow()`, `MaxBundleBuildAssetCount=512`, bounded `Directory.EnumerateFiles`, and no `AssetDatabase.FindAssets` bundle collection.
+- PASS: stale schema-62/current-text scan found no stale current revision or false SDK/AssetBundle closure flags in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check` for tracked touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan after schema 63, including new SDK hub `.cs` and `.meta`.
+- PASS: touched editor C# non-ASCII scan reported `NonAsciiByteCount=0`.
+- DEFERRED: dotnet compile was not launched because CPU sampled 73.99 percent, 58.28 percent, then 27.66 percent while active `dotnet.exe` PID 21868 was present.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 40
+
+What was wrong:
+- `ModBuilderWindow` had no explicit SDK-side cap matching the loader's 32 top-level managed DLL package cap.
+- Duplicate selected DLL file names could collide in the output package.
+- UI validation could perform deep asset and DLL metadata scans from repaint paths.
+- Stale output DLL cleanup used an unbounded top-level file array.
+
+What was done:
+- Added `MaxManagedAssemblyInputCount=32` and UI/build-time rejection above that cap.
+- Added duplicate selected DLL filename rejection before package output.
+- Split shallow UI validation from Build Mod deep asset/DLL validation.
+- Made configured empty asset folders fail explicitly during bundle build.
+- Added `MaxStaleAssemblyCleanupScanCount=128` and bounded stale DLL cleanup enumeration.
+- Updated `Signal_Schema.json` to schema revision `64`.
+- Updated README, Mod API spec, runtime playbook, loader/save matrix, SDK authoring plan, and static validator proof.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: keep the current SDK builder bounded and deterministic instead of pretending runtime managed DLL execution is supported.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Editor/package-time risk reduction: selected DLLs cap at 32, stale output DLL cleanup caps at 128, and UI repaint avoids deep filesystem/metadata scans.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `64`, `MaxManagedAssemblyInputCount=32`, `MaxStaleAssemblyCleanupScanCount=128`, `BuilderManagedAssemblyInputCapMatchesLoader=True`, `BuilderSkipsExpensiveValidationDuringOnGUI=True`, `StaleDllCleanupUsesBoundedEnumeration=True`, `BuilderRejectsDuplicateManagedAssemblyFileNames=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `64` and matching SDK authoring audit flags.
+- PASS: stale schema-63 scan found no stale current revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check`, touched-file trailing whitespace scan, and editor C# non-ASCII scan.
+- DEFERRED: dotnet compile was not launched because CPU sampled 72.78 percent and active `dotnet.exe` PID 14740 was present.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 41
+
+What was wrong:
+- `ModKernelInspectorWindow` still exposed `FutureCommandOpcodes.SubtitleCue` through an Inject Subtitle button.
+- That contradicted the reserved subtitle alias contract: `TriggerSubtitleCue` and `SubtitleCue` must not appear in runtime allowlists or editor runtime opcode tools until localization-owner proof exists.
+- The validator only checked `ModApiSandboxTunerWindow`, so the inspector leak was not covered by static proof.
+
+What was done:
+- Removed the Inject Subtitle button from `ModKernelInspectorWindow`.
+- Changed unknown inspector opcode injection to return without payload generation.
+- Extended `Validate_Mod_API_Static.ps1` to load `ModKernelInspectorWindow.cs` and reject both reserved subtitle aliases in editor runtime opcode tools.
+- Updated `Signal_Schema.json` to schema revision `65` with `EditorRuntimeOpcodeTunersRejectReservedSubtitleAliases=True`.
+- Updated README, Mod API spec, runtime playbook, and command audit matrix.
+
+Cinematic cheats used:
+- No physical simulation cheat. Authority cheat: keep subtitle support as offline/reserved authoring data until a real localization owner provides proof, instead of letting an editor injector imply runtime support.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Removed risk: editor tooling no longer exposes an unowned subtitle opcode injection path.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `65`, `FutureSubtitleCueAliasesReserved=True`, `EditorRuntimeOpcodeTunersRejectReservedSubtitleAliases=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: source scan found no `FutureCommandOpcodes.TriggerSubtitleCue` or `FutureCommandOpcodes.SubtitleCue` in `ModKernelInspectorWindow.cs` or `ModApiSandboxTunerWindow.cs`.
+- PASS: `Signal_Schema.json` parsed with schema revision `65`, command API subtitle editor-tool rejection flag `True`, and matching last static validation snapshot flag.
+- PASS: stale schema-64 scan found no stale current revision text in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check`, touched-file trailing whitespace scan, and editor C# non-ASCII scan.
+- DEFERRED: dotnet compile was not launched because CPU sampled 63.33 percent and active `dotnet.exe` PID 60456 was present.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 42
+
+What was wrong:
+- The SDK Hub was useful inside the Unity project, but did not answer the public-modder workflow concretely.
+- A random external author still had no generated file layout, no explicit "Unity is not required for normal authoring" answer, and no current starter contract separate from future Workbench/CLI plans.
+- The current Mod Builder can produce legacy-shaped packages while runtime envelope-only mode disables managed DLL and loose content ingestion, so documentation needed to stop implying that those are active public runtime rights.
+
+What was done:
+- Extended `ModdingSdkHubWindow` with `Create External Starter Kit` and `Open External Starter Kit`.
+- The generator writes missing files only under `ModdingSDK/ExternalStarterKit/`.
+- Generated starter kit includes `README.md`, `mod.h8manifest.json`, `mod.json`, `Content/assets.h8manifest.json`, `Graphs/main.h8graph.json`, `Tables/settings.h8table.json`, `Locales/en.h8loc.json`, `Generated/README.md`, `Reports/README.md`, `Reference/README.md`, `Reference/allowed_opcodes.csv`, and `Reference/kernel_tuning_profiles.csv`.
+- Added `Docs/Modding/External_Starter_Kit_File_Contract.md`.
+- Updated README, Mod API spec, SDK authoring plan, SDK product blueprint, runtime playbook, schema, and static validator.
+- Advanced `Signal_Schema.json` to schema revision `66`.
+- Extended `Validate_Mod_API_Static.ps1` to prove starter kit generator presence, required manifest outputs, folder README outputs, copied opcode references, no-full-Unity-project guidance, and envelope-only boundary guidance.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: provide a concrete generated external file skeleton now, while keeping Workbench/CLI as future tooling over the same contract instead of pretending managed runtime code is supported.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Editor/offline risk reduction: public author onboarding no longer depends on unbounded source-project discovery or legacy DLL/bundle assumptions.
+- No gameplay tick, SignalBus, NativeQueue, DataVault, save, physics, rendering, packet layout, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `66`, `ExternalStarterKitGeneratorPresent=True`, `ExternalStarterKitWritesAuthoringManifest=True`, `ExternalStarterKitWritesRuntimeManifest=True`, `ExternalStarterKitWritesFolderReadmes=True`, `ExternalStarterKitCopiesOpcodeReferences=True`, `ExternalStarterKitDocumentsNoUnityProjectRequirement=True`, `ExternalStarterKitDocumentsEnvelopeOnlyBoundary=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `66`, `sdkAuthoringAudit.externalStarterKitOutputPath=ModdingSDK/ExternalStarterKit`, and matching last static validation snapshot flags.
+- PASS: stale schema-65 scan found no stale current-revision text in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check`; Git line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- PASS: CPU/process gate before compile: average CPU `29.63`, no `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` process present.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal` -> Build succeeded, 45 warnings, 0 errors. Warnings are existing/non-domain: MSB3246 reference metadata warnings, MoreMountains demo type conflict, and Candice unused-field warnings.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 43
+
+What was wrong:
+- The external starter kit had a concrete layout, but a copied kit still had no local validation script that works without Unity and without the source project.
+- A public author could accidentally enable managed entry fields, change runtime away from envelope-only, delete reference CSVs, or break JSON and only discover it later inside internal tooling.
+
+What was done:
+- Extended `CreateExternalStarterKit` to write `Tools/README.md` and `Tools/validate_structure.ps1`.
+- The generated validator checks required directories/files, JSON parseability, authoring manifest `Compatibility.Runtime = envelope-only`, graph runtime `envelope-only`, API version floor, empty `EntryAssembly`, empty `EntryType`, asset/settings/locale shape, and `Reference/allowed_opcodes.csv` plus `Reference/kernel_tuning_profiles.csv`.
+- Updated `External_Starter_Kit_File_Contract.md`, README, Mod API spec, SDK authoring plan, SDK product blueprint, runtime playbook, schema, and static validator.
+- Advanced `Signal_Schema.json` to schema revision `67`.
+- Extended `Validate_Mod_API_Static.ps1` to prove local structure validator generation and required-file/envelope-only/managed-entry-disabled checks.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: add a cheap fail-fast local validator before Workbench/CLI exists, instead of requiring Unity or pretending the starter folder is runtime-verified.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Offline authoring risk reduction: malformed starter folders fail before pack/sim/runtime ingestion.
+- No gameplay tick, SignalBus, NativeQueue, DataVault, save, physics, rendering, packet layout, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `67`, `ExternalStarterKitWritesLocalStructureValidator=True`, `ExternalStarterKitValidatorChecksRequiredFiles=True`, `ExternalStarterKitValidatorChecksEnvelopeOnly=True`, `ExternalStarterKitValidatorChecksManagedEntryDisabled=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `67` and matching SDK authoring audit local validator flags.
+- PASS: stale schema-66 scan found no stale current-revision text in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check`; Git line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched after this C# edit because build-process gate found active `VBCSCompiler` PID `55184` on two samples. CPU averages were `23.97` and `44.04`.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 44
+
+What was wrong:
+- The schema 67 local starter validator did not enforce the same package identity contract as `ModLoader` and `ModBuilderWindow`.
+- External authors could use non-canonical package IDs, reserved filesystem device segments, mismatched `mod.h8manifest.json`/`mod.json` IDs, or invalid dependency IDs and only fail later.
+
+What was done:
+- Extended generated `Tools/validate_structure.ps1` with `Validate-ModId`.
+- Added reserved segment rejection for `con`, `prn`, `aux`, `nul`, `com1..com9`, and `lpt1..lpt9`.
+- Added authoring/runtime manifest ID parity and runtime dependency ID validation.
+- Updated README, Mod API spec, SDK authoring plan, SDK product blueprint, runtime playbook, external starter kit contract, schema, and static validator.
+- Advanced `Signal_Schema.json` to schema revision `68`.
+- Extended `Validate_Mod_API_Static.ps1` to prove canonical ID, manifest ID parity, and dependency ID validator coverage.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: fail identity errors in the text-folder authoring gate before package bake instead of adding runtime repair, guessing, or source-project dependency.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Offline authoring risk reduction: identity errors fail before pack/sim/runtime ingestion.
+- No gameplay tick, `FutureCommandEnvelope` layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `68`, `ExternalStarterKitValidatorChecksCanonicalIds=True`, `ExternalStarterKitValidatorChecksManifestIdParity=True`, `ExternalStarterKitValidatorChecksDependencyIds=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `68` and matching SDK authoring audit identity validator flags.
+- PASS: stale schema-67 fixed-string scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check`; Git line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched after this C# edit because build-process gate first found average CPU `58.5` with active `dotnet.exe` PID `47780`, then re-sample found active `csc.exe` PID `43064` and `dotnet.exe` PID `47780`.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 45
+
+What was wrong:
+- The SDK Hub could generate `ModdingSDK/ExternalStarterKit/`, but the folder itself was not present as a versioned public artifact.
+- A random external author without Unity still depended on an internal editor action before the starter kit could be copied, zipped, or validated.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/` as a versioned folder.
+- Included authoring/runtime manifests, graph/table/content/locale drafts, `Generated/`, `Reports/`, `Reference/`, `Tools/`, copied opcode/tuning CSVs, and `Tools/validate_structure.ps1`.
+- Updated `Validate_Mod_API_Static.ps1` to require all template files and execute the template's own validator.
+- Advanced `Signal_Schema.json` to schema revision `69`.
+- Updated README, API spec, SDK authoring plan, SDK product blueprint, runtime playbook, and external starter kit contract to state the versioned template path.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: ship a diffable text starter folder instead of a binary package or Unity-only generation step.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Offline authoring risk reduction: external authors can validate the starter folder without Unity or source-project access.
+- No gameplay tick, `FutureCommandEnvelope` layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/Tools/validate_structure.ps1 -Root ModdingSDK/ExternalStarterKit` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `69`, `ExternalStarterKitTemplateVersioned=True`, `ExternalStarterKitTemplatePassesLocalValidator=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `69` and matching starter template flags.
+- PASS: stale schema-68 fixed-string scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check`; Git line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan including starter template files and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build-process gate found average CPU `96.5` and active `dotnet.exe` PID `47780`.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-28 - pass 46
+
+What was wrong:
+- The versioned starter kit copied `allowed_opcodes.csv` and `kernel_tuning_profiles.csv`, but copied files can drift from authoritative docs.
+- A public author could receive stale opcode/tuning guidance while the runtime/source validator used newer data.
+
+What was done:
+- Extended `Validate_Mod_API_Static.ps1` to compare starter reference CSVs against `Docs/Modding/allowed_opcodes.csv` and `Docs/Modding/kernel_tuning_profiles.csv`.
+- Normalized line endings for the comparison.
+- Advanced `Signal_Schema.json` to schema revision `70`.
+- Updated README, API spec, SDK authoring plan, SDK product blueprint, runtime playbook, and external starter kit contract to state source parity.
+
+Cinematic cheats used:
+- No physical simulation cheat. Product cheat: keep external references as simple copied text files, but enforce source parity in static validation instead of adding runtime lookup or source-project dependency to the portable starter kit.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Offline authoring risk reduction: copied opcode/tuning references cannot silently drift from authoritative docs.
+- No runtime allowlist loading, command envelope layout, SignalBus, NativeQueue, DataVault, save, physics, rendering, or Burst/job path changed.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `70`, `ExternalStarterKitTemplateReferenceCsvsMatchSource=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `70` and matching starter reference parity flag.
+- PASS: stale schema-69 fixed-string scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check`; Git line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan including starter template files and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build-process gate found average CPU `62` and active `dotnet.exe` PID `47780`.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.

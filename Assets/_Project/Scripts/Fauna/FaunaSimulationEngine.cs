@@ -606,6 +606,7 @@ namespace Hecton8.AI
 
         public void Dispose(JobHandle dependency)
         {
+            DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
             ReleaseVaultAliases();
         }
 

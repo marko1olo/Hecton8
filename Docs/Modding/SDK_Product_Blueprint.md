@@ -30,6 +30,20 @@ HECTON-8 Modding SDK is four products sharing one schema:
 
 None of these products grants runtime code execution.
 
+## Current Implemented Surface
+
+The implemented Unity Editor surface is `Hecton/Modding/SDK Hub`.
+
+It is not the final Workbench, but it must answer the first public modder question without forcing people to inspect source:
+
+- open the current Mod Builder;
+- create `ModdingSDK/ExternalStarterKit/`;
+- link `Docs/Modding/External_Starter_Kit_File_Contract.md`;
+- link the API spec, authoring plan, product blueprint, sample, and runtime playbook;
+- run `Docs/Modding/Validate_Mod_API_Static.ps1`.
+
+The external starter kit is the current file contract for random internet authors. It is versioned at `ModdingSDK/ExternalStarterKit/`, and the SDK Hub can refresh missing files non-destructively. Its copied opcode/tuning CSV references are statically compared against `Docs/Modding/allowed_opcodes.csv` and `Docs/Modding/kernel_tuning_profiles.csv`. It states that no full Unity project is required for manifest, graph, table, locale, validation, and review-handoff authoring. It also includes JSON Schemas and `.vscode/settings.json` for schema-aware editor autocomplete, `Tools/prepare_mod.ps1` for one-command no-Unity starter setup and review manifest generation, `Tools/set_mod_identity.ps1` for safe no-Unity identity edits across both manifests, `Tools/list_allowed_opcodes.ps1` for text/JSON graph opcode discovery, plus `Tools/validate_structure.ps1`, a local no-Unity validator for required files, JSON parseability, schema file parseability, exact editor schema URL/fileMatch mapping, canonical mod/dependency IDs, matching authoring/runtime manifest IDs, envelope-only flags, graph node ID uniqueness, graph opcode allowlist membership against `Reference/allowed_opcodes.csv`, graph budget parity with `mod.h8manifest.json`, and empty managed entry fields. `Tools/build_review_manifest.ps1` runs that validator first and writes `Reports/review_manifest.json` with sorted file paths, byte counts, total bytes, explicit limits, and SHA-256 hashes while excluding `Generated/` and `Reports/` outputs; it fails before hashing if a copied kit exceeds `256` source files, `4194304` bytes per source file, or `33554432` total source bytes. The public scripts chain local tools in-process and compose child paths through normalized `Join-Path` segments so authors can use Windows PowerShell or `pwsh` on macOS/Linux. Unity remains optional for advanced asset preview until standalone Workbench/CLI tooling exists. Runtime stays envelope-only.
+
 ## Creator Personas
 
 ### Visual Creator

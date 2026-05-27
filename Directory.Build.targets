@@ -1,27 +1,89 @@
 <Project>
   <PropertyGroup>
-    <HectonVendorGeneratedWarningProjects>|AmplifyImpostors.Runtime|AstarPathfindingProject|AstarPathfindingProjectEditor|BakeryEditorAssembly|Crest|Crest.Helpers.Editor|Den.Tools|GPUInstancer|GPUInstancer.Editor|Lofelt.NiceVibrations|MapMagic.Editor|MapMagic.Settings|MeshBakerCore|MeshBakerEditor|MoreMountains.Tools|MoreMountains.Tools.Editor|RealtimeCSG|Unity.RenderPipelines.Core.Editor|Unity.RenderPipelines.Universal.Editor|Unity.RenderPipelines.Universal.Runtime|Unity.ShaderGraph.Editor|</HectonVendorGeneratedWarningProjects>
+    <HectonVendorGeneratedWarningProjects>|AmplifyImpostors.Editor|AmplifyImpostors.Runtime|AstarPathfindingProject|AstarPathfindingProjectEditor|BakeryEditorAssembly|BakeryRuntimeAssembly|Crest|Crest.Helpers.Editor|Den.Tools|Den.Tools.Editor|EasySave3|EasySave3Editor|GPUInstancer|GPUInstancer.Editor|JBooth.MicroSplat.Core|JBooth.MicroSplat.Core.Editor|Lofelt.NiceVibrations|Lofelt.NiceVibrations.Demo|Lofelt.NiceVibrations.Editor|MapMagic|MapMagic.Editor|MapMagic.MicroSplat|MapMagic.MicroSplat.Editor|MapMagic.Settings|MeshBakerCore|MeshBakerEditor|MoreMountains.Feedbacks|MoreMountains.Feedbacks.Editor|MoreMountains.Tools|MoreMountains.Tools.Editor|PackageToolsEditor|RealtimeCSG|ShapesRuntime|ShapesEditor|Unity.RenderPipelines.Core.Editor|Unity.RenderPipelines.Universal.Editor|Unity.RenderPipelines.Universal.Runtime|Unity.ShaderGraph.Editor|VolumetricLightBeam|VolumetricLightBeam.Editor|</HectonVendorGeneratedWarningProjects>
     <HectonUnityPackageCliShimProjects>|Unity.RenderPipelines.Core.Editor|Unity.RenderPipelines.Universal.Editor|Unity.RenderPipelines.Universal.Runtime|Unity.ShaderGraph.Editor|</HectonUnityPackageCliShimProjects>
+    <HectonVendorEditorRuntimeProjects>|AstarPathfindingProject|EasySave3|GPUInstancer|JBooth.MicroSplat.Core|MoreMountains.Feedbacks|MoreMountains.Tools|ShapesRuntime|VolumetricLightBeam|</HectonVendorEditorRuntimeProjects>
   </PropertyGroup>
 
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);$(HectonUnityCliVersionDefines)</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'BakeryRuntimeAssembly' Or '$(MSBuildProjectName)' == 'AmplifyImpostors.Runtime'">
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'BakeryRuntimeAssembly' Or '$(MSBuildProjectName)' == 'AmplifyImpostors.Runtime' Or '$(MSBuildProjectName)' == 'Den.Tools' Or $([System.String]::Copy('$(HectonVendorEditorRuntimeProjects)').Contains('|$(MSBuildProjectName)|'))">
     <DefineConstants>$(DefineConstants);UNITY_EDITOR;UNITY_EDITOR_WIN</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="$([System.String]::Copy('$(HectonVendorGeneratedWarningProjects)').Contains('|$(MSBuildProjectName)|'))">
-    <NoWarn>$(NoWarn);0618;0649;2008;UNT0006</NoWarn>
+    <NoWarn>$(NoWarn);0108;0169;0414;0436;0618;0619;0649;2008;UNT0006</NoWarn>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'JBooth.MicroSplat.Core' Or '$(MSBuildProjectName)' == 'JBooth.MicroSplat.Core.Editor'">
+    <DefineConstants>$(DefineConstants);__MICROSPLAT__</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Remove="Assets\_Project\Plugins\Windows\**\*.dll" />
+    <Reference Remove="Assets\Candice AI for Games\Scripts\Libs\Candice Save System\Plugins\sqlite3.dll" />
+    <Reference Remove="Assets\Editor\x64\Bakery\**\*.dll" />
+    <Reference Remove="Assets\Feel\NiceVibrations\Plugins\Windows\**\*.dll" />
+    <Reference Remove="Assets\MantisLODEditor\Plugins\**\*.dll" />
+    <Reference Remove="Assets\MapMagic\Tools\Plugins\NativePlugins.dll" />
+    <Reference Remove="Assets\MapMagic\Tools\Plugins\x86\NativePlugins.dll" />
+    <Reference Remove="Assets\Plugins\x86_64\**\*.dll" />
+    <Reference Remove="Assets\Technie\PhysicsCreator\Plugins\VHACD\**\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.burst@*\.Runtime\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.collab-proxy@*\Lib\Editor\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.visualscripting@*\Editor\VisualScripting.Core\Dependencies\Assemblies\WIN*\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.xr.arfoundation@*\Runtime\Simulation\Plugins\**\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.xr.meta-openxr@*\Runtime\Plugins\**\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.xr.openxr@*\APILayers~\**\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.xr.openxr@*\Runtime\ConformanceAutomation\**\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.xr.openxr@*\Runtime\MockRuntime\**\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.xr.openxr@*\Runtime\RuntimeDebugger\**\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.xr.openxr@*\Runtime\windows\**\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.xr.openxr@*\RuntimeLoaders\**\*.dll" />
+    <Reference Remove="Library\PackageCache\com.unity.xr.openxr@*\Samples~\**\*.dll" />
+    <Reference Remove="Library\ScriptAssemblies\MCPForUnity.Editor.dll" />
+    <Reference Remove="Library\ScriptAssemblies\Sirenix.OdinInspector.Modules.Unity.Addressables.dll" />
+    <Reference Remove="Hecton8.Core.Memory" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Memory.dll" />
+    <Reference Remove="Hecton8.Core.Memory.Defrag" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Memory.Defrag.dll" />
+    <Reference Remove="Hecton8.Core.Bucketing" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Bucketing.dll" />
+    <Reference Remove="Hecton8.Core.Contracts" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Contracts.dll" />
+    <Reference Remove="Hecton8.Core.Scheduling" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Scheduling.dll" />
+    <Reference Remove="Hecton8.Core.ToolKinematics" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.ToolKinematics.dll" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!$([System.String]::Copy('|Hecton8.EditModeTests|Hecton8.PlayModeTests|').Contains('|$(MSBuildProjectName)|'))">
+    <Reference Remove="Library\ScriptAssemblies\*Tests.dll" />
+    <Reference Remove="Library\ScriptAssemblies\Unity.Addressables.DocExampleCode.Editor.Tests.dll" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.EditModeTests.dll" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.PlayModeTests.dll" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!$([System.String]::Copy('$(MSBuildProjectName)').Contains('Editor'))">
+    <Reference Remove="Library\ScriptAssemblies\*.Editor.dll" />
+    <Reference Remove="Library\ScriptAssemblies\MCPForUnity.Editor.dll" />
+    <Reference Remove="Library\ScriptAssemblies\Sirenix.OdinInspector.Modules.Unity.Addressables.dll" />
+    <Reference Remove="Library\ScriptAssemblies\Unity.Addressables.Editor.dll" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
     <DefineConstants>$(DefineConstants);HECTON_CORE_CONTRACTS_DLL_LEGACY</DefineConstants>
     <DefineConstants Condition="!$([System.String]::Copy('$(DefineConstants)').Contains('_MATH_LOD_LOW')) And ($([System.String]::Copy('$(DefineConstants)').Contains('UNITY_ANDROID')) Or $([System.String]::Copy('$(DefineConstants)').Contains('HECTON_LOW_TIER')) Or $([System.String]::Copy('$(DefineConstants)').Contains('HECTON_MATH_LOD_LOW')) Or '$(HectonMathLodLow)' == 'true' Or '$(HectonBuildTier)' == 'Low')">$(DefineConstants);_MATH_LOD_LOW</DefineConstants>
-    <NoWarn>$(NoWarn);0414;0436;0618;2002</NoWarn>
+    <NoWarn>$(NoWarn);0067;0169;0414;0436;0618;0649;2002</NoWarn>
     <RunAnalyzers>false</RunAnalyzers>
     <UseSharedCompilation>false</UseSharedCompilation>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Editor'">
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.PlayModeTests' And !$([System.String]::Copy('@(ProjectReference)').Contains('Hecton8.Core.csproj'))">
@@ -60,6 +122,12 @@
     <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Memory.Defrag.dll" />
     <Reference Remove="Hecton8.Core.Bucketing" />
     <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Bucketing.dll" />
+    <Reference Remove="Library\ScriptAssemblies\*.Editor.dll" />
+    <Reference Remove="Library\ScriptAssemblies\*Tests.dll" />
+    <Reference Remove="Library\ScriptAssemblies\MCPForUnity.Editor.dll" />
+    <Reference Remove="Library\ScriptAssemblies\Sirenix.OdinInspector.Modules.Unity.Addressables.dll" />
+    <Reference Remove="Library\ScriptAssemblies\Unity.Addressables.DocExampleCode.Editor.Tests.dll" />
+    <Reference Remove="Library\ScriptAssemblies\Unity.Addressables.Editor.dll" />
     <Compile Remove="Assets\_Project\Scripts\Core\JobAdmissionTelemetryBridge.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\BinaryLayoutManifest.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\HomeostasisBrain.cs" />
@@ -393,6 +461,16 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Editor'">
+    <Reference Remove="Hecton8.Graphics.Scalability" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Graphics.Scalability.dll" />
+    <Reference Remove="Hecton8.Physics.Cable132" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Physics.Cable132.dll" />
+    <Reference Remove="Hecton8.Rendering.TexturePacker.Editor" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Rendering.TexturePacker.Editor.dll" />
+    <Reference Remove="Hecton8.World.OfflineGeology.Editor" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.World.OfflineGeology.Editor.dll" />
+    <Compile Include="Assets\_Project\Scripts\Graphics\Scalability\ThermalDynamicResolutionAdapter.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Graphics\Scalability\ThermalDynamicResolutionAdapter.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Physics\Cable132\CablePhysicsSolver132.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\Cable132\CablePhysicsSolver132.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Equipment\Auxiliary\Editor\AuxiliaryEquipmentEditorTools.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Equipment\Auxiliary\Editor\AuxiliaryEquipmentEditorTools.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Editor\CraftingFastFailXRayWindow_SHINOBU317.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\CraftingFastFailXRayWindow_SHINOBU317.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Editor\DroneFleetLogisticsTunerWindow.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\DroneFleetLogisticsTunerWindow.cs'))" />
@@ -443,6 +521,53 @@
                                        Condition="$([System.String]::Copy('%(Analyzer.Identity)').Contains('com.unity.entities@')) And !Exists('%(Analyzer.Identity)')" />
       <Analyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
       <_HectonMissingGeneratedAnalyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="HectonPruneNativeCliReferences" BeforeTargets="ResolveAssemblyReferences;CoreCompile">
+    <ItemGroup>
+      <_HectonNativeCliReference Include="@(Reference)"
+                                 Condition="$([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Assets\_Project\Plugins\Windows\')) Or
+                                            $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Assets\Candice AI for Games\Scripts\Libs\Candice Save System\Plugins\sqlite3.dll')) Or
+                                            $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Assets\Editor\x64\Bakery\')) Or
+                                            $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Assets\Feel\NiceVibrations\Plugins\Windows\')) Or
+                                            $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Assets\MantisLODEditor\Plugins\')) Or
+                                            $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Assets\MapMagic\Tools\Plugins\NativePlugins.dll')) Or
+                                            $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Assets\MapMagic\Tools\Plugins\x86\NativePlugins.dll')) Or
+                                            $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Assets\Plugins\x86_64\')) Or
+                                            $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Assets\Technie\PhysicsCreator\Plugins\VHACD\')) Or
+                                            ($([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Library\PackageCache\com.unity.burst@')) And $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('\.Runtime\'))) Or
+                                            ($([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Library\PackageCache\com.unity.collab-proxy@')) And $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('\Lib\Editor\'))) Or
+                                            ($([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Library\PackageCache\com.unity.visualscripting@')) And $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('\Dependencies\Assemblies\WIN'))) Or
+                                            ($([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Library\PackageCache\com.unity.xr.')) And $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('\Plugins\'))) Or
+                                            ($([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Library\PackageCache\com.unity.xr.openxr@')) And $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('\APILayers~\'))) Or
+                                            ($([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Library\PackageCache\com.unity.xr.openxr@')) And $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('\RuntimeLoaders\')))" />
+      <Reference Remove="@(_HectonNativeCliReference)" />
+      <_HectonNativeCliReference Remove="@(_HectonNativeCliReference)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="HectonPruneRuntimeEditorScriptAssemblyReferences"
+          BeforeTargets="ResolveAssemblyReferences;CoreCompile"
+          Condition="!$([System.String]::Copy('$(MSBuildProjectName)').Contains('Editor'))">
+    <ItemGroup>
+      <_HectonRuntimeEditorScriptAssemblyReference Include="@(Reference)"
+                                                   Condition="$([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('Library\ScriptAssemblies\')) And
+                                                              ($([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('.Editor.dll')) Or
+                                                               $([System.String]::Copy('%(Reference.Identity);%(Reference.HintPath)').Contains('.Tests.dll')))" />
+      <Reference Remove="@(_HectonRuntimeEditorScriptAssemblyReference)" />
+      <_HectonRuntimeEditorScriptAssemblyReference Remove="@(_HectonRuntimeEditorScriptAssemblyReference)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="HectonDeduplicateCompileItems" BeforeTargets="CoreCompile">
+    <RemoveDuplicates Inputs="@(Compile)">
+      <Output TaskParameter="Filtered" ItemName="_HectonUniqueCompile" />
+    </RemoveDuplicates>
+    <ItemGroup>
+      <Compile Remove="@(Compile)" />
+      <Compile Include="@(_HectonUniqueCompile)" />
+      <_HectonUniqueCompile Remove="@(_HectonUniqueCompile)" />
     </ItemGroup>
   </Target>
 

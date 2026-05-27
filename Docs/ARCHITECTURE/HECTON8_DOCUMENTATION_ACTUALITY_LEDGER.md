@@ -1,8 +1,8 @@
 ﻿# HECTON-8 Documentation Actuality Ledger
 
-Date: 2026-05-26
+Date: 2026-05-28
 Status: PENDING VERIFICATION
-Owner: DOCS_ACTUALIZATION
+Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM / CLI_COMPILE where artifact cited
 
 This ledger is the concise documentation-change register and proof-snapshot holder. Full historical text is archived at `../_Archive/Architecture_X_012_APEX_2026-05-23/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.full.md`.
@@ -16,12 +16,45 @@ This ledger is the concise documentation-change register and proof-snapshot hold
 | Legacy save header size | `44` bytes | `SaveBinaryStorage.LegacyHeaderSize` |
 | H8DM header size | `64` bytes | `Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs` |
 | H8DM directory record size | `64` bytes | `H8DataLayoutConstants.DirectoryRecordSizeBytes` |
-| Data Monolith payload | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` | present; `1,064,384` bytes in X_012 scan |
+| Data Monolith payload | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` | present; `1,064,384` bytes in 2026-05-28 static filesystem check |
 | Signal lane capacity | `512` | `Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs` |
 | Scalability DTO | `16` bytes | `ScalabilityStateDTO` static source |
 | AUP/blit struct | `48` bytes | AUP static source |
 
 Prompt/report values that disagree with source are stale. Current source wins.
+
+## 2026-05-28 Root And Architecture Source Reality Audit
+
+No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static source/filesystem facts used to update root and architecture onboarding docs.
+
+| Area | Current static fact | Source / proof |
+|---|---|---|
+| Unity version | `6000.4.1f1` | `ProjectSettings/ProjectVersion.txt` |
+| Render pipeline | URP package `17.4.0` | `Packages/manifest.json` |
+| Core packages | Addressables `2.7.6`, Input System `1.19.0`, Memory Profiler `1.1.12` | `Packages/manifest.json` |
+| XR package presence | OpenXR `1.17.0`, Meta OpenXR `2.5.0`, XR Management `4.6.0` | `Packages/manifest.json`; package presence is not platform readiness |
+| Enabled scene spine | `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD` | `ProjectSettings/EditorBuildSettings.asset` |
+| First 20 route docs | New game uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`; load-game resume may enter `02_HECTON_WORLD` directly | `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`, `FIRST_20_MINUTES_ROUTE_BRIEF.md` |
+| Scene authority drift | `AGENTS.md` still carries older no-orbit scene-flow wording; static source/docs include `01_ORBIT`; owner/integrator decision required before changing route doctrine | `AGENTS.md`, `ProjectSettings/EditorBuildSettings.asset`, `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` |
+| First-party asmdefs | `167` under `Assets/_Project` | static filesystem count |
+| Data Monolith payload | present, `1,064,384` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
+| Data Monolith scoped validator | `PASS`; `files=2`; `structs=32`; `mb=1.0495`; `seconds=0.491846`; Python schema/payload proof only | `../Reports/DOC_ROOT_ARCH_AUDIT_h8bin_validator_narrow_20260528.json` |
+| Source topology doc | Added current project topology, source owner spine, route map, and verification gaps | `PROJECT_RUNTIME_TOPOLOGY.md` |
+| Source topology source-spine recheck | Corrected player/environment runtime-context source anchors to `Assets/_Project/Scripts/Core/...` | PowerShell path scan |
+| Domain coverage doc | Added echelon map to active docs, source anchors, and proof gaps | `DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` |
+| Domain coverage reference check | Every listed architecture doc and `Assets/_Project/Scripts` anchor exists | PowerShell path scan |
+| Black-box doctrine sync | 300-frame rings; `Dump_*.bin` primary; `.h8dump` legacy | `../Actual Domains of Project.txt`, `../PROJECT_ATLAS.md` |
+| Index updates | Root and architecture read orders now surface topology, boot, dispatch, first route, and platform proof ladder | `../README.md`, `README.md`, `../PROJECT_BASELINE.md`, `../HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `../HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` |
+| Atlas stub cleanup | `observedAssemblyCount = 83` is compatibility-only; current count lives in topology/generated graph | `../PROJECT_ATLAS.md` |
+| Dependency graph regeneration | `BuildArchitectureAtlas.py` regenerated graph markdown/json/cache; graph reports `220` asmdefs scanned, `167` first-party asmdefs under `Assets/_Project` | `../Generated/DEPENDENCY_GRAPH.md`, `../Generated/DEPENDENCY_GRAPH.json`, `../Generated/DEPENDENCY_GRAPH.cache.json` |
+| AtlasCheck | `ATLAS_CHECK_PASS references=5807` | `python Tools/AtlasCheck.py` |
+| H-Phi atlas | `PROJECT_ATLAS_HPHI.md` is absent; `HectonPhiStaticAudit.py --no-fail` timed out after 300 seconds before producing it | no proof artifact; see `../Generated/README.md` |
+| Structure validation | `pass=true`; activeDocCount `704`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` | `../Reports/DOC_STRUCTURE_VALIDATION_X_012.json` |
+| OOP doc scanner | `finalPass=true`; activeFileCount `704`; sourceSyncPass `true`; active stale parameter files `0`; wordReductionPercent above `31%` | `../Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json` |
+
+Interpretation: project file topology is now easier to read.
+
+Compile, import, Play Mode, profiler, GC, save/load, player-build, shader, platform, and visual readiness remain unproven until fresh artifacts exist.
 
 ## Current Proof Snapshots
 
@@ -43,50 +76,17 @@ Latest reviewed native alias evidence: `../Reports/VAULT_NATIVE_ALIAS_LEDGER_131
 
 Earlier cleanup evidence recorded `1770` forbidden persistent candidates and `358` MonoBehaviour candidates. The reduction is real. The project is still not clean.
 
-Highest remaining persistent-native groups:
-
-- `ModularEquipmentEngine.cs`: `28`
-- `Gameplay/Combat/CombatDamageRuntime.cs`: `24`
-- `Gameplay/ScannerDataMiningRouter.cs`: `20`
-- `QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs`: `20`
-- `Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs`: `19`
-- `Construction/ShinobuSocketConstructionData.cs`: `19`
-- `SaveSystem/EntityDeltaCompressionArchitecture.cs`: `18`
-- `WorldProceduralScatterWorkingMemory.cs`: `18`
-- `SaveSystem/VoxelDeltaCompressionArchitecture.cs`: `16`
-- `Physiology/ShinobuRespawnReconciliationRuntime.cs`: `16`
-- `Quest/QuestDagRuntimeTypes.cs`: `16`
-
-Remaining MonoBehaviour/native hotspots:
-
-- `Gameplay/ContextualPhysicalIkRig.cs`: `13`
-- `SaveManager.cs`: `13`
-- `Graphics/Culling/TBDRPipelineSurgeonRuntime.cs`: `11`
-- `Gameplay/ContextualPhysicalIkRuntime.cs`: `10`
-- `World/FloraRegrowthDirector.cs`: `9`
-- `ConstructionManager.cs`: `9`
-- `World/AbyssalThermalManager.cs`: `7`
+Largest residual native groups are recorded in `../Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS23.json`; the project is still not clean.
 
 ### Compile Slice
 
-- Latest known reviewed full-solution CLI pass: `../Reports/BUILD_UNKNOWN_MESH_COMPONENT_CACHE_TRAP_RECHECK3_20260526.log`; exit `0`; `0 Warning(s)`; `0 Error(s)`.
-- Later source changes make that pass insufficient as a global readiness claim.
-- Render-feature recheck is guard-blocked at `../Reports/BUILD_UNKNOWN_RENDER_FEATURE_SHADER_FIND_RECHECK_20260526.log`.
-- Runtime shader reference catalog recheck is guard-blocked at `../Reports/BUILD_UNKNOWN_RUNTIME_SHADER_REFERENCE_CATALOG_RECHECK2_20260526.log`.
-- Current shader-catalog cleanup evidence is `../Reports/UNITY_RUNTIME_SHADER_REFERENCE_CATALOG_UNKNOWN_20260526.md`.
-- Current shader/mesh/CTS recheck evidence is `../Reports/UNITY_SHADER_MESH_CTS_RECHECK_UNKNOWN_20260526.md`.
-- Current runtime trap deeper pass evidence is `../Reports/UNITY_RUNTIME_TRAP_DEEPER_PASS_UNKNOWN_20260526.md`.
-- Current allocation-route cleanup evidence is `../Reports/UNITY_RUNTIME_ALLOC_ROUTE_PASS_UNKNOWN_20260527.md`.
-- Current native ring copy cleanup evidence is `../Reports/UNITY_NATIVE_RING_COPY_PASS_UNKNOWN_20260527.md`.
-- Current late-frame registry hot-path cleanup evidence is `../Reports/UNITY_LATEFRAME_REGISTRY_HOTPATH_PASS_UNKNOWN_20260527.md`.
-- Current read-accessor purity cleanup evidence is `../Reports/UNITY_READ_ACCESSOR_PURITY_PASS_UNKNOWN_20260527.md`.
-- Current global-route stability evidence is `../Reports/UNITY_GLOBAL_ROUTE_STABILITY_PASS_UNKNOWN_20260527.md`.
-- Runtime `Resources.Load` first-party source scan is currently `0`; shader catalog binding is now through `GameBootstrapper` and `00_BOOTSTRAP.unity`.
-- Release runtime `Shader.Find(...)` exact scan remains `0`; compute `FindKernel` calls are not shader lookup hits.
-- Current guarded `Hecton8.slnx` build fails before C# compile because ignored/generated Unity `.csproj` files are absent; latest proof is `../Reports/BUILD_UNKNOWN_RUNTIME_TRAP_DEEPER_PASS_POST_SCANNER_RECHECK_20260526.log`.
-- Latest native ring copy recheck has the same generated-project boundary: `../Reports/BUILD_UNKNOWN_NATIVE_RING_COPY_RECHECK_20260527.log`.
-- Later build retry for the deeper pass was guard-blocked by CPU above `50%`; see `../Reports/BUILD_UNKNOWN_RUNTIME_TRAP_DEEPER_PASS_RETRY_20260526.log`.
-- Runtime proof is absent until Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, player build, shader import, save/load, platform, and visual checks exist.
+Latest reviewed green full-solution CLI pass is stale after later source edits.
+
+Current guarded builds hit generated-project or CPU-guard boundaries.
+
+Runtime proof remains absent.
+
+Required proof: Unity import, Console, Play Mode, profiler, GC, player build, shader import, save/load, platform, visual checks.
 
 ## 2026-05-26 Documentation Distillation
 
@@ -101,12 +101,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 | Reports index | Reframed reports as evidence storage, not knowledge base | `../Reports/README.md` |
 | Deprecated transient indexes | Removed folder-index approach from active docs and recorded rejection | `../DEPRECATED/DOCS_ACTUALIZATION_TRANSIENT_INDEXES_2026-05-26.md` |
 | Deprecated root docs noise | Moved token telemetry, FAQ, glossary, and marketing binary archive out of active `Docs/` root | `../DEPRECATED/Root_Docs_Noise_2026-05-26/MANIFEST.md` |
-| Deprecated legacy bundles | Moved stale `AI_Fauna`, `Flora_Pipeline`, and `Scatter_Runtime` planning bundles out of active docs | `../DEPRECATED/Legacy_Domain_Bundles_2026-05-26/MANIFEST.md` |
-| Deprecated superseded route card | Moved historical SHINOBU_156 cavitation route card out of active architecture; SHINOBU_248 remains the live shockwave NaN route card | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
-| Deprecated parked marketing raw sheet | Moved parked Priority 250 raw public-index pitch sheet out of active CreatorOutreach; active Marketing file count is now `89` | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
-| Deprecated raw lead seed queue | Moved parked raw public seed list out of active CreatorOutreach; active Marketing file count is now `88` | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
-| Deprecated raw marketing prospecting lists | Moved adjacent survival and regional raw prospecting sheets out of active Marketing; active Marketing file count is now `86` | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
-| Deprecated raw scrape summary | Moved dated human-readable raw lead scrape result out of active Marketing/Data; active Marketing file count is now `85` | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
+| Deprecated active-doc cleanup | Legacy bundles, superseded route card, and raw marketing sheets left active docs | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
 
 ## Historical Distillate
 
@@ -231,10 +226,55 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 | Transition presentation route | `SceneRuntimeService` terminal boot handles, world-drone audio bridge, tick dispatcher, and camera-juice handles are cached and hot-swap refreshed | `../Reports/UNITY_GLOBAL_ROUTE_CACHE_PASS_UNKNOWN_20260527.md` |
 | Static audit | SignalBus recheck reports `errors=0`, `confirmedErrors=0`, `warnings=145`, `infos=1172` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_GLOBAL_ROUTE_CACHE_RECHECK.json` |
 
+## 2026-05-27 Mod Registry Cache Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Mod settings route | `ModSettingsRegistry` caches `UserOptionsPersistence` and storage keys; apply routes no longer read `GlobalRegistry.UserOptions` or rebuild the key string | `../Reports/UNITY_MOD_REGISTRY_CACHE_PASS_UNKNOWN_20260527.md` |
+| Mod slider persistence | Mod slider rows apply live callbacks in memory and persist once on commit/disable instead of saving options on every value event | `../Reports/UNITY_MOD_REGISTRY_CACHE_PASS_UNKNOWN_20260527.md` |
+| Mod catalog route | `ModItemRegistry` and `ModBuildableRegistry` cache inventory/logistics services; active catalog resolution reads cached owner interfaces | `../Reports/UNITY_MOD_REGISTRY_CACHE_PASS_UNKNOWN_20260527.md` |
+| Mod sandbox Vault route | `FutureCommandSandboxValidator.OpenVaultLane()` and rollback checks read cached `IDataVault`; the fallback registry read was removed | `../Reports/UNITY_MOD_REGISTRY_CACHE_PASS_UNKNOWN_20260527.md` |
+| Static audit | SignalBus recheck reports `errors=0`, `confirmedErrors=0`, `warnings=145`, `infos=1172`; touched-file findings are info-only | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_MOD_REGISTRY_CACHE_RECHECK.json` |
+
+## 2026-05-27 Vault Rebind Release Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Future command Vault lifetime | `FutureCommandSandboxValidator` releases all `20/20` sandbox `VaultLane<T>` handles through cached `IDataVault` on shutdown and DataVault rebind | `../Reports/UNITY_VAULT_REBIND_RELEASE_PASS_UNKNOWN_20260527.md` |
+| Projected mod cull telemetry | `ModEventProjectionBridge` releases and reopens cull telemetry storage on DataVault hot-swap, with Vault-backed storage preferred and fallback only when Vault is unavailable | `../Reports/UNITY_VAULT_REBIND_RELEASE_PASS_UNKNOWN_20260527.md` |
+| Static audit | SignalBus recheck reports `errors=0`, `confirmedErrors=0`, `warnings=145`, `infos=1172`; touched-file findings are info-only | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_VAULT_REBIND_RELEASE_RECHECK.json` |
+
+## 2026-05-28 Core Vault Release Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| StaticData/Babel telemetry ownership | Babel telemetry and BTree telemetry now use Babel-specific DataVault buffer IDs instead of sharing StaticData/BTree telemetry IDs | `../Reports/UNITY_CORE_VAULT_RELEASE_PASS_UNKNOWN_20260528.md` |
+| Core Vault release routes | StaticData, Babel, SignalWarden tuning/telemetry/scratchpad, and MacroDatabase shutdown/rebind paths release Vault handles before clearing descriptors | `../Reports/UNITY_CORE_VAULT_RELEASE_PASS_UNKNOWN_20260528.md` |
+| Static audit | SignalBus recheck reports `errors=0`, `confirmedErrors=0`, `warnings=73`, `infos=1020`; touched-file non-info findings are `0` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_CORE_VAULT_RELEASE_COLD_RECHECK.json` |
+
+## 2026-05-28 Core Sync IO And Accessor Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Lockstep replay writer route | Replay writer setup moved to `OnEnable()` cold lifecycle; post-fixed replay write no longer opens/creates file state | `../Reports/UNITY_CORE_SYNC_IO_ACCESSOR_PASS_UNKNOWN_20260528.md` |
+| Cold Core IO contracts | Input replay setup, binding override deletion, and parent-directory creation now expose cold/persistence names | `../Reports/UNITY_CORE_SYNC_IO_ACCESSOR_PASS_UNKNOWN_20260528.md` |
+| Lockstep DataVault helper contract | Mutating `GetVaultBuffer<T>()` was renamed to `OpenOrAcquireVaultBufferView<T>()`; `TryGetVaultBuffer<T>()` remains existing-handle-only | `../Reports/UNITY_CORE_SYNC_IO_ACCESSOR_PASS_UNKNOWN_20260528.md` |
+| Static audit | SignalBus recheck reports `errors=0`, `confirmedErrors=0`, `warnings=68`, `infos=1025`; Core subtree non-info findings are `0` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_CORE_SYNC_IO_ACCESSOR_RECHECK.json` |
+
+## 2026-05-28 Global Signal Name Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Global telemetry DTO names | Duplicate signal-like DTO names were removed by renaming local/narrow structs; runtime layout and BufferID/SystemID ownership were not changed | `../Reports/UNITY_GLOBAL_SIGNAL_NAME_PASS_UNKNOWN_20260528.md` |
+| Editor diagnostics rows | `SystemDiagnosticsBoard` crash table row no longer uses a runtime signal-like DTO name | `../Reports/UNITY_GLOBAL_SIGNAL_NAME_PASS_UNKNOWN_20260528.md` |
+| Static audit | SignalBus recheck reports `errors=0`, `confirmedErrors=0`, `warnings=57`, `infos=1024`; duplicate/editor signal-like warning categories are `0` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_GLOBAL_SIGNAL_NAME_RECHECK.json` |
+
 ## Validation
 
 | Validator | Required state |
 |---|---|
+| Current `Tools/OOP_Doc_Scanner.py` | 2026-05-28 `finalPass=true`; activeFileCount `704`; sourceSyncPass `true`; active stale parameter files `0`; reduction above `31%` |
+| Current `Tools/VerifyDocStructure.py` | 2026-05-28 `pass=true`; activeDocCount `704`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` |
 | `Tools/OOP_Doc_Scanner.py` | `finalPass=true`; source sync; reduction `>=30%`; markers `0`; stale parameter files `0` |
 | `Tools/VerifyDocStructure.py` | `pass=true`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0` |
 | 1334 final scan | `DOCUMENTATION_OPTIMIZATION_REPORT_1334_FINAL_SCAN.json`: `finalPass=true`; active docs `693`; stale parameter files `0`; reduction `48.0975%` |

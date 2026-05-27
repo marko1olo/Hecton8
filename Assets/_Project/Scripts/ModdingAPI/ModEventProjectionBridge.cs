@@ -157,12 +157,7 @@ namespace Hecton8.Modding
             _dataVault = GlobalRegistry.DataVault;
             _projectedEvents = new NativeQueue<ModEventDto>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModEventDto>[50] - projected public signal metadata for managed mods - owner: ModEventProjectionBridge
             NativeMemorySentinel.RegisterNativeQueue(_projectedEvents, HighTierProjectionCap, NativeMemoryOwner, nameof(_projectedEvents), NativeAllocationLifetime.Session);
-            if (!TryOpenCullTelemetryRing(_dataVault, out _cullTelemetry))
-            {
-                _cullTelemetry = new NativeArray<ModCullTelemetryEntry>(BlackboxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC FALLBACK: NativeArray<ModCullTelemetryEntry>[300] - culled mod hash blackbox ring; production path uses GlobalDataVault - owner: ModEventProjectionBridge
-                NativeMemorySentinel.RegisterNativeArray(_cullTelemetry, NativeMemoryOwner, nameof(_cullTelemetry), NativeAllocationLifetime.Session);
-                _cullTelemetryUsesVault = false;
-            }
+            EnsureCullTelemetryStorage(_dataVault);
 
             _queuedProjectedEventCount = 0;
             _projectionScheduled = false;
@@ -221,10 +216,46 @@ namespace Hecton8.Modding
                 _projectedEvents = default;
             }
 
+            ReleaseCullTelemetryStorage(_dataVault);
+            _dataVault = null;
+        }
+
+        private void RebindDataVault(IDataVault previousVault, IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            if (_projectionScheduled)
+            {
+                DispatcherJobSwap.TryComplete(ref _projectionHandle, forceComplete: true);
+                _projectionScheduled = false;
+            }
+
+            ReleaseCullTelemetryStorage(previousVault ?? _dataVault);
+            _dataVault = currentVault;
+            EnsureCullTelemetryStorage(currentVault);
+        }
+
+        private void EnsureCullTelemetryStorage(IDataVault dataVault)
+        {
+            if (TryOpenCullTelemetryRing(dataVault, out _cullTelemetry))
+                return;
+
+            if (_cullTelemetry.IsCreated)
+                return;
+
+            _cullTelemetry = new NativeArray<ModCullTelemetryEntry>(BlackboxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC FALLBACK: NativeArray<ModCullTelemetryEntry>[300] - culled mod hash blackbox ring; production path uses GlobalDataVault - owner: ModEventProjectionBridge
+            NativeMemorySentinel.RegisterNativeArray(_cullTelemetry, NativeMemoryOwner, nameof(_cullTelemetry), NativeAllocationLifetime.Session);
+            _cullTelemetryUsesVault = false;
+        }
+
+        private void ReleaseCullTelemetryStorage(IDataVault dataVault)
+        {
             if (_cullTelemetryUsesVault)
             {
-                if (_dataVault != null && _cullTelemetryHandle.BufferID != 0u)
-                    _dataVault.ReleaseBuffer(in _cullTelemetryHandle);
+                if (dataVault != null && _cullTelemetryHandle.BufferID != 0u)
+                    dataVault.ReleaseBuffer(in _cullTelemetryHandle);
+
                 _cullTelemetry = default;
             }
             else if (_cullTelemetry.IsCreated)
@@ -236,7 +267,7 @@ namespace Hecton8.Modding
 
             _cullTelemetryHandle = default;
             _cullTelemetryUsesVault = false;
-            _dataVault = null;
+            _cullTelemetryCursor = 0;
         }
 
         private bool TryOpenCullTelemetryRing(IDataVault dataVault, out NativeArray<ModCullTelemetryEntry> telemetry)
@@ -664,6 +695,11 @@ namespace Hecton8.Modding
         {
             HectonAPI.OnGlobalRegistryServiceReplaced(serviceSlot, currentService);
             ModCommandDispatcher.OnGlobalRegistryServiceReplaced(serviceSlot, currentService);
+            ModSettingsRegistry.OnGlobalRegistryServiceReplaced(serviceSlot, currentService);
+            ModItemRegistry.OnGlobalRegistryServiceReplaced(serviceSlot, currentService);
+            ModBuildableRegistry.OnGlobalRegistryServiceReplaced(serviceSlot, currentService);
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+                RebindDataVault(previousService as IDataVault, currentService as IDataVault);
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
                 _playerRuntimeContext = currentService as IPlayerRuntimeContext;
         }

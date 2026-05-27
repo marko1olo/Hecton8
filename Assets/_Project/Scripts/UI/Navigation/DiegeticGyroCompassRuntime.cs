@@ -285,6 +285,8 @@ namespace Hecton8.UI.Navigation
         private float _fastCadenceAccumulatedDelta;
         private int _fastCadenceStride = 1;
         private int _fastCadenceCounter;
+        private bool _manualRecalibrationRequested;
+        private float _manualRecalibrationHold01;
         private VaultLane<CompassStateDTO> _stateLane;
         private VaultLane<CompassPresentationStateDTO> _presentationLane;
         private VaultLane<float> _headingOutputLane;
@@ -325,6 +327,8 @@ namespace Hecton8.UI.Navigation
         private void OnEnable()
         {
             ConfigureSignalLanes();
+            ResolveColdDependencies();
+            TryResolveVaultBuffers();
             TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegisterTickables();
@@ -370,6 +374,11 @@ namespace Hecton8.UI.Navigation
         /// <inheritdoc />
         public void RequestRecalibration()
         {
+            _manualRecalibrationRequested = true;
+            _manualRecalibrationHold01 = 1f;
+            if (_jobPending)
+                return;
+
             if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
                 return;
 
@@ -377,24 +386,43 @@ namespace Hecton8.UI.Navigation
             state.Flags |= FlagCalibrationRequested;
             state.RecalibrationHold01 = 1f;
             stateBuffer[0] = state;
+            _manualRecalibrationRequested = false;
+            _manualRecalibrationHold01 = 0f;
         }
 
         /// <inheritdoc />
         public bool TryAccumulateRecalibrationHold(float deltaTime, out float progress01)
         {
             progress01 = 0f;
+            float safeDeltaTime = SanitizeDeltaTime(deltaTime);
+            if (_jobPending)
+            {
+                _manualRecalibrationHold01 = math.saturate(
+                    _manualRecalibrationHold01 + safeDeltaTime * math.rcp(RecalibrationHoldSeconds));
+                if (_manualRecalibrationHold01 >= 1f)
+                    _manualRecalibrationRequested = true;
+
+                progress01 = _manualRecalibrationHold01;
+                return true;
+            }
+
             if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
                 return false;
 
-            float safeDeltaTime = SanitizeDeltaTime(deltaTime);
             CompassStateDTO state = stateBuffer[0];
             SanitizeCompassStateScalars(ref state);
-            state.RecalibrationHold01 = math.saturate(state.RecalibrationHold01 + safeDeltaTime * math.rcp(RecalibrationHoldSeconds));
+            state.RecalibrationHold01 = math.saturate(
+                math.max(state.RecalibrationHold01, _manualRecalibrationHold01) +
+                safeDeltaTime * math.rcp(RecalibrationHoldSeconds));
             progress01 = state.RecalibrationHold01;
             if (state.RecalibrationHold01 >= 1f)
+            {
                 state.Flags |= FlagCalibrationRequested;
+                _manualRecalibrationRequested = false;
+            }
 
             stateBuffer[0] = state;
+            _manualRecalibrationHold01 = 0f;
 
             return true;
         }
@@ -402,6 +430,11 @@ namespace Hecton8.UI.Navigation
         /// <inheritdoc />
         public void CancelRecalibrationHold()
         {
+            _manualRecalibrationRequested = false;
+            _manualRecalibrationHold01 = 0f;
+            if (_jobPending)
+                return;
+
             if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
                 return;
 
@@ -420,9 +453,8 @@ namespace Hecton8.UI.Navigation
         public void InjectDependencies(IPlayerRuntimeContext playerContext, IDataVault vault, float qualityWeight01)
         {
             _playerContext = playerContext;
-            _vault = vault;
             RefreshQualityPolicy(qualityWeight01);
-            TryResolveVaultBuffers();
+            RebindDataVaultForLifecycle(vault);
             EnsureIndirectBuffers();
         }
 
@@ -544,8 +576,9 @@ namespace Hecton8.UI.Navigation
             if (_playerContext == null)
                 _playerContext = GlobalRegistry.Player;
 
-            if (_vault == null)
-                _vault = GlobalRegistry.DataVault;
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_vault, currentVault))
+                RebindDataVaultForLifecycle(currentVault);
         }
 
         private bool TryResolveVaultBuffers()
@@ -556,12 +589,14 @@ namespace Hecton8.UI.Navigation
         private bool TryReadCompassState(out CompassStateDTO state)
         {
             state = default;
+            if (_jobPending)
+                return false;
+
             if (!TryGetExistingStateBuffer(out var stateBuffer))
                 return false;
 
             state = stateBuffer[0];
-            if (SanitizeFiniteState(ref state))
-                stateBuffer[0] = state;
+            SanitizeFiniteState(ref state);
 
             return true;
         }
@@ -832,11 +867,35 @@ namespace Hecton8.UI.Navigation
                     _fastCadenceAccumulatedDelta = 0f;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    _vault = currentService as IDataVault;
-                    TryResolveVaultBuffers();
-                    ResetPresentationState(resetDialMatrix: true);
+                    RebindDataVaultForLifecycle(currentService as IDataVault);
                     break;
             }
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+            {
+                TryResolveVaultBuffers();
+                return;
+            }
+
+            CompletePendingJob(forceComplete: true);
+            ClearVaultLanes();
+            _vault = vault;
+            _fastCadenceAccumulatedDelta = 0f;
+            _fastCadenceCounter = 0;
+
+            TryResolveVaultBuffers();
+            ResetPresentationState(resetDialMatrix: true);
+        }
+
+        private void ClearVaultLanes()
+        {
+            _stateLane = default;
+            _presentationLane = default;
+            _headingOutputLane = default;
+            _blackBoxLane = default;
         }
 
         private void TryRegisterHotSwapListener()
@@ -975,6 +1034,27 @@ namespace Hecton8.UI.Navigation
             return true;
         }
 
+        private void ApplyQueuedManualRecalibration(ref CompassStateDTO state)
+        {
+            if (_manualRecalibrationRequested)
+            {
+                state.Flags |= FlagCalibrationRequested;
+                state.RecalibrationHold01 = math.max(state.RecalibrationHold01, 1f);
+                _manualRecalibrationRequested = false;
+                _manualRecalibrationHold01 = 0f;
+                return;
+            }
+
+            if (_manualRecalibrationHold01 <= 0f)
+                return;
+
+            state.RecalibrationHold01 = math.max(state.RecalibrationHold01, _manualRecalibrationHold01);
+            if (state.RecalibrationHold01 >= 1f)
+                state.Flags |= FlagCalibrationRequested;
+
+            _manualRecalibrationHold01 = 0f;
+        }
+
         private bool ShouldUseFastCadence(in CompassStateDTO state)
         {
             return state.SystemStress01 <= StressSlowThreshold01 &&
@@ -1034,6 +1114,8 @@ namespace Hecton8.UI.Navigation
             state.Flags = ShouldUseVisualOverkill(in state) ? state.Flags | FlagIndirectDial : state.Flags & ~FlagIndirectDial;
             if ((state.Flags & FlagPowered) == 0u && state.Power01 >= PowerDeathThreshold01)
                 state.CurrentHeadingDegrees = actualHeading;
+
+            ApplyQueuedManualRecalibration(ref state);
 
             int resetDrift = (state.Flags & FlagCalibrationRequested) != 0u ? 1 : 0;
             if (resetDrift != 0)

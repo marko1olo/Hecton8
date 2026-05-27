@@ -28,7 +28,8 @@ Current-state boundary:
 
 - It is not proof that all current sources comply.
 
-- `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` supersedes the older literal `.Complete()` call-site list.
+- Older dated report call-site lists are historical and may be archived or absent.
+- Use a fresh `.Complete()` grep plus `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` before claiming current dispatcher debt.
 - Last documented strict grep: dispatcher callbacks in `ItemCatalog.cs` / `AssetLifecycleGovernor.cs`; explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs`.
 - Rerun and link command output, timestamp, and environment before calling that inventory current.
 

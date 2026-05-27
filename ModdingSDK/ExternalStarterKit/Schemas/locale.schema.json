@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hecton8.local/schemas/locale.schema.json",
+  "title": "HECTON-8 locale draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Schema", "Locale", "Strings"],
+  "properties": {
+    "Schema": { "const": "hecton8.locale.draft.v1" },
+    "Locale": { "type": "string", "minLength": 2 },
+    "Strings": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

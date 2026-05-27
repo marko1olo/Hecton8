@@ -15,22 +15,24 @@ console proof.
 
 ## Current Static Pressure
 
-Source artifact:
+Historical expected artifact paths:
 
 - `Docs/AgentLogs/ArchitectureRiskHotlist_HFI_AUDIT.md`
 - `Docs/AgentLogs/ArchitectureRiskHotlist_HFI_AUDIT.json`
 
+These files are absent from active `Docs/AgentLogs` in the 2026-05-28 static check. Recapture the tools in Slice Rules before treating scores as current proof.
+
 Latest cleanup slice:
 
-- 2026-05-23 EXTERNAL_CODEX cleanup:
+- 2026-05-23 EXTERNAL_CODEX cleanup, historical:
   - Replaced selected registry/scene-search fallbacks with cached owner interfaces plus registry hot-swap refresh.
   - Covered UI/vegetation gates, battery/physics owner decoupling, loot-magnet quality routing, airlock/PDA-shell rebinding.
   - Covered flora/organic/trade/active-sonar/seismic/GPU scatter continuous quality cleanup and compile-wall repairs.
-  - Artifact: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup32_scatter_quality.log`.
-  - Boundary: CLI_COMPILE only; 0 `: warning ` and 0 `: error ` text matches.
+  - Historical artifact path: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup32_scatter_quality.log`.
+  - Current active file check: artifact absent; zero-warning/error text must be rerun before citation.
   - Missing proof: runtime/profiler/GC.
 
-Current linked HFI_AUDIT artifact reports an R27 candidate scan; recapture the tools below before treating these scores as current under later documentation churn:
+The following R27 pressure table is retained as stale orientation only. Recapture the tools below before treating these scores as current under later documentation churn:
 
 | Domain | Score | Scored files | First review files |
 

@@ -1,8 +1,8 @@
 ﻿# Project Baseline
 
-Date: 2026-05-26
+Date: 2026-05-28
 Status: STATIC BASELINE
-Owner: DOCS_ACTUALIZATION
+Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE
 
 Purpose: stable engineering entry point. This file is not a work log, task board, build-status page, report index, or prompt digest.
@@ -44,6 +44,21 @@ Purpose: stable engineering entry point. This file is not a work log, task board
 - Current save header size: `56` bytes.
 - AUP/blit layout: `48` bytes.
 - AUP distance work subtracts sector/local coordinates in double before float local handoff.
+
+## Current Static Project Envelope
+
+Source-backed snapshot for agent onboarding:
+
+- Unity editor version: `6000.4.1f1`.
+- Primary project root: `Assets/_Project`.
+- Enabled build-spine scenes: `00_BOOTSTRAP`, `01_MAIN_MENU`, `01_ORBIT`, `02_HECTON_WORLD`.
+- New-game route: `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`.
+- Authority drift: `AGENTS.md` still contains older no-orbit scene-flow wording. Do not change the scene route from this baseline alone; follow `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` and require owner/integrator decision.
+- First-party asmdef count under `Assets/_Project`: `167`.
+- URP package: `com.unity.render-pipelines.universal` `17.4.0`.
+- Data Monolith payload is present at the target path and is `1,064,384` bytes in the 2026-05-28 static filesystem check.
+
+Detailed source owner map lives in `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`. Domain-to-architecture coverage lives in `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`. These facts are static topology only; they do not prove import, compile, route playthrough, profiler, GC, player build, platform, or visual readiness.
 
 ## Verification Language
 

@@ -1,0 +1,59 @@
+{
+  "id": "UNKNOWN",
+  "date": "2026-05-28",
+  "domain": "Core & Memory Infrastructure / SignalBus Contracts / Zero-GC Runtime Architecture",
+  "status": "STATIC_SOURCE_PROOF_ONLY_RUNTIME_PENDING",
+  "fullBuildRun": false,
+  "fullBuildReason": "User explicitly assigned overall project compilation errors to another agent.",
+  "changedSourceFiles": [
+    "Assets/_Project/Scripts/Core/HectonPersistentPathPolicy.cs",
+    "Assets/_Project/Scripts/Core/InputDispatcher.cs",
+    "Assets/_Project/Scripts/Core/RebindingManager.cs",
+    "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs"
+  ],
+  "fixes": [
+    "Lockstep replay writer setup moved from post-fixed write path to OnEnable cold lifecycle.",
+    "StageReplayWrite now uses only an already-open replay writer or skips replay writing.",
+    "Cold sync-IO helper names now expose cold/user-commit/persistence boundaries.",
+    "HectonPersistentPathPolicy keeps compatibility wrapper and adds EnsureParentDirectoryCold.",
+    "Lockstep DataVault acquisition helper renamed from GetVaultBuffer to OpenOrAcquireVaultBufferView."
+  ],
+  "proof": {
+    "gitDiffCheck": "exit 0; line-ending warnings only",
+    "braceDelta": 0,
+    "touchedFileNonInfoAuditFindings": 0,
+    "coreSubtreeNonInfoAuditFindings": 0,
+    "signalBusAudit": {
+      "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_CORE_SYNC_IO_ACCESSOR_RECHECK.json",
+      "files": 2443,
+      "shaders": 71,
+      "errors": 0,
+      "confirmedErrors": 0,
+      "warnings": 68,
+      "infos": 1025
+    },
+    "documentation": {
+      "VerifyDocStructure.py": {
+        "pass": true,
+        "activeDocCount": 704,
+        "encodingWithoutUtf8Sig": 0
+      },
+      "OOP_Doc_Scanner.py": {
+        "finalPass": true,
+        "activeFileCount": 704,
+        "sourceSyncPass": true
+      }
+    }
+  },
+  "residualWarnings": {
+    "RUNTIME_SYNC_FILE_IO_REVIEW": 57,
+    "DUPLICATE_SIGNAL_LIKE_NAME_REVIEW": 8,
+    "EDITOR_MANAGED_STRING_IN_SIGNAL_REVIEW": 3
+  },
+  "notClaimed": [
+    "No profiler microseconds.",
+    "No Unity Editor import proof.",
+    "No Play Mode proof.",
+    "No full solution build proof."
+  ]
+}

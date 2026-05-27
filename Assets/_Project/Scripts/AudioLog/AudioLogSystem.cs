@@ -241,9 +241,7 @@ namespace Hecton8.Narrative
                     TryRegisterSaveParticipant();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    ReleaseVaultBuffers(previousService as IDataVault ?? _dataVault);
-                    _dataVault = currentService as IDataVault;
-                    EnsureVaultBuffersCold();
+                    RebindDataVaultCold(currentService as IDataVault, ensureBuffers: true);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registered = false;
@@ -1338,7 +1336,7 @@ namespace Hecton8.Narrative
             CacheAudioService(GlobalRegistry.Audio);
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
             _cachedSaveService = GlobalRegistry.Save;
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultCold(GlobalRegistry.DataVault, ensureBuffers: false);
         }
 
         private void CacheAudioService(IAudioService audioService)
@@ -1415,6 +1413,18 @@ namespace Hecton8.Narrative
                 GlobalRegistry.UnregisterAudioLogRuntime(this);
 
             _serviceRegistered = false;
+        }
+
+        private void RebindDataVaultCold(IDataVault nextVault, bool ensureBuffers)
+        {
+            if (!ReferenceEquals(_dataVault, nextVault))
+            {
+                ReleaseVaultBuffers(_dataVault);
+                _dataVault = nextVault;
+            }
+
+            if (ensureBuffers)
+                EnsureVaultBuffersCold();
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hecton8.local/schemas/h8mod.authoring.schema.json",
+  "title": "HECTON-8 authoring mod manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Schema", "Id", "DisplayName", "Author", "Version", "RequiredAPIVersion", "Capabilities", "Budgets", "Compatibility", "Entrypoints"],
+  "properties": {
+    "Schema": { "const": "hecton8.h8mod.authoring.v1" },
+    "Id": { "type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" },
+    "DisplayName": { "type": "string", "minLength": 1 },
+    "Author": { "type": "string", "minLength": 1 },
+    "Version": { "type": "string", "minLength": 1 },
+    "RequiredAPIVersion": { "type": "integer", "minimum": 2 },
+    "Capabilities": { "type": "array", "items": { "type": "string" } },
+    "Budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["MaxEnvelopesPerFrame", "MaxAssetBytes"],
+      "properties": {
+        "MaxEnvelopesPerFrame": { "type": "integer", "minimum": 0 },
+        "MaxAssetBytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "Compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Game", "Runtime"],
+      "properties": {
+        "Game": { "const": "HECTON-8" },
+        "Runtime": { "const": "envelope-only" }
+      }
+    },
+    "Entrypoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["CommandGraph", "AssetManifest", "SettingsTable", "LocaleRoot"],
+      "properties": {
+        "CommandGraph": { "type": "string" },
+        "AssetManifest": { "type": "string" },
+        "SettingsTable": { "type": "string" },
+        "LocaleRoot": { "type": "string" }
+      }
+    }
+  }
+}

@@ -103,6 +103,7 @@ namespace Hecton8.Core.Data
             if (_ownedFallbackPointer != null)
                 CloseFile();
 
+            ReleaseVaultHandles(_dataVault);
             _dataVault = dataVault;
             _blackBoxHandle = default;
             _blackBoxCursorHandle = default;
@@ -487,11 +488,34 @@ namespace Hecton8.Core.Data
         public void Shutdown()
         {
             CloseFile();
+            ReleaseVaultHandles(_dataVault);
             _blackBoxHandle = default;
             _blackBoxCursorHandle = default;
             _btreeTelemetryHandle = default;
             _btreeTelemetryCursorHandle = default;
             _btreeTelemetryAccumulatorHandle = default;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _blackBoxHandle);
+            ReleaseVaultHandle(vault, ref _blackBoxCursorHandle);
+            ReleaseVaultHandle(vault, ref _btreeTelemetryHandle);
+            ReleaseVaultHandle(vault, ref _btreeTelemetryCursorHandle);
+            ReleaseVaultHandle(vault, ref _btreeTelemetryAccumulatorHandle);
+            ReleaseVaultHandle(vault, ref _mappedBytesHandle);
+            ReleaseVaultHandle(vault, ref _errorSliceHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static long ToNanoseconds(long stopwatchTicks)
@@ -547,14 +571,14 @@ namespace Hecton8.Core.Data
 
             if (!vault.TryResolveHandle(in _mappedBytesHandle, out NativeArray<byte> paddedBytes))
             {
-                _mappedBytesHandle = default;
+                ReleaseVaultHandle(vault, ref _mappedBytesHandle);
                 _ownedFallbackPointer = null;
                 return false;
             }
 
             if (!paddedBytes.IsCreated || paddedBytes.Length < paddedLength)
             {
-                _mappedBytesHandle = default;
+                ReleaseVaultHandle(vault, ref _mappedBytesHandle);
                 _ownedFallbackPointer = null;
                 return false;
             }
@@ -915,7 +939,7 @@ namespace Hecton8.Core.Data
                     return true;
                 }
 
-                _errorSliceHandle = default;
+                ReleaseVaultHandle(vault, ref _errorSliceHandle);
             }
 
             RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
@@ -985,6 +1009,8 @@ namespace Hecton8.Core.Data
                 _ownedFallbackPointer = null;
             }
 
+            if (_mappedBytesHandle.BufferID != 0u)
+                _dataVault?.ReleaseBuffer(in _mappedBytesHandle);
             _mappedBytesHandle = default;
 
             if (_errorPointer != null)
@@ -992,6 +1018,8 @@ namespace Hecton8.Core.Data
                 _errorPointer = null;
             }
 
+            if (_errorSliceHandle.BufferID != 0u)
+                _dataVault?.ReleaseBuffer(in _errorSliceHandle);
             _errorSliceHandle = default;
             _errorSliceVaultBacked = false;
             _basePointer = null;
@@ -1059,7 +1087,7 @@ namespace Hecton8.Core.Data
                 ring.Length < H8StaticDataFormat.TelemetryFrameCount)
             {
                 _blackBoxHandle = vault.EnsureGenerationHandle<H8StaticDataTelemetryEntry>(
-                    BufferID.StaticDataTelemetryRing,
+                    BufferID.BabelTelemetryRing,
                     H8StaticDataFormat.TelemetryFrameCount,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.ClearMemory);
@@ -1071,7 +1099,7 @@ namespace Hecton8.Core.Data
                 cursor.Length < 1)
             {
                 _blackBoxCursorHandle = vault.EnsureGenerationHandle<int>(
-                    BufferID.StaticDataTelemetryCursor,
+                    BufferID.BabelTelemetryCursor,
                     1,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.ClearMemory);
@@ -1092,7 +1120,7 @@ namespace Hecton8.Core.Data
                 ring.Length < H8StaticDataFormat.TelemetryFrameCount)
             {
                 _btreeTelemetryHandle = vault.EnsureGenerationHandle<BTreeTelemetryEntry>(
-                    H8CacheBTree.BTreeTelemetryRingBufferId,
+                    BufferID.BabelBTreeTelemetryRing,
                     H8StaticDataFormat.TelemetryFrameCount,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.ClearMemory);
@@ -1104,7 +1132,7 @@ namespace Hecton8.Core.Data
                 cursor.Length < 1)
             {
                 _btreeTelemetryCursorHandle = vault.EnsureGenerationHandle<int>(
-                    H8CacheBTree.BTreeTelemetryCursorBufferId,
+                    BufferID.BabelBTreeTelemetryCursor,
                     1,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.ClearMemory);
@@ -1116,7 +1144,7 @@ namespace Hecton8.Core.Data
                 accumulator.Length < 1)
             {
                 _btreeTelemetryAccumulatorHandle = vault.EnsureGenerationHandle<BTreeTelemetryAccumulatorDTO>(
-                    H8CacheBTree.BTreeTelemetryAccumulatorBufferId,
+                    BufferID.BabelBTreeTelemetryAccumulator,
                     1,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.ClearMemory);

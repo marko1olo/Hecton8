@@ -580,11 +580,26 @@ namespace Hecton8.Modding
     {
         // COLD ALLOC: List<ItemData>[16] — deferred item registrations until the runtime item catalog exists — owner: ModItemRegistry
         private static readonly List<ItemData> _pendingItems = new List<ItemData>(16);
+        private static IPlayerInventoryService s_playerInventoryService;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _pendingItems.Clear();
+            s_playerInventoryService = null;
+        }
+
+        internal static void BindRegistryServicesCold()
+        {
+            s_playerInventoryService = GlobalRegistry.PlayerInventory;
+        }
+
+        internal static void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
+                s_playerInventoryService = currentService as IPlayerInventoryService;
         }
 
         internal static bool TryRegister(ItemData itemData, out string error)
@@ -631,7 +646,7 @@ namespace Hecton8.Modding
 
         internal static ItemCatalog ResolveActiveCatalog()
         {
-            IPlayerInventoryService inventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
+            IPlayerInventoryService inventoryService = s_playerInventoryService;
             PlayerInventory playerInventory = inventoryService != null ? inventoryService.Inventory : null;
             return playerInventory != null ? playerInventory.ItemCatalog : null;
         }
@@ -749,11 +764,26 @@ namespace Hecton8.Modding
 
         // COLD ALLOC: List<PendingBuildableRegistration>[16] — deferred buildable registrations until the live module catalog exists — owner: ModBuildableRegistry
         private static readonly List<PendingBuildableRegistration> _pendingBuildables = new List<PendingBuildableRegistration>(16);
+        private static ILogisticsService s_logisticsService;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _pendingBuildables.Clear();
+            s_logisticsService = null;
+        }
+
+        internal static void BindRegistryServicesCold()
+        {
+            s_logisticsService = GlobalRegistry.Logistics;
+        }
+
+        internal static void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Logistics)
+                s_logisticsService = currentService as ILogisticsService;
         }
 
         internal static bool TryRegister(BuildableData buildableData, string customCategory, out string error)
@@ -826,7 +856,7 @@ namespace Hecton8.Modding
 
         internal static ModuleCatalog ResolveActiveCatalog()
         {
-            ILogisticsService logistics = Hecton8.Core.GlobalRegistry.Logistics;
+            ILogisticsService logistics = s_logisticsService;
             return logistics != null ? logistics.Catalog : null;
         }
 

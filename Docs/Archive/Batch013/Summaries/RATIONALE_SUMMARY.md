@@ -1,0 +1,3076 @@
+Batch013 RATIONALE summary v2 concentrated. Files=69. Bytes=3729927. Raw files copied intact. Policy: dense extract; exact duplicate files collapsed; prompt files reduced to id/role/tasks; boilerplate/articles/XML/Markdown noise stripped; blockers/proof retained.
+
+FILE AgentLogs\Rationale_1300.md bytes=41496 done=0 blockers=3 pendingHits=2 selected=45
+- # Rationale_1300
+- Domain: `Assets/_Project/Scripts/AI/Cognition`
+- Status: STATIC_GREEN / PRIVATE_WIDE_PAD_CLOSED / CROSS_DOMAIN_DTO_PAD_CLOSED / LOCKED_VAULT_WRITES_CLOSED / TEMP_PATH_CONCAT_CLOSED / DUMP_PATH_FAIL_CLOSED / CSV_RESOLVER_FAIL_CLOSED / LAYOUT_GUARD_ADDED / HOT_UNSAFE_BYPASS_CULLED / AUP_HASH_FAIL_CLOSED / S...
+- ## Decision 2026-05-25-001: Phase 0 Evidence Route
+- Problem: Assignment required native memory alias eradication, but code reality was unknown.
+- Solution: Extracted prompt from `Docs/Tasks/CURRENT_BATCH.md`, selected eight mandates, and used scoped Roslyn evidence before mutation.
+- Rejected Alternatives: Direct code edits from prompt assumptions; project-wide rewrite; managed `List ` substitution to satisfy scanner.
+- Scalability potential: Low avoids churn and preserves existing continuous quality math; Middle/High/Ultra keep DataVault relocation compatible without changing truth ownership.
+- Hardware Impact: Prevented blind rewrite risk on i3/MX350; measured microseconds absent until Unity profiling.
+- ## Decision 2026-05-25-002: Editor Telemetry Alias Exorcism
+- Problem: `AIAnxietyTunerWindow.AnxietyTelemetryChartElement` held persistent `NativeArray ` field. Even editor-only, it was stale physical pointer pattern.
+- Solution: Replaced field with `IDataVault` plus `VaultGenerationHandle ` and resolve transient `NativeArray` inside `DrawChart` only.
+- Rejected Alternatives: Managed telemetry copy for chart; keeping raw `NativeArray` because it is editor code; resolving through `GlobalRegistry` during paint.
+- Scalability potential: Low keeps editor chart safe during vault relocation; Middle/High/Ultra allow telemetry visualization without stale pointers.
+- Hardware Impact: 0 hot runtime microseconds. Removes one stale-pointer class; editor repaint may pay small vault resolve cost only when UI draws.
+- ## Decision 2026-05-25-003: Read Accessor Purification
+- Problem: Public read-looking accessors used mutable `TryResolveViews`, which violates doctrine that read accessors must be pure and must not expose write-capable aliases.
+- Solution: Converted Utility, Anxiety, and Apex tuning/state reads to `IDataVault.TryReadOnlyHandle` with handle validity and bounds checks.
+- Rejected Alternatives: Leaving `TryResolveViews` in read APIs; copying to managed DTO arrays; synchronously completing jobs before read.
+- Scalability potential: Low fails closed if handle is stale; Middle/High/Ultra keep readbacks decoupled from compaction and scheduling.
+- Hardware Impact: 0 expected hot-loop microseconds; no GC; fewer mutable aliases reduce compaction hazard on weak silicon.
+- ## Decision 2026-05-25-004: Direct Writer Lock Discipline
+- Problem: Direct tuning/state writers mutated vault buffers through transient mutable views without explicit writer fences.
+- Solution: Converted Utility tuning, Anxiety tuning/profile sync, Apex state, and Apex tuning writers to `TryAcquireWriteLock` and `finally ReleaseWriteLock`.
+- Rejected Alternatives: Holding locks across frame phases; scheduling job rewrites without owner proof; returning early after acquiring lock.
+- Scalability potential: Low devices can skip writes on contention; Middle/High/Ultra can preserve vault compaction safety while tuning/editor writes occur.
+- Hardware Impact: 0 steady hot-loop microseconds; direct editor/cold writes pay lock bookkeeping only. No managed allocation introduced.
+- ## Decision 2026-05-25-005: Roslyn Proof Artifact
+- Problem: Raw scanner classifies `*VaultBuffers` fields as forbidden because it cannot infer phase-local vault view structs.
+- Solution: Kept raw Roslyn ledger and generated `VAULT_EXORCISM_REPORT_1300.json` with explicit domain classification: 36 transient vault views, 65 transient job views, 0 persistent aliases.
+- Rejected Alternatives: Hiding raw findings; regex-only proof; chat-only evidence.
+- Scalability potential: Low/Middle/High/Ultra all benefit from reproducible static proof before future compaction work.
+- Hardware Impact: 0 runtime microseconds. Editor/tool-only managed allocation.
+- ## Decision 2026-05-25-006: Black-Box Dump Route
+- Problem: Existing black-box dump routes used subsystem filenames, while assignment mandates `Docs/AgentLogs/Dump_1300_AICognition.bin`.
+- Solution: Retained legacy subsystem dump names and mirrored cold dump writers to agent filename.
+- Rejected Alternatives: Renaming/removing legacy files; writing managed string diagnostics on hot failure paths; spawning background work on hot update.
+- Scalability potential: Low devices pay no steady cost; Middle/High/Ultra keep richer post-mortem data without changing runtime truth.
+- Hardware Impact: 0 runtime microseconds; cold fault path writes extra binary file only when dump is requested or fault-triggered.
+- ## Decision 2026-05-25-007: Build Gate
+- Problem: Verification requires compilation, but local rule forbids launching build when active `dotnet` or `csc` exists.
+- Solution: Ran Roslyn parser/static audit and scoped `git diff --check`; did not start Unity/dotnet build while active `dotnet` processes were present.
+- Rejected Alternatives: Violating build gate; claiming compile success without running it; killing unrelated processes.
+- Scalability potential: Preserves parallel agent stability.
+- Hardware Impact: Avoided extra CPU contention on already shared machine; compile proof remains pending.
+Source lines scanned 316; retained 45; overflow-important omitted 187.
+
+FILE AgentLogs\Rationale_1300-B.md bytes=2326 done=0 blockers=0 pendingHits=1 selected=16
+- # Rationale 1300-B
+- Problem: Need audit AI Cognition DTOs used in vault NativeArrays without mutating source.
+- Solution: Use static source inspection and mandate-driven offset arithmetic. Treat StructLayout Explicit Size and FieldOffset declarations as source evidence only.
+- Rejected Alternatives: Runtime UnsafeUtility.SizeOf () proof rejected because no Unity compile/build requested and dotnet build is forbidden under load/other-build uncertainty.
+- Scalability potential: Low/MX350 requires aligned compact DTOs and no absolute-position float drift. Middle/High/Ultra can add richer telemetry only outside gameplay truth DTOs.
+- Hardware Impact: Static audit prevents ARM64 unaligned access traps and cache-hostile DTOs before they hit i3/MX350 execution.
+- Problem: Vault DTO field order has source-level explicit layout, but several DTOs place small fields before later 4-byte fields or data-like 8-byte fields after 4-byte fields.
+- Solution: Record exact file:line violations instead of editing. Required fix pattern is to move 8-byte data fields to front, 4-byte fields next, 2/1-byte flags last, then named padding.
+- Rejected Alternatives: Do not hand-wave explicit offsets as sufficient; ARM64 mandate requires deterministic field order and named padding.
+- Scalability potential: Low/MX350 benefits from predictable cache lines and aligned loads. Middle/High/Ultra can spend saved stalls on richer telemetry/presentation lanes, not bloated truth DTOs.
+- Hardware Impact: Prevents unaligned or cache-hostile loads on i3/MX350 and future ARM64 devices. Estimate: 0.01-0.04 us per hot batch avoided depending on touched row count.
+- Problem: Alpha Leviathan telemetry writes absolute double3 positions into float3 fields.
+- Solution: Mark as AUP violation in report. Required fix pattern is local delta from sector/camera/observer origin before downcast, or store proper AUP/int64+local telemetry fields.
+- Rejected Alternatives: Clamping absolute double to float is not precision strategy; it only hides overflow.
+- Scalability potential: Low keeps cheap local telemetry; High/Ultra can add richer debug payloads in non-truth telemetry lane without corrupting AUP semantics.
+- Hardware Impact: Avoids far-origin float jitter and bad postmortem state on cheap silicon; expected CPU change negligible, correctness gain material.
+Source lines scanned 19; retained 16; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_1301.md bytes=130647 done=0 blockers=25 pendingHits=23 selected=45
+- # Rationale_1301
+- Status: STATIC PASS / BUILD BLOCKED BY EXISTING UI DEPENDENCY
+- ## Phase 0 Preflight
+- Problem: User requested `C:\hades\current_batch.md`, but that file does not exist. Active batch prompt containing id `1301` is at `C:\hades\Hecton8\Docs\Tasks\CURRENT_BATCH.md`.
+- Solution: Used CLI regex extraction against active batch file and verified ` ` from cover to cover.
+- Rejected Alternatives: Do not read archived batch files; AGENTS forbids previous-batch contamination unless ordered. Do not infer from neighboring prompt 1300.
+- Scalability potential: Correct prompt isolation prevents cross-domain code churn. Low/Middle/High/Ultra behavior unaffected because this is process control.
+- Hardware Impact: Avoids wasted compile/edit cycles; estimated 0 runtime us, prevents human-time regression.
+- Problem: Prompt path says `Assets/Project`, but source reality under this Unity project is `Assets/_Project`.
+- Solution: Treat `Assets/_Project/Scripts/AI/Ecology` as concrete source root and include boid-related script paths found by source scan. Any code edit outside this will require explicit rationale tied to boid/flocking ownership.
+- Rejected Alternatives: Creating missing `Assets/Project` path or editing unrelated AI folders would be domain sabotage.
+- Scalability potential: Keeps work bounded; low devices do not pay for speculative architecture.
+- Hardware Impact: Runtime impact 0 us; reduces risk of unrelated compile churn.
+- Problem: Phase 0 requires native alias audit before code mutation.
+- Solution: Load relevant mandates first: native memory/job system, zero-GC, ARM64 layout, boid spatial hash, registry DI, SignalBus, post-mortem telemetry, fake-first, AUP.
+- Rejected Alternatives: Starting with broad refactor or manual edits without hit list.
+- Scalability potential: Low: no stale native aliases. Middle: cleaner job scheduling. High/Ultra: richer presentation can read stable snapshots without gameplay truth drift.
+- Hardware Impact: Audit itself runtime 0 us; projected gain depends on offenders found.
+- ## Phase 0 Native Alias Exorcism
+- Problem: Static field scan found three non-job `NativeArray ` fields in `SpatialHashQuery`: spatial grid entries, bucket ranges, and AUP snapshot. They were public value-type fields, so any future caller could persist raw native aliases across GlobalDataVau...
+- Solution: Replaced fields with `VaultGenerationHandle `, `VaultGenerationHandle `, and `VaultGenerationHandle `. Query methods now accept `IDataVault`, resolve read-only views with `TryReadOnlyHandle`, use them only inside call, and fail closed when handle ...
+- Rejected Alternatives: Keeping NativeArray fields because struct has no current caller was rejected; public stale-pointer API is still architectural leak. Storing `IDataVault` inside query struct was rejected; query object should carry descriptors, not serv...
+- Scalability potential: Low devices avoid relocation crash risk with no extra allocation. Middle/High/Ultra tiers keep same query math and existing continuous quality budgets; this patch does not reduce visual density or alter gameplay truth.
+- Hardware Impact: Runtime microseconds saved: 0 claimed. Cost added: three `TryReadOnlyHandle` calls per actual query use. Existing in-repo call graph shows no current callers, so current frame cost is 0 us. Safety gain is stale native pointer elimination, n...
+- Problem: Offender ownership had to map to existing vault routes without inventing new BufferIDs.
+- Solution: Mapped `AupSnapshotHandle` to `BufferID.ShinobuAmbientAupSnapshot` 70403, `EntriesHandle` to `BufferID.ShinobuSpatialGridEntries` 70448, and `BucketRangesHandle` to `BufferID.ShinobuSpatialGridBucketRanges` 70450, all under `SystemID.AIEcology`. E...
+- Rejected Alternatives: Creating new query-owned buffers was rejected because it would split one fact into two owners. Moving ownership to `SpatialHashQuery` was rejected because it is query facade, not lifecycle owner.
+- Scalability potential: Low/Middle/High/Ultra behavior remains continuous through existing `GlobalQualityWeight` spatial-grid cadence and query budget code.
+- Hardware Impact: Runtime microseconds saved: 0 claimed. Avoided duplicate native allocation and avoided extra memory pressure on low-end i3/MX350-class hardware.
+- Problem: DTO layout verification was required before touching spatial grid structures.
+- Solution: Audited affected DTOs and existing validators. `SpatialGridEntryDTO` is explicit 16 bytes, `SpatialGridBucketRangeDTO` explicit 32 bytes, `SpatialGridTelemetryEntry` explicit 64 bytes, and `AmbientEntityAupDTO` is asserted as 64 bytes in `ShinobuE...
+- Rejected Alternatives: Reordering already explicit DTOs without measured defect was rejected; it risks binary/GPU contract churn with no proof.
+- Scalability potential: Stable cache footprints remain: entry 16B, bucket range 32B, telemetry 64B. Weak hardware keeps tight traversal; high tiers can spend saved stability budget on denser visuals through existing quality scalars.
+- Hardware Impact: Runtime microseconds saved: 0 claimed; no DTO byte width changed.
+- Problem: Roslyn AST was requested, but local PowerShell host could not load bundled Roslyn assemblies.
+- Solution: Attempted to load `Assets/Plugins/Roslyn` assemblies and fallback Cursor Roslyn assemblies. Both failed on host/runtime dependency mismatch (`System.Memory`/`System.Runtime`). Recorded this honestly and used brace-aware field scanner plus direct s...
+- Rejected Alternatives: Faking Roslyn result was rejected. Launching dotnet build/tool while csc/dotnet were already running and CPU load was above policy threshold was rejected.
+- Scalability potential: No runtime effect. Process integrity prevents false proof artifacts from driving unsafe code churn.
+- Hardware Impact: Runtime 0 us. Tooling time lost; no gameplay cost.
+- Problem: Compile verification was required but environment guard blocked launching another build.
+- Solution: Checked process and CPU state before build. Found `csc.exe` and `dotnet.exe` active and CPU load 64%, with no root `.sln` present. Did not launch dotnet build. Static scanner returned after=0 persistent native alias offenders.
+- Rejected Alternatives: Violating build guard to get fake compile signal was rejected. Reporting compile success without running it was rejected.
+- Scalability potential: No runtime effect. Avoids saturating already compiling workstation.
+- Hardware Impact: Runtime 0 us; developer-machine contention avoided.
+- Problem: Build verification remained required after guard cleared.
+Source lines scanned 668; retained 45; overflow-important omitted 466.
+
+FILE AgentLogs\Rationale_1302.md bytes=32771 done=0 blockers=1 pendingHits=4 selected=45
+- # Rationale_1302 - MEMORY_SOVEREIGN_PHYSICS_HYDRO_EXORCIST
+- State: APEX_PASS13_ROOT_BRIDGE_EXORCISED_PENDING_UNITY_COMPILE
+- ## Decision 001 - Prompt Source
+- Problem: User directive said root `current_batch.md`, but `C:\hades\Hecton8\current_batch.md` does not exist.
+- Solution: Located active batch at `Docs/Tasks/CURRENT_BATCH.md` with CLI file scan and extracted ` ` by regex over raw file content.
+- Rejected Alternatives: Did not infer assignment from chat prose alone; that would violate batch prompt protocol and risk neighboring-agent contamination.
+- Scalability potential: N/A, process control only.
+- Hardware Impact: 0 us runtime impact; no player-frame code touched.
+- ## Decision 002 - Initial Domain Boundary
+- Problem: Prompt names `Assets/Project/Scripts/Physics`, while current HECTON-8 repository layout normally stores first-party code under `Assets/_Project`.
+- Solution: Treat Phase 0 as path-verification first, then scan actual existing physics directory while excluding any `Tethers` subtree. No edits outside this domain without explicit cross-domain interface proof.
+- Rejected Alternatives: Did not create missing `Assets/Project` path or move files; that would be architectural sabotage and source churn.
+- Scalability potential: Keeps audit bounded to active physics systems instead of contaminating unrelated domains.
+- Hardware Impact: 0 us runtime impact; prevents false-positive refactors.
+- ## Decision 003 - Mandate Set
+- Problem: Phase 0 touches native memory ownership, jobs, DTO layout, telemetry, registry/signal boundaries, AUP, and physics determinism.
+- Solution: Read eight relevant mandates before source work: native memory/jobs, zero-GC, ARM64 runtime struct layout, crash telemetry, GlobalRegistry DI, SignalBus segregation, AUP determinism, and physics integrity.
+- Rejected Alternatives: Did not read all registry files in bulk; targeted mandate reads keep active working set constrained to actual task.
+- Scalability potential: Enforces low/middle/high/ultra paths through continuous `GlobalQualityWeight`, not binary switches.
+- Hardware Impact: 0 us runtime impact in Phase 0; prevents later MX350/i3 regression patterns.
+- ## Decision 004 - Task 01 Scanner Route
+- Problem: assignment requires AST-level separation of persistent field aliases from local native views and job parameters inside physics tree.
+- Solution: Used existing `Tools/VaultNativeAliasRoslynAudit` compiled Roslyn scanner against `Assets/_Project/Scripts/Physics`, then generated filtered 1302 ledger excluding Tether/Cable paths. Raw evidence remains in `Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_...
+- Rejected Alternatives: Rejected `rg`/regex-only hit lists for final evidence because they overcount locals, method parameters, and transient Burst job fields. Rejected editing Tether/Cable code because it is outside 1302 ownership.
+- Scalability potential: scoped result lets Phase 1 target actual physics/hydro/KCC owners instead of wasting cycles on cable/tether systems owned by another lane.
+- Hardware Impact: 0 us runtime impact. only raw forbidden persistent alias is in excluded `VerletCableDTOs.cs`; scoped domain has zero persistent native collection fields to migrate.
+- ## Decision 005 - Task 02 Ownership Mapping
+- Problem: Task 02 requires ownership mapping for forbidden aliases, but scoped 1302 hit list is empty.
+- Solution: Mapped existing vault-handle owners instead of inventing migration work: buoyancy, async readback, Gerstner waves, KCC, exosuit, cavitation, seaglide, submarine dynamics, vehicle damage, and habitat fluid incursion already hold `VaultGenerationHan...
+- Rejected Alternatives: Rejected migrating raw `VerletCableDTOs.cs` finding because it belongs to cable/tether ownership. Rejected creating phantom `BufferID` entries for empty offender classes.
+- Scalability potential: Existing systems retain their continuous `GlobalQualityWeight` and Math LOD routes; low, middle, high, and ultra tiers are not collapsed into binary branch.
+- Hardware Impact: 0 us runtime change on i3/MX350. No additional lock, handle lookup, or telemetry write was added to hot physics phases.
+- ## Decision 006 - Task 03 Dependency Impact
+- Problem: Public readers, editor views, render uploads, and signal lanes could be destabilized by needless migration.
+- Solution: Treated empty offender list as hard stop for source mutation. Documented that current surfaces use read DTOs, read-only vault views, `SignalBus ` snapshots, or renderer-specific GraphicsBuffers.
+- Rejected Alternatives: Rejected rewriting accessors to new read-lock wrappers with no source alias to remove. That would add unproven contention windows and could force hidden synchronization.
+- Scalability potential: Keeps existing owner-phase publish/read patterns intact, preserving cheap-device cadence and high-tier visual overkill paths.
+- Hardware Impact: 0 us runtime change. Avoided extra per-frame handle resolution and branch work in consumers.
+- ## Decision 007 - Task 04 DTO Layout
+- Problem: prompt demands DTO extraction from forbidden arrays and ARM64 explicit layout correction.
+- Solution: Since no in-domain forbidden arrays exist, verified representative scoped DTO files use `LayoutKind.Explicit` and 8-byte-compatible sizes. No broad DTO refactor was performed.
+- Rejected Alternatives: Rejected Pack=1 and broad sequential-to-explicit sweeps outside offender set; both can create binary compatibility churn without concrete memory-safety defect.
+- Scalability potential: Current DTO cache-line footprints remain stable across weak and high-end hardware. Future changes must be guarded by explicit layout validators.
+- Hardware Impact: 0 us runtime change. No new memory stride, copy, or cache footprint change introduced.
+- ## Decision 008 - Task 05 Telemetry Plan
+Source lines scanned 236; retained 45; overflow-important omitted 130.
+
+FILE AgentLogs\Rationale_1303.md bytes=58068 done=0 blockers=22 pendingHits=15 selected=45
+- # Rationale_1303 - MEMORY_SOVEREIGN_TETHERS_EXORCIST
+- ## Initial Boundary
+- Problem: Task authority is restricted to persistent native memory hazards in `Assets/Project/Scripts/Physics/Tethers`.
+- Solution: Confine scans and mutations to tether domain unless cross-domain interface proof is required.
+- Rejected Alternatives: Scanning all physics systems would create neighbor-task contamination and false architectural dependencies.
+- Scalability potential: Low uses static source proof first; Middle/High/Ultra only receive expanded visual/simulation work after memory ownership is proven.
+- Hardware Impact: Static archaeology has no runtime cost; expected runtime target remains 0 B GC and no unmanaged alias UAF on i3/MX350.
+- ## Mandate Selection
+- Problem: Tether memory exorcism crosses physics truth, Native memory, DTO layout, telemetry, phase ownership, AUP, Zero-GC, and fake-first doctrine.
+- Solution: Loaded 8 mandate files: tether physics, native memory/jobs, ARM64 DTO layout, telemetry, execution phases, zero-GC, AUP precision, cinematic fake-first.
+- Rejected Alternatives: Loading whole registry would pollute context and violate 2-8 mandate read rule.
+- Scalability potential: Low/Middle/High/Ultra all share same ownership law; visual complexity scales later through `VISUAL_SYNC`, not simulation truth bloat.
+- Hardware Impact: Mandate-driven audit prevents MX350 stalls from GC, job completion misuse, and stale NativeArray aliases.
+- ## Domain Path Correction
+- Problem: Prompt states `Assets/Project/Scripts/Physics/Tethers`, but that path is absent. Current first-party tree uses `Assets/_Project`, and `Assets/_Project/Scripts/Physics/Tethers` exists.
+- Solution: Use `Assets/_Project/Scripts/Physics/Tethers` as corrected domain root for authoritative scans. Inspect adjacent `Assets/_Project/Scripts/Physics/Tether*.cs` and `Cable132` only as dependency context unless cross-domain fix is proven necessary.
+- Rejected Alternatives: Creating `Assets/Project` would fabricate parallel domain. Editing adjacent solver files without evidence would violate domain boundaries.
+- Scalability potential: Low/Middle/High/Ultra unaffected; this is path authority repair, not runtime design.
+- Hardware Impact: No runtime impact. Prevents scanning empty/nonexistent path and producing false clean report.
+- ## Phase 0 Strict Root Ledger
+- Problem: Task 01 demanded AST separation between field aliases and harmless locals/job parameters.
+- Solution: Ran existing compiled `Tools/VaultNativeAliasRoslynAudit` net10 binary against corrected root `Assets/_Project/Scripts/Physics/Tethers`; output `Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1303_STRICT_ROOT.json` reports 1 scanned file, 0 parse failures...
+- Rejected Alternatives: Regex-only final evidence would not satisfy Roslyn mandate; rebuilding tool was rejected because CPU was 88.46% and project build gate forbids dotnet build under load.
+- Scalability potential: Low/Middle/High/Ultra all get identical ownership proof; there is no runtime work in strict contracts folder.
+- Hardware Impact: 0 us runtime. Scanner execution is offline; no i3/MX350 frame cost.
+- ## Boundary Leak Classification
+- Problem: strict corrected root is clean, but live tether owner is `Assets/_Project/Scripts/TetherInstance.cs`, outside prompt folder, and it stores 25 persistent `NativeArray ` physical Vault aliases at lines 236-260.
+- Solution: Classified file as critical boundary leak and mapped each alias to its existing `BufferID`, including `TetherCablePositions(67)`, `TetherCableBlackBox(72)`, `TetherVerletPositions(326)`, `TetherVerletNodeFaultFlags(337)`, `VerletCableGpuSplinePoin...
+- Rejected Alternatives: Reporting strict root as clean without naming actual runtime owner would be fake pass. Editing `TetherInstance.cs` during Phase 0 was rejected because this turn is archaeology and file is outside strict root.
+- Scalability potential: Low: handles only, low visual segment density. Middle: same handles with default interpolation. High: extra visual spline density. Ultra: visual overkill only; simulation truth and DTO layout remain unchanged.
+- Hardware Impact: Planned Phase 1 removes stale physical aliases and protects live compaction; expected gain on i3/MX350 is crash-risk removal and less pointer lifetime pressure, not claimed measured microsecond win yet.
+- ## Telemetry And Dump Route Gap
+- Problem: Existing tether telemetry uses 64-byte entries and 300-frame capacity concepts, but `TetherInstance` still names legacy dump files `Docs/AgentLogs/Dump_VERLET_CABLES.bin` and `.h8dump`.
+- Solution: Phase 0 report specifies `Docs/AgentLogs/Dump_1303_Tethers.bin` as required black-box raw ring route and keeps `TetherCableBlackBox(72)` / `TetherCableBlackBoxHead(212)` as existing Vault lanes.
+- Rejected Alternatives: Managed string logging or chat-only crash notes are not forensic proof and violate black-box rule.
+- Scalability potential: Low/Middle/High/Ultra write same fixed telemetry stride; quality may scale cadence only, not layout.
+- Hardware Impact: Fixed 300-entry ring writes are bounded; no managed allocation. Phase 1 must avoid hot path formatting and background-thread allocation bursts.
+- ## Compile Verification Gate
+- Problem: workflow asks for compile verification after tasks 1-5, but Phase 0 changed only docs/report JSON and CPU was 88.46%.
+- Solution: Did not launch dotnet build. Recorded skipped compile explicitly in `Status_1303.md` and `VAULT_EXORCISM_REPORT_1303.json`.
+- Rejected Alternatives: Violating CPU/compiler gate to produce ceremonial build marker would be worse than no build and could interfere with other agents.
+- Scalability potential: No runtime effect. It preserves shared build bandwidth for active code owners.
+- Hardware Impact: Avoided unnecessary CPU contention on host; no gameplay microsecond claim.
+- ## Phase 1 Descriptor Substitution
+- Problem: `TetherInstance` held 25 persistent physical `NativeArray ` Vault aliases. Any live compaction could invalidate those addresses while MonoBehaviour still believed it owned stable memory.
+Source lines scanned 465; retained 45; overflow-important omitted 301.
+
+FILE AgentLogs\Rationale_1304.md bytes=81062 done=0 blockers=26 pendingHits=28 selected=45
+- # Rationale 1304 - MEMORY_SOVEREIGN_WORLD_VOXEL_EXORCIST
+- Domain: Assets/Project/Scripts/World/Voxel
+- Status: APEX_TARGET_ALIAS_ZERO_EXTERNAL_COMPILE_BLOCKED
+- ## Decision 001 - Static AST Before Mutation
+- Problem: assignment targets persistent native aliases, but raw text search cannot distinguish field declarations from local method-scoped `NativeArray ` views.
+- Solution: Use Roslyn AST scanner constrained to `Assets/Project/Scripts/World/Voxel` to produce JSON hit list with file, class/struct, field, type, and line.
+- Rejected Alternatives: Regex-only scan. It misses declaration context and can either under-report toxic fields or over-report safe locals.
+- Scalability potential: Low uses no Unity load; Middle/High/Ultra can reuse scanner as gate before runtime proof.
+- Hardware Impact: Static scan cost is offline only; expected runtime gain is preventing stale unmanaged pointers that can stall or crash i3/MX350 during voxel deformation.
+- ## Decision 002 - No Runtime Claim Without Proof
+- Problem: mandate demands Zero-GC and memory safety, but this phase starts without Unity profiler, GCMonitor, or Play Mode evidence.
+- Solution: Mark runtime and GC status as PENDING VERIFICATION until compile/static gates and runtime artifacts exist.
+- Rejected Alternatives: Claiming 0 B/frame from code review. That is not accepted by AGENTS.md.
+- Scalability potential: Low/Middle/High/Ultra claims remain separated from measured proof.
+- Hardware Impact: Prevents false optimization reports that hide regressions on low-end silicon.
+- ## Decision 003 - Batch Path Drift To Actual First-Party Voxel Scope
+- Problem: prompt declares `Assets/Project/Scripts/World/Voxel`, but that path is absent. repository authority in AGENTS.md declares first-party code under `Assets/_Project`, and actual voxel terrain sources are distributed under `Assets/_Project/Scripts/Worl...
+- Solution: Use `Assets/_Project` as corrected first-party root and restrict analysis to voxel/SDF terrain files. This is critical boundary correction, not domain expansion.
+- Rejected Alternatives: Creating missing path, scanning third-party* voxel utilities, or ignoring live first-party voxel engine. All three produce false proof.
+- Scalability potential: Low/Middle/High/Ultra paths all rely on same owner map; fixing live path is mandatory before runtime tuning.
+- Hardware Impact: Prevents stale persistent voxel native buffers from remaining in actual runtime path on i3/MX350.
+- ## Decision 004 - Use Existing Roslyn Audit Executable
+- Problem: Direct PowerShell-hosted Roslyn loading failed earlier because `Microsoft.CodeAnalysis` dependency versions conflicted with available `System.Runtime.CompilerServices.Unsafe` assemblies. new scanner build would violate build guard while other dotne...
+- Solution: Use already-built `Tools/VaultNativeAliasRoslynAudit/bin/Debug/net10.0/VaultNativeAliasRoslynAudit.exe` without compiling new code. It produced 0 parse failures.
+- Rejected Alternatives: Hand-authored regex-only hit list, new Add-Type scanner compilation, or forcing net8 executable despite missing runtime.
+- Scalability potential: Low/Middle/High/Ultra all benefit from repeatable static gate. scanner is offline and costs no frame time.
+- Hardware Impact: Prevents false-negative native alias retention that would crash low-end devices during vault compaction; no runtime cost.
+- ## Decision 005 - No Phase 1 C# Mutation Before Route Map
+- Problem: hit list crosses sonar SDF publishing, delta compaction, marching cubes scratch, and GPU upload staging. Blindly replacing fields with handles would alter public read models and async generation lifecycle.
+- Solution: Stop Phase 0 at proof artifacts and ownership map. Phase 1 must start with `HectonVoxelVolume` sonar SDF because it has existing vault descriptor path and smallest public blast radius.
+- Rejected Alternatives: Migrating all `HectonVoxelEngine` scratch arrays in one pass, changing `Hecton8.Core.Contracts` signatures, or deleting local buffers without audio-material vault route.
+- Scalability potential: Low uses vault-backed SDF and fail-closed read access; Middle uses same route with normal cadence; High/Ultra spend saved CPU on denser visible meshing and richer sonar material response, driven by `GlobalQualityWeight`.
+- Hardware Impact: Limits regression risk on i3/MX350 by attacking one owner route at time instead of destabilizing async cave generation.
+- ## Decision 006 - Treat VoxelSurfaceNetsVaultBuffers As Phase-Local Only
+- Problem: Roslyn flags `VoxelSurfaceNetsVaultBuffers` as 18 forbidden native fields, but type is intended as resolved view aggregate returned from `TryResolveViews`.
+- Solution: Do not mark aggregate as persistent owner by itself; mark it forbidden only if stored across frames or outside method/job scheduling scope. Keep field list in ledger because type can become toxic if cached.
+- Rejected Alternatives: Removing aggregate immediately, or suppressing it entirely from report.
+- Scalability potential: Low/Middle/High/Ultra preserve same vault handle model; only view lifetime discipline changes.
+- Hardware Impact: Prevents stale relocated views without forcing extra per-field resolution overhead in same scheduling phase.
+- ## Decision 007 - Compile Gate Deferred By Active Dotnet Processes
+- Problem: AGENTS.md forbids launching dotnet build while another dotnet/csc process is running. Current process scan showed active dotnet processes after scanner run.
+- Solution: Do not launch project compile in this window. Record Roslyn parse proof and leave compile status pending until dotnet/csc are clear.
+- Rejected Alternatives: Running build anyway, or claiming compile health from Roslyn parse success.
+- Scalability potential: Build validation is offline only and does not affect runtime tiers.
+- Hardware Impact: Avoids starving shared workstation and interfering with other agents; no runtime impact.
+Source lines scanned 653; retained 45; overflow-important omitted 443.
+
+FILE AgentLogs\Rationale_1305.md bytes=29112 done=0 blockers=1 pendingHits=4 selected=45
+- # Rationale_1305 - MEMORY_SOVEREIGN_WORLD_PAGING_EXORCIST
+- ## Phase 0 Decisions
+- Problem: prompt names `Assets/Project/Scripts/World/Streaming`, but repository uses `Assets/_Project` and canonical strict folder contains only asmdef plus assembly marker.
+- Solution: Treat `Assets/_Project/Scripts/World/Streaming` as literal first-party path equivalent and run strict Roslyn proof there first. Separately inspect streaming-adjacent source under `Assets/_Project/Scripts/World` without mutating it until critical d...
+- Rejected Alternatives: Blindly editing all of `Assets/_Project/Scripts/World` would violate strict folder mandate. Pretending missing `Assets/Project` path exists would produce fake report.
+- Scalability potential: Low/Middle/High/Ultra unchanged until real resident buffers are migrated; no runtime method is changed by this decision.
+- Hardware Impact: 0 us runtime. Prevents wrong-file surgery on i3/MX350 and top-tier hardware alike.
+- Problem: Native alias detection by text search cannot distinguish job parameters, locals, core memory owners, and persistent class fields.
+- Solution: Use existing `Tools/VaultNativeAliasRoslynAudit` AST scanner as primary proof artifact, then narrow findings to strict folder and streaming-adjacent files. Cross-check result with two read-only subagent audits.
+- Rejected Alternatives: `rg NativeArray<` as proof; it produces false positives for job structs and method-local resolved views.
+- Scalability potential: Static-only; protects all quality weights because memory ownership must not vary by tier.
+- Hardware Impact: 0 us runtime. Removes stale-pointer risk only after offenders are migrated.
+- Problem: strict folder has zero runtime owner files, while active world paging/residency code lives in `Assets/_Project/Scripts/World`.
+- Solution: Stop Phase 0 at evidence collection and log mismatch as implementation blocker. Do not move or rewrite broad world files until next phase explicitly accepts domain exception.
+- Rejected Alternatives: Creating new manager in empty strict folder would duplicate authority. Editing adjacent files under implicit assumption would violate domain boundary enforcement.
+- Scalability potential: Low tier keeps current behavior; Middle/High/Ultra unchanged. No fake architecture split is introduced.
+- Hardware Impact: 0 us runtime.
+- Problem: `TerrainChunkPagerRuntime` keeps 19 raw DataVault-derived pointers as class fields and locks vault buffers for lifetime of runtime.
+- Solution: Classify pager migration as contract refactor: remove persistent raw pointer fields, resolve phase-local `NativeArray ` views, redesign worker thread staging/request/result/dump leases, and convert raw pointer Burst job signatures in `TerrainChunk...
+- Rejected Alternatives: Replacing pointer fields with `NativeArray ` fields would still be persistent aliasing. Unlocking buffers without worker lease redesign risks stale pointers and data races.
+- Scalability potential: Low uses cheapest phase-local views and minimal copy windows; Middle keeps normal cadence; High/Ultra spend saved memory safety margin on larger residency windows and richer telemetry without changing truth ownership.
+- Hardware Impact: Estimated 0 us saved until implemented. Expected low-end gain after implementation is reduced stall/crash risk, not deterministic frame-time savings.
+- Problem: `WorldChunkResidencyManager` stores vault-resolved `NativeArray ` views as long-lived fields and also owns direct persistent `NativeParallelHashMap`, `NativeQueue`, and `NativeList` fields.
+- Solution: Phase 1 must retain `VaultGenerationHandle ` fields for existing BufferID-backed arrays, add scoped resolve helpers, and migrate direct maps/lists/queues to DTO arrays/ring buffers only after public consumers and job contracts are wrapped.
+- Rejected Alternatives: Removing all native fields in one pass would break jobs, HLOD renderer binding, PDA map reads, and load queue semantics. Keeping direct collections as undocumented exceptions violates ownership doctrine.
+- Scalability potential: Low uses compact state arrays and bounded queues; Middle uses normal budgets; High/Ultra scale capacity and telemetry density by `GlobalQualityWeight` while keeping DTO layout and authority route fixed.
+- Hardware Impact: Estimated 0 us saved in Phase 0. Future i3/MX350 impact is lower allocator pressure and fewer relocation hazards during sector transitions.
+- Problem: Existing telemetry does not match requested single 64B streaming black-box route.
+- Solution: Record exact state: pager has `PagerTelemetryEntry` at 64B x 300, residency has `ChunkResidencyTelemetryEntry` at 72B x 300, and dump routing must target `Docs/AgentLogs/Dump_1305_Streaming.bin` in implementation phase.
+- Rejected Alternatives: Allocating private telemetry ring in MonoBehaviour or relying on `Debug.Log` on crash.
+- Scalability potential: Low records minimal flags/hashes at fixed capacity; Middle records normal state; High/Ultra may add richer optional telemetry through separate vault-owned lanes without changing critical ring layout.
+- Hardware Impact: New 64B x 300 ring cost would be 19.2 KB. Runtime savings in Phase 0: 0 us.
+- Problem: Compile verification is mandated, but project rules forbid `dotnet build` when CPU load is above 50 percent or compiler/build processes are active.
+- Solution: Sample CPU/build state before build. CPU was 83 percent and no build processes were active; compile verification remains pending.
+- Rejected Alternatives: Running build under prohibited CPU load, or claiming compile pass without running it.
+- Scalability potential: Not runtime-relevant.
+- Problem: original scanner missed `NativeParallelMultiHashMap`, leaving `_chunkSpatialLookup` invisible to automated report.
+- Solution: Add `NativeParallelMultiHashMap` to `Tools/VaultNativeAliasRoslynAudit/Program.cs` native collection coverage. This is scanner source correction only; no rebuild/rerun was performed in this pass.
+- Rejected Alternatives: Continuing to document `_chunkSpatialLookup` as permanent blind spot after identifying exact scanner gap.
+- Scalability potential: Static-only. Improves future proof quality for all tiers.
+- Problem: terrain pager blackbox dump path still used legacy `Dump_SHINOBU_245.bin` route and version.
+- Solution: Change `TerrainChunkPagerRuntime.cs` dump constants/comments to `Docs/AgentLogs/Dump_1305_Streaming.bin`, version `1305`, and `BLACKBOX_DUMP_1305_STREAMING`.
+- Rejected Alternatives: Leaving crash dumps under another agent identity, or claiming blackbox compliance in docs only.
+- Scalability potential: Low/Middle/High/Ultra unchanged; crash evidence route is identity/forensics, not fidelity.
+- Hardware Impact: 0 us runtime. Only path/version constants changed.
+Source lines scanned 189; retained 45; overflow-important omitted 109.
+
+FILE AgentLogs\Rationale_1306.md bytes=131960 done=0 blockers=6 pendingHits=22 selected=45
+- # Rationale_1306 - MEMORY_SOVEREIGN_CONSTRUCTION_EXORCIST
+- Domain: Assets/Project/Scripts/Construction
+- Evidence: STATIC_SOURCE_PENDING
+- ## Decision 000 - Phase 0 Evidence Path
+- Problem: Task requires eradication of persistent native aliases without false positives from local job-scoped native views.
+- Solution: Use Roslyn syntax scan for FieldDeclarationSyntax inside Construction, then perform targeted code reads for lifecycle and consumers. This follows DOD ownership proof: one owner, one route, one proof artifact.
+- Rejected Alternatives: Regex-only scan is too noisy; direct edits before owner mapping can break consumers and race fences.
+- Scalability potential: Low tier gets safer relocation and zero hidden native leaks; Middle/High/Ultra can spend saved stability margin on richer base visuals without bloating gameplay truth.
+- Hardware Impact: Static scan cost is offline. Runtime target is no extra hot-path work on i3/MX350; expected gain cannot be measured until offenders are known.
+- ## Decision 001 - Mandate Set
+- Problem: Construction memory touches native ownership, ARM64 DTO layout, telemetry, power/pipe logistics, flooding, registry access, zero-GC, and fake-first simulation.
+- Solution: Loaded eight mandates before coding: native memory/job protocol, ARM64 layout law, postmortem telemetry, logistics networks, fluid incursion, zero-GC, global registry DI, cinematic cheat protocol.
+- Rejected Alternatives: Reading unrelated AI/render/audio mandates would inflate context and increase off-domain drift.
+- Scalability potential: Low/Middle/High/Ultra decisions must remain continuous through GlobalQualityWeight, not binary quality switches.
+- Hardware Impact: No runtime impact; reduces design error risk before touching MX350-sensitive systems.
+- ## Decision 002 - Domain Path Correction
+- Problem: Prompt names `Assets/Project/Scripts/Construction`, but that path does not exist. scan there would prove nothing.
+- Solution: Use `Assets/_Project/Scripts/Construction`, active first-party Construction folder under project structure declared by `AGENTS.md`.
+- Rejected Alternatives: Creating missing prompt path would be architectural sabotage. Reporting zero violations from nonexistent path would be false report.
+- Scalability potential: Correct path exposes real hot-path native aliases that can affect weak and high-end devices through relocation crashes.
+- Hardware Impact: Offline-only. Prevents false clean report that would leave i3/MX350 crash risk untouched.
+- ## Decision 003 - Roslyn Tool Reuse
+- Problem: Task 01 requires field-level AST separation of local native views from persistent native fields.
+- Solution: Reused existing `Tools/VaultNativeAliasRoslynAudit` net10 binary against Construction folder and emitted `Docs/Reports/VAULT_EXORCISM_REPORT_1306.json`.
+- Rejected Alternatives: Regex-only report would misclassify locals and job parameters; launching rebuild while CPU was above 50 percent violates AGENTS.
+- Scalability potential: Offline proof enables targeted migration instead of broad refactor churn.
+- Hardware Impact: 0 runtime us. Static result exposes 155 candidate persistent aliases.
+- ## Decision 004 - BufferID Planning Without Code Mutation
+- Problem: Several offenders already have established BufferIDs; others have no exact enum lanes and cannot be migrated safely in Phase 0 without route-card review.
+- Solution: Map existing drone/catalog/socket/foundation lanes to current IDs and reserve planned construction memory-sovereignty range `12876000..12876070` for missing FluidPipe/HabitatGraph/LogisticsScheduler lanes.
+- Rejected Alternatives: Reusing unrelated existing IDs risks type identity break; adding enum values during Phase 0 would exceed archaeology scope.
+- Scalability potential: Low tier gets stable relocation; high/ultra can increase visual proxy richness after state ownership is safe.
+- Hardware Impact: 0 runtime us in Phase 0. Later migration removes stale-pointer crash class.
+- ## Decision 005 - Telemetry DTO Naming Conflict
+- Problem: `ConstructionTelemetryEntry` already exists as 64-byte validation telemetry DTO, but Phase 0 needs memory-sovereignty telemetry fields.
+- Solution: Phase 0 report records conflict and plans either reviewed ABI migration of existing DTO or new `ConstructionMemoryTelemetryEntry` naming exception.
+- Rejected Alternatives: Adding duplicate `ConstructionTelemetryEntry` would not compile; overloading existing fields without documentation would corrupt validation telemetry meaning.
+- Scalability potential: Low/Middle/High/Ultra telemetry remains fixed 300 frames and 64B entries; no gameplay-truth bloat.
+- Hardware Impact: Planned ring is 19.2 KB. Runtime write target remains sub-0.05 ms when implemented.
+- ## Decision 006 - Build Verification Deferred By Protocol
+- Problem: Phase 0 produced docs/report files only, but AGENTS asks for verification. CPU sampled at 90 percent.
+- Solution: Do not launch dotnet build. Record static Roslyn parse result as current proof and mark compile as blocked by CPU protocol.
+- Rejected Alternatives: Violating >50 percent CPU build ban to satisfy checklist would create contention with other agents.
+- Scalability potential: No device-tier impact.
+- Hardware Impact: Avoided adding build load during active multi-agent work.
+Source lines scanned 663; retained 45; overflow-important omitted 522.
+
+FILE AgentLogs\Rationale_1307.md bytes=61225 done=0 blockers=3 pendingHits=8 selected=45
+- # Rationale_1307
+- ## 2026-05-25 Phase 0 Boot
+- Problem: Task source path was ambiguous because current_batch.md was not present at repository root.
+- Solution: Used CLI search and extracted ` ` from `Docs/Tasks/CURRENT_BATCH.md`, active task file in batch folder.
+- Rejected Alternatives: Did not use archived CURRENT_BATCH files because AGENTS.md forbids stale batch context; did not infer task list from chat prose.
+- Scalability potential: No runtime effect. Prevents wrong-domain edits that would waste integration time across low, middle, high, and ultra targets.
+- Hardware Impact: 0 us runtime; i3/MX350 impact is prevention of false work, not frame savings.
+- Problem: Native-memory rules for audio propagation require more than leak cleanup; stale aliases can violate DataVault relocation.
+- Solution: Phase 0 will scan for persistent native fields, map ownership, DTO layout, accessors, and telemetry before code mutation.
+- Rejected Alternatives: Rejected broad refactor and regex-only hit list as insufficient; AST classification is required to separate fields from locals.
+- Scalability potential: Low tier gets bounded acoustic cadence and safe fallback; middle/high/ultra can increase visual/audio detail through continuous GlobalQualityWeight without changing memory ownership.
+- Hardware Impact: Expected runtime gain is unknown until source scan and profiler proof. Static target is 0 B GC and no DataVault relocation crash on i3/MX350.
+- Problem: requested domain folder contains no C# files, while active propagation namespace file is one level higher.
+- Solution: Ran strict-folder Roslyn audit and separate Audio-scope Roslyn audit filtered to `Hecton8.Audio.Propagation`; wrote both artifact paths into `VAULT_EXORCISM_REPORT_1307.json`.
+- Rejected Alternatives: Did not claim empty folder proves acoustic engine is clean; did not treat unrelated Audio systems as my domain.
+- Scalability potential: Low/middle/high/ultra all depend on same route truth; wrong folder ownership would send future fixes to dead space.
+- Hardware Impact: 0 us runtime; prevents false integration work.
+- Problem: Portal OpenSet/ClosedSet buffers use raw IDs `70028` and `70029`, which collide with current thermodynamics BufferID enum values.
+- Solution: Marked as RED_STATIC in Phase 0 report; Phase 1 must assign named, unique BufferID enum entries before any runtime verification claim.
+- Rejected Alternatives: Rejected continuing to use raw cast IDs because GlobalDataVault descriptor consistency is impossible when two owners share one numeric identity.
+- Scalability potential: Low tier avoids cross-domain memory corruption under pressure; middle/high/ultra can increase acoustic route cadence without colliding with thermodynamics memory.
+- Hardware Impact: Exact microseconds unknown. Prevented failure mode is DataVault owner collision and wrong-buffer resolution, not measured CPU win yet.
+- Problem: Portal `AcousticTelemetryEntry` is 40-byte explicit struct, but prompt requires 64 bytes.
+- Solution: Logged required Phase 1 layout expansion: add BufferID, generation/status/failure fields and explicit named padding while keeping total size multiple of 8.
+- Rejected Alternatives: Rejected leaving implicit telemetry gaps or reporting blackbox compliance from current 40-byte record.
+- Scalability potential: Low gets compact failure flags; middle/high/ultra can retain richer lock/generation timing without changing ring route.
+- Hardware Impact: +24 bytes per frame entry, 300 entries = +7200 bytes native memory. CPU cost remains one fixed struct store per portal result.
+- ## 2026-05-25 Phase 1 APEX Reaudit
+- Problem: Spatial audio scratch BufferID constants used raw values 70015-70029, colliding with active Thermodynamics enum values 70016-70029.
+- Solution: Added named `BufferID` entries `SpatialAudioVirtualVoiceTuning` through `SpatialAudioPortalClosedSet` in free 72430-72444 audio range and rewired `SpatialAudioManager` constants to those names.
+- Rejected Alternatives: Rejected keeping raw casts or only repairing two portal scratch IDs; adjacent acoustic and virtual voice pools shared same collision lane.
+- Scalability potential: Low/middle devices avoid cross-domain wrong-buffer resolves under memory pressure; high/ultra can raise acoustic cadence without aliasing Thermodynamics state.
+- Hardware Impact: No measured microsecond gain. Prevented failure mode is memory route corruption; static cost is 15 enum constants.
+- Problem: Portal blackbox entries did not carry source BufferID, generation, or failure code, so lock/capacity failures were silent.
+- Solution: Expanded `AcousticTelemetryEntry` to 64 bytes and wired `WriteAcousticPortalFailureBlackBox` into work/scratch acquisition failures after partial locks are released.
+- Rejected Alternatives: Rejected managed log strings in failure branches and rejected throwing exceptions from hot acquisition paths.
+- Scalability potential: Low tier degrades by skipping one acoustic update with binary failure evidence; high/ultra retain detailed failure provenance without changing DTO size.
+- Hardware Impact: Success path remains one fixed native struct store. Failure path adds one blackbox write; estimated under 5 us on i3/MX350, unprofiled.
+- Problem: Touched explicit structs still had implicit tail gaps, which weakens ARM64 layout proof.
+- Solution: Added named padding fields at `SoundEmissionSignal` offset 60 and `AcousticPathResult` offset 100; initialized them in constructors/object initializers.
+- Rejected Alternatives: Rejected trusting implicit `StructLayout` tail padding because mandate requires visible padding fields.
+- Scalability potential: Same across low/middle/high/ultra; ABI is now stable for layout guards and binary dump readers.
+- Hardware Impact: 0 us runtime; no size growth because padding occupied existing tail gaps.
+- Problem: APEX review required proof rather than broad claim of zero-GC.
+- Solution: Ran Roslyn native alias audits with correct `--output` argument, full project Roslyn parse check, line-range managed text scans, and wrote byte offset map to `VAULT_EXORCISM_REPORT_1307.json`.
+Source lines scanned 459; retained 45; overflow-important omitted 314.
+
+FILE AgentLogs\Rationale_1308.md bytes=46591 done=0 blockers=12 pendingHits=20 selected=45
+- # Rationale 1308 - MEMORY_SOVEREIGN_AUDIO_SYNTHESIS_EXORCIST
+- ## Decision 001 - Phase 0 Evidence Route
+- Problem: Persistent native aliases in audio synthesis cannot be proven safely by text grep because locals and fields share syntax tokens.
+- Solution: Use Roslyn AST scanner confined to `Assets/Project/Scripts/Audio/Synthesis` to classify field declarations, owning type, generic native container type, and line span.
+- Rejected Alternatives: Regex-only grep is useful for discovery but cannot separate local variables from fields. Manual inspection alone is not machine-repeatable.
+- Scalability potential: Low/Middle/High/Ultra all benefit because DataVault handles preserve relocation safety without changing DSP quality math.
+- Hardware Impact: Prevents dangling native pointer crashes and relocation stalls on i3/MX350-class systems; estimated hot-path GC impact target remains 0 B, microsecond savings pending scan.
+- ## Decision 002 - Domain Boundary
+- Problem: GlobalDataVault interfaces may live outside synthesis folder, but assignment boundary forbids broad edits without critical justification.
+- Solution: Phase 0 will inspect cross-domain interfaces as read-only context and mutate only `Assets/Project/Scripts/Audio/Synthesis` unless compile-critical interface shim is proven necessary.
+- Rejected Alternatives: Editing Core/DataVault contracts upfront would risk cross-agent conflict and violate owner-route discipline.
+- Scalability potential: Keeps audio work decoupled from other agents while preserving Low to Ultra quality scaling inside synthesis.
+- Hardware Impact: Avoids integration churn and compile-wall risk; microsecond impact is indirect until concrete offending fields are found.
+- ## Decision 003 - Build Discipline
+- Problem: Project decree forbids `dotnet build` while CPU is busy or another compiler is running.
+- Solution: Before any build attempt, check CPU and `dotnet`/`csc` processes. Static Roslyn/source scans can run first without compile contention.
+- Rejected Alternatives: Blind rebuild during active multi-agent batch can waste CPU and create false compiler noise.
+- Scalability potential: Build discipline does not affect runtime tiers, but protects iteration throughput across agents.
+- Hardware Impact: Prevents avoidable CPU contention on weak development machines; runtime microsecond impact none.
+- ## Decision 004 - Actual Synthesis Path
+- Problem: prompt path `Assets/Project/Scripts/Audio/Synthesis` does not exist in this checkout.
+- Solution: Use factual first-party path `Assets/_Project/Scripts/Audio/Synthesis`, matching project folder contract in `AGENTS.md`, and record mismatch in Phase 0 ledger.
+- Rejected Alternatives: Creating missing `Assets/Project` path or reporting empty scan would fabricate evidence.
+- Scalability potential: No runtime tier effect; this preserves source-of-truth integrity for all future Low/Middle/High/Ultra audio work.
+- Hardware Impact: Runtime impact none; prevents false negative audit.
+- ## Decision 005 - Confirmed Memory Offenders
+- Problem: Roslyn found 26 persistent candidates; 18 are transient `*VaultViews` fields and 8 are true persistent raw pointer fields.
+- Solution: Treat only `VocalBankPlaybackRuntime` pointer fields as confirmed Phase 1 offenders: `_statePtr`, `_codecPtr`, `_telemetryPtr`, `_countersPtr`, `_waveformPtr`, `_mockBankPtr`, `_bankPtr`, `_mmfPointer`.
+- Rejected Alternatives: Refactoring transient job fields would break valid Burst parameter passing. Removing `*VaultViews` would make code less explicit without solving persistence.
+- Scalability potential: Low tier gains crash resistance under vault relocation; Middle/High/Ultra keep procedural voice fidelity because buffers stay vault-owned and quality math remains continuous.
+- Hardware Impact: Prevents stale pointer access under defrag/hot-swap. Microseconds saved are not claimed until runtime proof; expected gain is stability, not faster math.
+- ## Decision 006 - DTO And Telemetry Strategy
+- Problem: prompt requests DTO extraction and telemetry planning, but active synthesis DTOs are already explicit-layout and 64-byte telemetry rings already exist.
+- Solution: Do not rewrite DTOs in Phase 0. Use existing `VocalTelemetryEntryDTO`, `AudioDSPTelemetryEntry`, and `AudioDspTelemetryEntry` as anomaly sinks; expand validators later where missing.
+- Rejected Alternatives: Creating new generic `AudioSynthesisTelemetryEntry` now would duplicate existing owner-specific facts and require new BufferIDs/global route review.
+- Scalability potential: Existing per-system telemetry scales by owner and avoids bloating one monolithic audio payload across Low/Middle/High/Ultra tiers.
+- Hardware Impact: 64-byte ring writes are cache-line sized; expected anomaly write cost <1 us/event on i3/MX350.
+- ## Decision 007 - Persistent Pointer Exorcism
+- Problem: `VocalBankPlaybackRuntime` stored eight long-lived raw pointers and two MMF owner fields across DataVault compaction/hot-swap boundaries.
+- Solution: Remove persistent pointer/MMF fields and keep only `VaultGenerationHandle ` descriptors plus scalar bank length/state. Resolve `NativeArray` views at each phase boundary and derive raw pointers only inside immediate callback/job scope.
+- Rejected Alternatives: Periodic `RefreshUnsafePointers` was rejected because it still leaves stale aliases between refreshes and cannot prove safety during hot-swap.
+- Scalability potential: Low devices get fail-closed silence instead of crash under relocation; Middle/High/Ultra keep same vocal DSP math and can spend saved stability budget on higher-quality radio/distortion scalars.
+- Hardware Impact: Runtime speedup is not claimed. Stability gain is removal of dangling pointer reads; expected hot overhead is few DataVault lock checks, pending profiler proof.
+- ## Decision 008 - Bank Bytes Ownership
+- Problem: `vocal_banks.h8bin` was exposed through memory-mapped external pointer consumed by audio callback.
+Source lines scanned 385; retained 45; overflow-important omitted 244.
+
+FILE AgentLogs\Rationale_1309.md bytes=47402 done=0 blockers=12 pendingHits=6 selected=45
+- # Rationale 1309 - MEMORY_SOVEREIGN_UI_PRESENTATION_EXORCIST
+- Status: APEX STATIC PASS / LISTENER REGISTRY FIX / HOT VALUE-CONSTRUCTOR SYNTAX PURGE / CURRENT PASS BUILD NOT RUN PER USER BUILD-RARE ORDER / PREVIOUS BUILD BLOCKED BY NON-DOMAIN ERRORS
+- ## Decision 000 - Domain Path Normalization
+- Problem: Prompt names `Assets/Project/Scripts/UI`, but live repository uses `Assets/_Project/Scripts/UI` and `Assets/_Project/Scripts/Visor`. literal `Assets/Project` scan returns no source files.
+- Solution: Use live source authority under `Assets/_Project/Scripts/UI` and visor/presentation-adjacent code under `Assets/_Project/Scripts/Visor`, while recording mismatch. This follows domain file's current-source precedence and avoids fake zero-result rep...
+- Rejected Alternatives: Literal scan of missing `Assets/Project` path would create false clean result. Broad project-wide edits would violate domain boundary.
+- Scalability potential: Low tier avoids unnecessary audit span; Middle/High/Ultra maintain exact source ownership and prevent unrelated churn.
+- Hardware Impact: Static scan only. Runtime gain unknown until offenders are proven and patched. Estimated current hot-path gain: 0 us pending evidence.
+- ## Decision 001 - Phase 0 Evidence First
+- Problem: assignment demands Vault migration, but code reality must prove persistent native aliases before mutation. Blind substitution risks inventing dependencies and breaking parallel agents.
+- Solution: Run AST/static scans first, build machine-readable ledgers, then patch only proven offenders. DOD practice: one owner, one route, one proof artifact.
+- Rejected Alternatives: Search-and-replace `NativeArray` fields with fake handles would be compile-hostile and architecturally dishonest.
+- Scalability potential: Low/Middle/High/Ultra all benefit from only removing real alias hazards, not adding ornamental Vault surfaces.
+- Hardware Impact: No runtime impact yet. Estimated saved time: 0 us until offenders are removed and verified.
+- ## Decision 002 - Event Lane NativeQueue Removal
+- Problem: `BaseIntegrityEvents`, `NotificationEvents`, `PDAIntrusionEvents`, and `SpectrumEvents` owned persistent `NativeQueue ` fields. These lanes are presentation dispatch buffers, not cross-domain native truth, and they were outside `GlobalDataVault` ow...
+- Solution: Replace those persistent unmanaged queues with `FixedUiEventQueue ` cold fixed-capacity ring lanes. route remains main-thread presentation dispatch; no gameplay truth or DTO authority moved. DOD practice: one fact owner, no hot `GlobalRegistry` po...
+- Rejected Alternatives: Keeping `NativeQueue ` plus `NativeMemorySentinel` preserves forbidden alias. Routing these tiny same-thread events through Vault buffers would create fake dependencies and higher lock cost than payload deserves. Routing through legac...
+- Scalability potential: Low tier uses same fixed caps and drops excess events fail-closed. Middle/High/Ultra spend saved allocator/sentinel overhead on existing visual feedback, not extra gameplay truth.
+- Hardware Impact: Removes persistent native queue allocation and prewarm/dispose paths from four event systems. Hot-path estimate: 1-4 us saved during burst event enqueue/flush spikes on i3/MX350-class CPUs; normal frames near 0 us. No per-frame GC introduced.
+- ## Decision 003 - MockTextSpan Pointer Exorcism
+- Problem: `MockTextSpan` stored `ushort* Buffer` inside Vault DTO. That is stale-pointer hazard across Vault compaction and violates descriptor sovereignty even though jobs also received phase-local pointers.
+- Solution: Replace pointer with `BufferId` and `BufferGeneration` fields while keeping struct size at 32 bytes. Scheduled jobs continue to receive raw pointers only as transient `IJob` parameters resolved inside owner phase.
+- Rejected Alternatives: Leaving pointer unused but present would keep Roslyn audit red. Passing `VaultGenerationHandle ` into Burst jobs was rejected; jobs consume physical views, not handles.
+- Scalability potential: Low/Middle/High/Ultra share stable descriptor metadata; visual quality remains controlled by existing continuous tuning and `GlobalQualityWeight`.
+- Hardware Impact: Runtime speed change is approximately 0 us. Risk reduction is stale pointer removal on compaction/live reload; ARM64 DTO size remains 32 bytes.
+- ## Decision 004 - Vault View Handles Instead Of Persisted Views
+- Problem: `DynamicDecalFrameStats.UploadBuffer` persisted `NativeArray ` view beyond owner finalize phase, and `PdaH8lrLoreStore` persisted raw `byte*` base pointer.
+- Solution: Store `VaultGenerationHandle ` plus capacity in decal frame stats and resolve upload view immediately before GPU upload. Remove lore-store base pointer field and resolve vault mirror pointer per read accessor. lore mirror write uses `TryAcquireWri...
+- Rejected Alternatives: Copying decal upload data into managed array would create GC pressure and duplicate memory bandwidth. Re-enabling memory-mapped persistent pointers would preserve stale pointer hazard on platforms that support MMF.
+- Scalability potential: Low tier keeps one upload scratch buffer and capped read spans. Middle/High/Ultra can raise existing visual density through runtime's continuous quality paths without changing authority ownership.
+- Hardware Impact: Avoids stale `NativeArray` and pointer lifetime faults. Microsecond estimate: 0-8 us saved on frames that avoided failed/stale upload resolution; main benefit is correctness under compaction.
+- ## Decision 005 - Verification Boundary
+- Problem: code needed proof without violating coordinator build gate. latest gate reported CPU at 100% and active `csc`/`dotnet` processes.
+- Solution: Do not launch `dotnet build`. Use existing Roslyn native-alias audit executable to parse `Assets/_Project/Scripts/UI` and `Assets/_Project/Scripts/Visor`. Result: `forbiddenPersistentCandidates=0`, `parseFailures=0` in both ledgers. Proof report w...
+- Rejected Alternatives: Launching another build would violate explicit CPU/process rule. Reporting fake compile pass is rejected.
+- Scalability potential: Verification path is static and device-independent. Low/Middle/High/Ultra runtime behavior is unaffected by this audit pass.
+- Hardware Impact: No runtime impact. Verification time only. Estimated saved runtime: 0 us; prevents shipping persistent native alias regressions.
+- ## Decision 006 - Inline Queue Slots, Not Managed Arrays
+- Problem: first fixed UI event queue still had managed `T[]` backing store. It removed `NativeQueue`, but it did not satisfy APEX no-hidden-managed-buffer standard for hot presentation event lanes.
+- Solution: Replace backing array with explicit inline slots `_item0` through `_item23`. Enqueue/dequeue use index switches and `default` clearing. Event payload construction now uses `default` plus field assignment instead of object initializers.
+- Rejected Alternatives: `NativeQueue ` preserved original forbidden persistent alias. `T[]` preserved managed heap backing. Routing local visual events through GlobalDataVault would create fake global truth owner for same-thread UI dispatch.
+- Scalability potential: Low tier drops overflow fail-closed; Middle/High/Ultra keep deterministic event latency and spend cycles on presentation effects.
+- Hardware Impact: 1-4 us saved during burst dispatch spikes on i3/MX350-class hardware by removing native queue prewarm/sentinel work and managed backing array pressure. Normal frames near 0 us.
+- ## Decision 006B - Inline Listener Registries, Not ListenerSlot Arrays
+Source lines scanned 376; retained 45; overflow-important omitted 143.
+
+FILE AgentLogs\Rationale_1310.md bytes=41882 done=0 blockers=14 pendingHits=9 selected=45
+- # Rationale_1310
+- Status: IMPLEMENTED PARANOID-SCANNER-PASS-50 PERSISTENT-ALIAS-ADMISSION-FENCE NO-BUILD-REQUESTED
+- ## Decision 001 - Scope Boundary
+- Problem: Prompt grants authority over central unmanaged storage, but project worktree is dirty across hundreds of files.
+- Solution: Restrict implementation to `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs`, `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`, editor/test tooling required by tasks, and 1310-owned docs/reports.
+- Rejected Alternatives: Broad Core refactor; touching unrelated GlobalRegistry/SignalBus debt; reverting external dirty files.
+- Scalability potential: Low/Middle/High/Ultra unchanged because this protects memory truth rather than adding gameplay load.
+- Hardware Impact: i3/MX350 gain is crash/stall avoidance; estimated hot-path added cost target under 5 us per lock path, 0 B GC.
+- ## Decision 002 - Mandate Set
+- Problem: Task spans native memory, atomics, ARM64 layout, telemetry, and phase boundaries.
+- Solution: Read seven relevant mandates: native memory/jobs, arena allocator, ARM64 DTO layout, crash telemetry, zero-GC, performance budgets, execution phases.
+- Rejected Alternatives: Reading all 35 mandates before any source inspection; insufficient and slower for this narrow memory domain.
+- Scalability potential: Low uses fail-closed fewer relocations; Middle keeps normal cadence; High/Ultra may run richer telemetry without changing gameplay truth.
+- Hardware Impact: Avoids expensive global locks; expected low-end benefit is avoiding multi-ms stalls from unsafe relocation retries.
+- ## Decision 003 - Race Window Classification
+- Problem: Current write-lock and buffer-pin paths are partially guarded but publish state in unsafe order for compaction/growth.
+- Solution: Classify races before editing: writer id before block pin, block pin before active mask, arena growth without active mask, telemetry cursor naked writes.
+- Rejected Alternatives: Add one managed lock around all allocator operations; rejected because it serializes Core memory and can stall Burst admission on low-end CPUs.
+- Scalability potential: Low skips relocation/growth under contention; Middle retries next owner phase; High/Ultra can move more bytes only when active masks are zero.
+- Hardware Impact: i3/MX350 avoids stale-pointer crash class; expected cost is volatile/interlocked operations, target under 10 us per contested lock.
+- ## Decision 004 - DTO Layout Boundary
+- Problem: Telemetry and allocator metadata must stay ARM64-safe while adding sync evidence.
+- Solution: Keep existing sizes: `VaultArenaBlock` 32 B, `VaultBufferMeta` 64 B, `MemoryDefragTelemetryEntry` 128 B. Use existing reserved fields for skip counters where possible.
+- Rejected Alternatives: Enlarge `VaultArenaBlock` to one full cache line; rejected because it doubles block-map memory and changes established ABI without compile/runtime proof.
+- Scalability potential: Low preserves smaller metadata cache footprint; High/Ultra can spend saved memory on richer presentation telemetry instead of allocator bloat.
+- Hardware Impact: MX350/i3 keeps block scan cache density; false-sharing risk remains noted for adjacent 32-byte block mutations.
+- ## Decision 005 - Block Mutation Gate
+- Problem: Writer locks, pin locks, frees, compaction moves, and arena growth all mutate `VaultArenaBlock` state; early active-mask publication created pending-bit race where later unlock could clear bit for new waiter on same 32-bit bucket.
+- Solution: Add `_blockMutationGate`; publish `SetActiveLockBit` only while gate is held and immediately before `ActiveWriterSystemID` or `Reserved1` publication. Clear active bits under same gate or through bounded gated helper.
+- Rejected Alternatives: Managed `lock`; rejected for hot allocator admission. Pending mask without ref counts; rejected because same-bit collisions remain possible.
+- Scalability potential: Low skips locks/growth under contention; Middle retries next phase; High/Ultra can compact larger slices only when lock masks are objectively zero.
+- Hardware Impact: i3/MX350 pays one interlocked gate on lock/pin/free paths, estimated 2-8 us under light contention, in exchange for eliminating stale arena aliases during relocation.
+- ## Decision 006 - Arena Growth Fence
+- Problem: `H8Memory.ReallocateRaw` frees old arena pointer; any active NativeArray alias becomes dangling if growth runs while job owns buffer view.
+- Solution: `TryGrowArenaForBytes` and `TryGrowArena` now check `HasActiveBurstLocks(0u)` and `_compactionFence`, queue `_deferredArenaGrowthBytes`, and recheck inside `_blockMutationGate` before `H8Memory.ReallocateRaw`.
+- Rejected Alternatives: Let `H8Memory.ReallocateRaw` discover aliases; rejected because raw allocator cannot know DataVault job ownership. Blocking until locks drain; rejected as hang vector.
+- Scalability potential: Low defers growth and survives with less relocation; Middle retries at dispatcher phase; High/Ultra can grow/relocate once active masks clear.
+- Hardware Impact: MX350 avoids access violation class; deferred growth costs one volatile long and telemetry write on blocked pressure.
+- ## Decision 007 - Telemetry And Dump Route
+- Problem: Existing blackbox ring did not record locked compaction skips and cursor publication used plain writes; 1310 requires raw `Dump_1310_MemorySentry.bin` route on sync failure.
+- Solution: Reuse telemetry offset 76 as `LockedSkipCount`, write entries through `NativeArrayUnsafeUtility.GetUnsafePtr` + `UnsafeUtility.MemCpy`, publish cursor/count with volatile/interlocked operations, and cold-start one background dump worker guarded by...
+- Rejected Alternatives: `BinaryWriter` for 1310 dump; rejected because it allocates wrappers in fault path. Spawning `new Thread` from hot fault paths; rejected because it violates hot zero-GC. `Debug.Log` only; rejected because post-mortem data must survive...
+- Scalability potential: Low records only fixed 300-entry ring; Middle/High/Ultra can interpret same binary evidence without changing gameplay DTO shape.
+- Hardware Impact: Hot telemetry remains unmanaged pointer copy; dump is cold and backgrounded. Low-end runtime path stays 0 B GC.
+- ## Decision 008 - Fuzzer And Scanner Boundary
+Source lines scanned 268; retained 45; overflow-important omitted 155.
+
+FILE AgentLogs\Rationale_1311.md bytes=40274 done=0 blockers=12 pendingHits=8 selected=45
+- # Rationale_1311 - SIGNAL_CORRIDOR_SPSC_ARCHITECT
+- Status: STRICT STATIC GREEN / RUNTIME NOT PROVEN
+- ## 2026-05-25 Phase 0 Bootstrap
+- Problem: requested prompt path was described as root `current_batch.md`, but active batch reality is `Docs/Tasks/CURRENT_BATCH.md`; exact ` ` exists there.
+- Solution: Use CLI extraction from `Docs/Tasks/CURRENT_BATCH.md` with attribute-tolerant XML tag match. Treat only `id="1311"` block as active assignment.
+- Rejected Alternatives: Reading neighboring `id="1300"` block or archived batches; both would contaminate domain and task count.
+- Scalability potential: No runtime effect. Prevents wrong-domain edits that could break core signal ownership.
+- Hardware Impact: 0 us runtime; process hygiene only.
+- ## 2026-05-25 Phase 0 Source Audit
+- Problem: Active `SignalBus ` storage is not `SpscSignalRingBuffer ` fallback. `SignalBusRuntime.cs` declares `private static NativeQueue _queue`, allocates it during lane initialization, gates push with `_queue.Count`, enqueues in `TryPush`, exposes `Native...
+- Solution: Record every active queue allocation/read/write/flush surface in `Docs/Reports/SIGNAL_SPSC_PHASE0_LEDGER_1311.json` before code mutation.
+- Rejected Alternatives: Claiming project already uses SPSC because `SpscSignalRingBuffer ` exists on disk. Existence is not call-site integration.
+- Scalability potential: Low/MX350 gains only after Phase 1 removes `NativeQueue .Count` and queue-linked storage from active lanes. Middle/High/Ultra can spend saved flush budget on richer telemetry and visual-only consumers, but no runtime gain is claimed f...
+- Hardware Impact: Static audit only; measured gain absent. Expected target after replacement is removal of O(N) Count traversal and less cache-hostile queue traversal during signal flush.
+- Problem: `SpscSignalRingBuffer ` has 64-byte explicit `PaddedSignalIndex`, but parent struct is implicit sequential and contains `NativeArray ` before `_head`/`_tail`. Source proves cursor wrappers are 64 bytes and adjacent; it does not prove parent `_head`...
+- Solution: Mark cursor alignment as partial source proof. Phase 1 must either move cursor state into explicit 128-byte header or accept documented deviation from prompt's parent-layout wording because `NativeArray ` size varies with Unity safety configuration.
+- Rejected Alternatives: Writing fake byte-offset claim without compiled `UnsafeUtility.GetFieldOffset` evidence, or applying `[StructLayout(LayoutKind.Explicit, Size=128)]` blindly over generic native-container wrapper.
+- Scalability potential: Low/Middle benefit from avoiding false sharing if header is made explicit. High/Ultra benefit only if producer storms no longer serialize on one shared queue cursor.
+- Hardware Impact: Static source effect only. No microsecond claim without profiler or Burst/editor layout proof.
+- Problem: strict two-file replacement cannot remove `NativeQueue .ParallelWriter` from job producers without breaking public writer signatures. Broad project source stores `SignalBus .ParallelWriter` as `NativeQueue .ParallelWriter` in multiple job structs.
+- Solution: Phase 1 must introduce unmanaged `SignalBus .ParallelWriter` backed by CAS-reserved MPSC ring and then migrate producer fields/calls, or keep documented legacy bridge that is not claimed as complete removal.
+- Rejected Alternatives: Keeping hidden NativeQueue bridge while reporting "NativeQueue eliminated"; rejected as false report.
+- Scalability potential: Low tier needs bounded drops with no queue growth. Middle uses normal frame caps. High/Ultra can retain richer telemetry and visual-only overflow consumers after core gameplay lanes are bounded.
+- Hardware Impact: Source-only risk model. No runtime numbers yet.
+- ## 2026-05-25 Ring Primitive Patch
+- Problem: previous SPSC fallback placed cursor padding in two private 64-byte structs, but parent wrapper still hid cursor offsets behind `NativeArray ` and other fields. It did not satisfy actual cache-line proof needed for cursor isolation.
+- Solution: Introduced `SignalRingCursorState` with `[StructLayout(LayoutKind.Explicit, Size = 128)]`, `Head` at byte 0, and `Tail` at byte 64. `SpscSignalRingBuffer ` now stores cursor state in native one-row header and mutates it through volatile/interlocke...
+- Rejected Alternatives: Forcing explicit layout onto generic parent wrapper. That would be fake proof because Unity `NativeArray ` embeds configuration-dependent safety state.
+- Scalability potential: Low/MX350 avoids producer/consumer cursor false sharing once primitive is active. Middle/High/Ultra can raise telemetry richness after queue traversal cost is removed.
+- Hardware Impact: No measured microseconds. Static source effect only; compile and profiler proof pending.
+- Problem: SPSC cannot safely accept multiple producers. Existing job producers expose `NativeQueue .ParallelWriter`, so real replacement needs MPSC reservation semantics.
+- Solution: Added `MpscSignalRingBuffer ` with bounded power-of-two storage, CAS tail reservation, per-slot publication tickets, and nested unmanaged `ParallelWriter`. Consumer reads only when expected slot ticket is published.
+- Rejected Alternatives: Using SPSC for job producers, which would corrupt under concurrent writes; keeping Unity `NativeQueue .ParallelWriter`, which preserves current queue-backed lie.
+- Scalability potential: Low tier drops on full without allocation or growth. Middle uses configured frame caps. High/Ultra can increase optional diagnostic/visual lanes after contention is bounded.
+- Hardware Impact: Expected saving is removal of NativeQueue linked storage and Count traversal only after SignalBus integration. Current patch is primitive-only; no runtime saving claimed.
+- Problem: Build verification is required but CPU guard blocked it.
+- Solution: Sampled CPU after source patch; `_Total` processor time was 83.1%, so no `dotnet build` was launched. Scoped `git diff --check` passed with CRLF warnings only.
+- Rejected Alternatives: Violating explicit no-build-under-load rule.
+- Hardware Impact: 0 us runtime; verification blocked by host load.
+- Problem: Agent tracking files did not exist for `1311`, so mandated state machine had no local disk memory.
+- Solution: Create `Docs/Tasks/Status_1311.md` and `Docs/AgentLogs/Rationale_1311.md` before source mutation.
+- Rejected Alternatives: Chat-only tracking; rejected because context compression loses state and project rules require disk evidence.
+- Scalability potential: No runtime effect. Prevents incomplete or duplicated passes.
+- ## 2026-05-25 Paranoid Review Correction
+- Problem: first explicit cursor header used `int Head` and `int Tail`. That isolated cache lines, but it left implicit 4-byte gaps after each cursor and kept shorter wraparound horizon than required for long-running signal corridor.
+Source lines scanned 287; retained 45; overflow-important omitted 182.
+
+FILE AgentLogs\Rationale_1312.md bytes=34840 done=0 blockers=7 pendingHits=7 selected=45
+- Status: STATIC VERIFIED / PARANOID AUDIT VERIFIED / BUILD NOT RUN BY USER GATE
+- Problem: Active prompt requires fixing voxel pager directory slot math and RLE overflow without corrupting concurrent agent work.
+- Solution: Scope edits to H8BinaryWorldPager.cs, VoxelDeltaProcessor.cs, and 1312-owned proof artifacts unless compile-visible dependency requires minimal interface bridge.
+- Rejected Alternatives: Repository-wide cleanup rejected because worktree is dirty from many agents and cross-domain edits would create architectural sabotage. Chat-only reporting rejected because batch protocol requires disk artifacts.
+- Scalability potential: Low uses deterministic modulo/dense fallback to keep paging predictable. Middle/High/Ultra may spend saved collision/retry time on richer streaming telemetry and visual overkill, but gameplay truth and DTO layouts remain stable.
+- Hardware Impact: Expected low-end i3/MX350 gain is reduced directory collision retries and prevented 256KB page write rejection stalls; static estimate pending source inspection.
+- Problem: Phase 0 found live RLE jobs outside two files named by user prompt.
+- Solution: Treat `SaveSystem/VoxelDeltaCompressionArchitecture.cs` as critical live-route dependency because it declares `VoxelRleEncoderJob` and `VoxelDeltaRleFinalizeJob` and enqueues `VXRL` pages into `H8BinaryWorldPager`.
+- Rejected Alternatives: Pretending jobs were in `VoxelDeltaProcessor.cs` rejected as false reporting. Ignoring file rejected because page overflow defect remains active there.
+- Scalability potential: Low avoids failed writes and synchronous retry pressure. Middle/High/Ultra can keep richer voxel deformation streams because fallback keeps payload bounded instead of dropping pages.
+- Hardware Impact: i3/MX350 expected gain is avoidance of catastrophic 256KB write rejection in checkerboard RLE; exact runtime microseconds unmeasured.
+- Problem: prompt demands zero collisions for 10000 sectors in 252-slot directory.
+- Solution: Record mathematical impossibility and implement reachable uniform modulo plus collision telemetry/fail-closed handling instead.
+- Rejected Alternatives: Claiming no collisions rejected by pigeonhole proof. Expanding to 256 entries rejected because it exceeds 4096-byte directory page and shifts all sector offsets without migration.
+- Scalability potential: Low gets predictable metadata collision accounting. Middle/High/Ultra can add richer diagnostics without changing save authority.
+- Hardware Impact: Static pair-collision probability drops from 1/128 to 1/252, 96.875 percent reduction versus broken mask.
+- Problem: `ResolveDirectorySlot` used bitmask against 251 even though directory has 252 entries.
+- Solution: Replace mask with `mixed % 252`; retain existing 4096-byte page and 16-byte entry ABI. Add directory slot and folded previous-sector hash into 64-byte telemetry entry for overwrite forensics.
+- Rejected Alternatives: 256-slot bitmask rejected because it requires 4160 bytes. Secondary hash probing rejected because current on-disk directory has no probe chain or tombstone schema.
+- Scalability potential: Low-tier gets cheaper miss diagnosis and fewer collision spikes. Middle/High/Ultra can visualize collision heat without changing save identity.
+- Hardware Impact: On i3/MX350, modulo cost is below measurable page I/O noise; reduced collision probability avoids metadata overwrite churn and page read misses.
+- Problem: Checkerboard VXRL can produce 32768 runs, requiring 262176 bytes, 96 bytes above pager payload cap.
+- Solution: In finalize, detect run count/byte overflow, clear fatal RLE state, set `HeaderFlagDenseFallback`, and pack 135168-byte dense payload: 4096-byte dirty mask, 65536-byte ushort SDF, 32768-byte material, 32768-byte flags.
+- Rejected Alternatives: Keeping 98304-byte live triplet fallback rejected because prompt and native snapshot contract require 135168 bytes. Silent `CounterFailure` rejected because it suppresses WAL writes.
+- Scalability potential: Low gets bounded writes. Middle/High/Ultra can retain dense deformation detail instead of losing terrain edits under extreme drilling.
+- Hardware Impact: Estimated low-end i3/MX350 cost is ~140 us for worst-case dense pack, paid only on overflow; saves failed disk write/retry stalls and rollback ambiguity.
+- Problem: `VoxelDeltaProcessor` owned compaction/native snapshot scratch as private persistent arrays, outside GlobalDataVault ownership route.
+- Solution: Add dedicated `BufferID` lanes and move scratch to `VaultGenerationHandle ` descriptors resolved only during owner phases. Add deferred release vault tracking for borrowed native snapshot scratch during DataVault rebind.
+- Rejected Alternatives: Keeping local persistent arrays rejected by mandate. Allocator.TempJob scratch rejected because compaction can cross frame boundaries.
+- Scalability potential: Low avoids allocator stalls under carving pressure. Middle/High/Ultra can increase quality/cadence through capacity and scheduling without changing DTO layout.
+- Hardware Impact: Removes live-cycle native allocation calls for scratch; expected gain on i3/MX350 is lower frame-time variance during compaction, not raw arithmetic speed.
+- Problem: Paging proof required AUP precision, but `H8BinaryWorldPager` has no chunk-distance logic.
+- Solution: Verified paging-adjacent selection in `VoxelDeltaProcessor` already uses `double3` deltas and double squared distance before casting to float for ranking. No ownerless distance system was invented.
+- Rejected Alternatives: Adding synthetic paging distance code rejected because it would create second owner for chunk residency truth.
+- Scalability potential: Low through Ultra keep identical authority math at 100km boundaries.
+- Hardware Impact: No added cost; prevents float precision loss by preserving existing double route.
+- Problem: Required fuzzer claim of zero collisions conflicts with finite directory math.
+- Solution: Add editor-only fuzzer and static scanner that prove reachability/distribution while explicitly marking collision-free 10000-sector mapping impossible.
+- Rejected Alternatives: Fake zero-collision report rejected as mathematically false.
+- Scalability potential: Low devices do not run editor fuzzer. High-end editor machines can raise sample counts for forensic confidence.
+- Hardware Impact: Runtime impact zero; editor fuzzer is offline proof only.
+- Problem: Compile verification was required, but project rules forbid launching builds while CPU is above 50 percent or any `dotnet`/`csc` is active.
+- Solution: Ran scanner and diff checks; skipped build after detecting 7 active `dotnet` processes and CPU load between 51 and 90 percent.
+- Rejected Alternatives: Forcing build rejected by explicit project protocol and risk of colliding with other agents.
+- Scalability potential: Keeps shared workstation throughput stable with 20+ agents.
+Source lines scanned 237; retained 45; overflow-important omitted 151.
+
+FILE AgentLogs\Rationale_1313.md bytes=49834 done=0 blockers=7 pendingHits=13 selected=45
+- # Rationale 1313 - DATA_MONOLITH_BAKER_AND_RELEASE_PURGER
+- Evidence class: STATIC_SOURCE / STATIC_DOC until Unity import, bake, boot, profiler, and GC proof exist.
+- ## Decision 01 - Phase 0 Boundary
+- Problem: User asked to start Phase 0, while full prompt has 10 tasks and existing source already contains Data Monolith classes.
+- Solution: Execute Tasks 01-03 only: inventory static-data parser surfaces, audit DTO layout surface, and map boot dependency route. Do not mutate runtime code before hit list is source-backed.
+- Rejected Alternatives: Implementing Tasks 04-10 immediately risks duplicating existing Data Monolith code and colliding with other agents. Declaring readiness from existing payload violates `ARCH_Project_Bootstrap_Sequence_Init_Safety`.
+- Scalability potential: Low tier consumes compact binary tables; Middle tier can stage validated hot reload; High tier keeps richer editor manifests; Ultra tier can carry visual-overkill authoring data outside gameplay truth.
+- Hardware Impact: Static Phase 0 has no runtime gain. Expected later removal of runtime parsers targets cold boot spikes and managed allocations on i3/MX350.
+- ## Decision 02 - Mandate Set
+- Problem: Data Monolith touches authoring CSV, binary storage, ARM64 DTO layout, boot order, DataVault, and parser purging.
+- Solution: Use 8 mandates: designer CSV bridge, ARM64 layout, zero-GC, native memory/jobs, bootstrap, global registry DI, crash telemetry, and binary/checksum persistence.
+- Rejected Alternatives: Reading physics/AI/render mandates would add noise outside 1313 domain. Skipping mandates violates batch protocol.
+- Scalability potential: Mandate set covers low-to-ultra behavior without binary quality flags; GlobalQualityWeight affects optional debug/authoring richness, not static truth layout.
+- Hardware Impact: Correct mandate alignment prevents low-end cold boot file parsing and ARM64 unaligned DTO traps.
+- ## Decision 03 - Evidence Class
+- Problem: Existing docs claim current `static_data.h8bin` exists, but runtime readiness needs bake/import/boot proof.
+- Solution: Mark all Phase 0 findings `PENDING VERIFICATION`; cite static source and docs only.
+- Rejected Alternatives: Treating file existence as runtime readiness is false proof. Running full build before CPU/compiler preflight is forbidden.
+- Scalability potential: Honest evidence boundaries avoid shipping binary path that works only on developer machines.
+- Hardware Impact: No measured gain until bake and boot paths are executed under Unity/player proof.
+- ## Decision 04 - Existing Monolith Route Is Owner
+- Problem: prompt asks for binary monolith route, but source already contains `H8StaticDataArena`, `H8DataMonolithCompiler`, layout guard, and release build gate.
+- Solution: Treat existing route as owner: `GameBootstrapper.InitializeMemoryPreWarmPhaseAsync` creates/registers `GlobalDataVault`, then calls `H8StaticDataArena.TryInitializeFromStreamingAssets` through `InitializeBootstrapDataMonolith`.
+- Rejected Alternatives: second loader or direct runtime parser bridge would create two owners for static truth. Hot polling `GlobalRegistry` would violate cold DI policy.
+- Scalability potential: Low tier reads one resident binary payload; Middle tier keeps strict boot fail-fast; High tier can add editor hot reload; Ultra tier can carry richer authoring diagnostics without changing runtime DTO truth.
+- Hardware Impact: Preserving existing payload/DataVault lane avoids extra startup allocations and duplicate memory on i3/MX350.
+- ## Decision 05 - Text Ingest Evidence Split
+- Problem: raw file-I/O scan finds hundreds of hits, but not every `Application.dataPath` or dump writer is release static-data parser.
+- Solution: Split findings into strict runtime CSV/JSON/text ingest risks, CSV parser token review, broad file-I/O review, and monolith binary consumers in `DATA_MONOLITH_PHASE0_ARCHAEOLOGY_1313.json`.
+- Rejected Alternatives: Declaring all file I/O illegal would create false blockers. Ignoring non-editor CSV/parser tokens would hide real release purge work.
+- Scalability potential: Low tier release can purge strict text ingest first; Middle/High/Ultra can retain editor/dev diagnostics behind compile guards without changing binary contract.
+- Hardware Impact: first measurable low-end gain comes from removing strict runtime text ingest, not from deleting unrelated dump/file diagnostics.
+- ## Decision 06 - No Compile In Phase 0
+- Problem: Phase 0 wrote report/status artifacts only, while project policy forbids casual rebuilds under shared-agent load.
+- Solution: Do not launch Unity/dotnet build. Verification remains static-source/static-binary only until later source mutation or explicit build gate run.
+- Rejected Alternatives: Running build without C# mutation wastes shared CPU and risks colliding with other agents. Claiming compile success without running it is false reporting.
+- Scalability potential: Honest verification staging keeps release gates meaningful across low-to-ultra hardware targets.
+- Hardware Impact: Zero runtime impact in Phase 0; no compiler load added to shared machine.
+- ## Decision 07 - 1313 Proof Artifacts Without Destroying X_002
+- Problem: Existing Roslyn scanner and release gate emit X_002 report paths, so 1313 cannot produce mandated report names by running existing Unity menu.
+- Solution: Add 1313 alias report writes while preserving X_002 outputs. `OOP_StaticData_Scanner` now writes `DATA_PIPELINE_OPTIMIZATION_REPORT_1313.json`; `H8DataMonolithReleaseBuildGate` now writes 1313 release/development gate reports.
+- Rejected Alternatives: Renaming X_002 constants would destroy another agent's proof route. Faking Roslyn AST report from shell would be false evidence.
+- Scalability potential: Low/Middle/High/Ultra builds share same gate logic and can emit separate proof artifacts without duplicating scanner ownership.
+- Hardware Impact: Editor-only write amplification only when scanner/gate runs. No player runtime cost.
+- ## Decision 08 - Runtime Zero-GC Verdict Is FAIL
+Source lines scanned 380; retained 45; overflow-important omitted 239.
+
+FILE AgentLogs\Rationale_1314.md bytes=135144 done=0 blockers=39 pendingHits=53 selected=45
+- # Rationale_1314 - AUDIO_MASTER_BUS_ALIGNMENT_REPAIRER
+- Status: STATIC FAIL BLOCKERS GATED / RAW TELEMETRY PASS WITH TASK08 DATAVAULT HOT-RING LIMITATION / DIRECT REGISTER-CLEAR STATUS EXPORTS / NATIVE DUMP THREAD REMOVED / COMPILE NOT RUN BY USER INSTRUCTION
+- ## R0 - Phase 0 Boundary
+- Problem: Native audio master bus registration is reported blocked by unaligned `WriteIndex` pointer derived from `sharedStatePtr + 1`, placing `int*` cursor at base + 4 instead of 8-byte boundary.
+- Solution: Restrict first pass to direct source archaeology and pointer layout proof in `NativeAudioFrameRingBuffer.cs` and `HectonSensoryKernelNativeBridge.cs`; use audio SPSC, ARM64 layout, zero-GC, native memory, registry DI, and blackbox mandates as acce...
+- Rejected Alternatives: Broad audio architecture refactor rejected because prompt names specific pointer arithmetic defect. GlobalRegistry polling rejected by doctrine; any re-registration path must cache cold dependencies or listen to explicit hotswap/reini...
+- Scalability potential: Low/MX350 uses same descriptor truth and lock-free writer with minimal telemetry cadence. Middle keeps full 300-frame audio bridge telemetry. High adds heavier editor stress validation. Ultra can increase procedural synthesis richness...
+- Hardware Impact: Expected gain on i3/MX350 is not CPU micro-optimization yet; primary gain is restoring native DSP registration. Avoiding managed fallback/audio-source patch paths prevents unpredictable GC and thread stalls.
+- Proof State: STATIC_SOURCE_PENDING. No compile or Unity runtime proof yet.
+- ## R1 - Phase 0 Source Archaeology
+- Problem: `NativeAudioKernelRingBufferDescriptor.WriteIndexSlot` is `1`, and `TryCreateNativeDescriptor` directly uses `sharedStatePtr + WriteIndexSlot`. For `int*`, slot 1 means 4-byte offset, so `WriteIndex` fails 8-byte pointer alignment gate.
+- Solution: Record live-source ledger in `Docs/Reports/AUDIO_BRIDGE_ARCHAEOLOGY_1314.json`; correct path is even-slot shared-state layout: read cursor at slot 0, write cursor at slot 2, metadata on even slots, shared-state length expanded to keep every export...
+- Rejected Alternatives: Leaving slots dense and weakening `IsDescriptorValid` is rejected because it would push known unaligned pointer into native code. Allocating separate managed cursor object is rejected because it violates DataVault/native ownership and...
+- Scalability potential: Low/MX350 pays only few padded ints and pointer checks. Middle/High/Ultra keep same truth layout; higher tiers can spend audio budget on richer DSP after native registration is stable.
+- Hardware Impact: Shared-state padding cost is 24 extra bytes if slots move from 6 dense ints to 12 padded ints. CPU impact is below measurement noise; real gain is avoiding native registration rejection and managed fallback pressure.
+- Proof State: STATIC_SOURCE_CONFIRMED_ALIGNMENT_FAULT. Runtime proof still absent.
+- ## R2 - Registry And Re-registration Gap
+- Problem: `PlayerCriticalProceduralAudioRenderer.RefreshNativeOutputBridge()` contains bridge registration call but static search found no call site. Audio device reset currently calls `RefreshAudioConfiguration()` only, which rebuilds buffers and clears bri...
+- Solution: Implement repair so `HectonSensoryKernelNativeBridge` owns descriptor validity/status discipline, then add explicit registration gate at existing renderer call site only if strict source scope permits. If kept inside two-file boundary, final statu...
+- Rejected Alternatives: Per-frame bridge polling is rejected. Registry polling from audio producer thread is rejected. Silent failure is rejected; failures must write telemetry and fail closed to silence.
+- Scalability potential: Re-registration cadence must be event-driven on all tiers. Low tier logs compact telemetry; High/Ultra may keep fuller bridge history but cannot change descriptor truth.
+- Hardware Impact: Event-driven registration avoids recurring CPU cost. Calling native registration only on buffer/context replacement should be effectively 0 us per frame.
+- Proof State: STATIC_SOURCE_CALLSITE_GAP. Compile/runtime proof absent.
+- ## R3 - Tasks 04-05 Pointer Correction And Descriptor Hardening
+- Problem: Dense shared-state slots exported `WriteIndex` at int slot 1. On 8-byte-aligned `int*` base this creates `base + 4`, which fails bridge's own `RequiredAlignmentBytes = 8` pointer validation.
+- Solution: Move every exported shared-state field to even int slots: `ReadIndexSlot = 0`, `WriteIndexSlot = 2`, metadata at 4/6/8/10, `SourceChannelsSlot = 12`, and `SharedStateSlotCount = 14`. `TryCreateNativeDescriptor` now materializes `readIndexPtr` and ...
+- Rejected Alternatives: Weakening alignment validation rejected because it hides native crash vector. Separate managed cursor boxes rejected because they break DataVault ownership and add GC risk. dedicated native allocation per cursor rejected as unnecessar...
+- Scalability potential: Low tier pays 32 bytes of padded state and two cold validation checks. Middle, High, and Ultra use same ABI; higher tiers spend recovered stability on richer DSP, not different truth layout.
+- Hardware Impact: Runtime hot-path cost is 0 us/frame after descriptor creation. Cold registration validation adds few integer comparisons. i3/MX350 impact is below measurable frame cost; primary gain is avoiding native bridge rejection.
+- Proof State: STATIC_SOURCE_PASS. Runtime native plugin registration proof pending compile/editor run.
+- ## R4 - Task 06 Lock-Free SPSC Writer
+- Problem: writer must not allocate or lock inside audio producer path, and it must not rely on managed array bridges.
+- Solution: `TryWriteInterleaved` now resolves source/frame native pointers with `NativeArrayUnsafeUtility`, writes mono/stereo paths directly by pointer, clamps non-finite samples to silence, and publishes write cursor through existing `Volatile.Write` route.
+- Rejected Alternatives: `float[]` mixing rejected as managed allocation/GC risk. `lock`/`Monitor` rejected because audio producer cannot block on consumer. Per-sample channel loops rejected for stereo because shipped layout can use fixed two-lane stores.
+- Scalability potential: Low tier gets cheapest deterministic writer. Middle/High/Ultra can increase procedural synthesis density while preserving same SPSC publish rule.
+- Hardware Impact: Expected saving is avoidance of managed callback/fallback pressure; no profiler-backed microsecond claim. direct pointer stereo path removes bounds-check noise from inner block write.
+- Proof State: STATIC_SOURCE_PASS. Live DSP allocation profiling pending Unity Editor/runtime.
+- ## R5 - Task 07 Re-registration Gate
+- Problem: `RefreshNativeOutputBridge()` had registration logic but audio/DataVault refresh paths did not reliably invoke it. Native bridge failures were also not recorded into audio black box.
+- Solution: Add `TryRegisterWithRetryGate` to validate first, retry bounded registration, and fail closed with `TryClear`. Route DataVault/audio configuration refreshes through `RefreshNativeOutputBridge()` and record registration failures via `_sampleRingBuf...
+- Rejected Alternatives: Per-frame registry polling rejected by GlobalRegistry doctrine. Same-frame busy retry loops rejected as hardware-state thrash. Throwing on plugin failure rejected because correct fail-closed audio state is silence plus telemetry.
+- Scalability potential: All tiers use event-driven re-registration. Low tier pays zero recurring frame cost. High/Ultra can retry no more often than context replacement; audio richness remains decoupled from bridge identity.
+- Hardware Impact: 0 us/frame steady-state. Cold retry is two native calls maximum and only on context/buffer replacement.
+- Proof State: STATIC_SOURCE_PASS. Compile proof blocked by external build gate.
+- ## R6 - Task 08 Telemetry And Black-Box Dump
+Source lines scanned 1041; retained 45; overflow-important omitted 473.
+
+FILE AgentLogs\Rationale_1315.md bytes=93572 done=0 blockers=38 pendingHits=26 selected=45
+- # Rationale 1315 - MEMORY_SOVEREIGN_VOXEL_ENGINE_EXORCIST
+- Domain: Assets/_Project/Scripts/HectonVoxelEngine.cs; Assets/_Project/Scripts/World/Voxel
+- ## Decision 000 - Session State Files
+- Problem: Agent 1315 status/rationale files were absent at session start; workflow requires disk-backed memory before code work.
+- Solution: Created Status_1315.md and Rationale_1315.md before source mutation.
+- Rejected Alternatives: Chat-only tracking rejected because context compression would erase task state.
+- Hardware Impact: 0 us runtime impact on i3/MX350.
+- ## Decision 001 - Mandate Set Before Source Mutation
+- Problem: Voxel memory exorcism touches native ownership, jobs, DTO layout, telemetry, registry routes, and deformation cost.
+- Solution: Bound task to eight registry mandates: native memory/job protocol, zero-GC, ARM64 layout, crash telemetry, voxel MC pipeline, voxel carving persistence, GlobalRegistry DI, and cinematic fake-first.
+- Rejected Alternatives: Reading unrelated AI/audio/UI mandates rejected because they do not own voxel native memory or target file route.
+- Scalability potential: Keeps Low/Middle/High/Ultra constraints visible before implementation; no binary quality switch accepted.
+- Hardware Impact: 0 us runtime impact; prevents design drift that would cost >100 us in voxel rebuild paths on i3/MX350.
+- ## Decision 002 - Roslyn Baseline As Primary Proof
+- Problem: batch claims exactly 124 forbidden aliases; grep cannot distinguish job parameters from persistent fields.
+- Solution: Ran existing Roslyn SyntaxTree scanner and filtered `Assets/_Project/Scripts/HectonVoxelEngine.cs`. Result: 124 forbidden non-job field declarations, 74 allowed job parameter fields, 0 parse failures.
+- Rejected Alternatives: Regex-only report rejected because it counted local variables and job structs without ownership semantics.
+- Scalability potential: Low/Middle/High/Ultra all require relocation-safe scratch ownership before increasing voxel detail.
+- Hardware Impact: 0 us runtime impact; prevents unsafe persistent aliases that can hard-fault on low-end i3/MX350 during arena relocation.
+- ## Decision 003 - DataVault Scratch Buffer Range
+- Problem: Streaming scratch arrays need per-slot stable BufferIDs without colliding with existing enum IDs.
+- Solution: Reserved dynamic cast range 74500..74996 for slot-local voxel scratch handles; existing enum IDs occupy 74390..74405 and 75000..75002 around this range.
+- Rejected Alternatives: Editing `BufferID` enum with 392 named scratch IDs rejected as metadata bloat; reusing one BufferID per element type rejected because slots need independent buffers.
+- Scalability potential: Low tier can keep one slot and low capacities; Middle/High/Ultra can scale slot count and mesh raw capacity continuously via existing `GlobalQualityWeight` math.
+- Hardware Impact: Expected gain is relocation safety rather than raw frame savings; avoids crash-class faults on i3/MX350 under defrag pressure.
+- ## Decision 004 - NativeList/NativeParallelHashMap Bridge Risk
+- Problem: `GlobalDataVault` owns `NativeArray ` buffers through generation handles, but exposes no native-list or native-hashmap generation-handle API.
+- Solution: Marked `NativeList ` and `NativeParallelHashMap ` as required bridge work: spawn points can become NativeArray+count; modified cells require either array-backed lookup DTOs or new DataVault collection contract.
+- Rejected Alternatives: Hiding NativeList/HashMap inside another wrapper rejected as fake sovereignty; keeping `DataVaultExempt` allocator rejected as primary breach.
+- Scalability potential: Array-backed modified cells would need Low/Middle/High/Ultra lookup strategy, from bounded linear scan to bucketed overkill lookup.
+- Hardware Impact: naive linear modified-cell scan can exceed 0.1 ms on i3/MX350; bucketed bridge is required before claiming performance.
+- ## Decision 005 - MC Table Lease Descriptor Substitution
+- Problem: `MCTables.JobTableLease` stored persistent `NativeArray .ReadOnly` aliases, so MC lookup tables stayed live outside Vault descriptor route.
+- Solution: Replaced those aliases with `VaultGenerationHandle ` descriptors and pure read properties that resolve `ReadOnly` views through `GlobalDataVault.TryReadOnlyHandle`. Added `try/finally` release around MC table fill locks.
+- Rejected Alternatives: Keeping readonly aliases because tables are static rejected; static permanence is still relocation hazard and still violates one owner/one route. Copying tables into managed arrays rejected as GC and Burst-incompatible.
+- Scalability potential: Low/Middle/High/Ultra tiers all share one cold MC table route; higher tiers spend saved stability budget on voxel density, not duplicate lookup ownership.
+- Hardware Impact: Expected frame saving is 0 us; gain is removal of crash-class stale alias on low-end i3/MX350 and ARM64 devices.
+- ## Decision 006 - Voxel Blackbox Ownership Metadata
+- Problem: Voxel telemetry was 32B and used 1304 dump route, so 1315 crash proof lacked BufferID/SystemID/generation context.
+- Solution: Expanded `VoxelMeshPipelineTelemetryEntry` to explicit 64B and wrote BufferID, SystemID, ring generation, Vault generation, state hash, and frame counters. Updated dump path to `Docs/AgentLogs/Dump_1315_VoxelEngine.bin`.
+- Rejected Alternatives: Adding second 1315 telemetry ring rejected as duplicate ownership; existing 300-frame voxel blackbox is correct single route.
+- Scalability potential: Low tier pays one fixed 64B ring entry per sample; Middle/High/Ultra can add visual overkill without losing crash provenance.
+- Hardware Impact: Estimated write cost remains under 5 us per sample on i3/MX350 because hot path writes one fixed-size struct and no managed strings.
+- ## Decision 007 - Explicit Mesh DTO Padding
+- Problem: `VoxelSurfaceVertex` and `VoxelColliderVertex` were sequential runtime DTOs with implicit layout dependence.
+Source lines scanned 587; retained 45; overflow-important omitted 391.
+
+FILE AgentLogs\Rationale_1316.md bytes=151120 done=0 blockers=11 pendingHits=16 selected=45
+- # Rationale_1316 - MEMORY_SOVEREIGN_VEGETATION_EXORCIST
+- State: PENDING VERIFICATION
+- ## R0 - Initial Scope Lock
+- Problem: Agent 1316 must avoid stale context and sibling-agent prompt bleed while operating on unmanaged vegetation memory.
+- Solution: Extract only ` ` from `Docs/Tasks/CURRENT_BATCH.md`, create fresh status/rationale files, and confine first audit to `Assets/_Project/Scripts/World/VegetationMemoryPool.cs` plus `Assets/_Project/Scripts/World/Vegetation`.
+- Rejected Alternatives: Reading archived batch prompts or previous agents' logs would import stale ownership data and violate batch hygiene.
+- Scalability potential: Low/Middle/High/Ultra cannot be assigned until actual buffer topology and quality-weight flow are audited.
+- Hardware Impact: Initial file-state discipline has no runtime gain; it prevents merge and architecture damage on i3/MX350.
+- ## R1 - Primary Alias Ledger
+- Problem: `VegetationMemoryPool.cs` holds persistent NativeArray/NativeList/NativeParallelMultiHashMap aliases inside nested structs, so GlobalDataVault defrag can relocate memory under stale physical views.
+- Solution: Generate `Docs/Reports/VEGETATION_NATIVE_ALIAS_LEDGER_1316.json` against primary file only. Result is 75 field-like aliases: 8 chunk-pool lanes, 7 active aggregate lanes, 60 native memory lanes.
+- Rejected Alternatives: Whole-domain grep was rejected because it would count valid Burst job parameters and locals. Keeping `DataVaultExempt*Allocator` comments was rejected because AGENTS/DataVault sovereignty supersedes old exemption comments for this batch.
+- Scalability potential: Low uses same descriptor route with smaller capacities and lower cadence; Middle keeps active aggregate lanes; High increases visible capacity; Ultra spends saved alias safety on larger active flora payloads and telemetry detail. No b...
+- Hardware Impact: Removing persistent raw views prevents relocation crashes. Runtime microsecond gain is not claimed yet; concrete low-end gain is avoiding defrag stalls/corruption on i3/MX350.
+- ## R2 - Hash/List Incompatibility Boundary
+- Problem: Five hash-map fields and three list fields cannot be represented by `VaultGenerationHandle ` without redesign, because `IDataVault` exposes contiguous `NativeArray ` generations only.
+- Solution: Mark those lanes for explicit DTO conversion: hash maps become bucket/head/next/value array families; lists become payload array plus explicit count handle. No direct `VaultGenerationHandle >` or `VaultGenerationHandle >` is valid.
+- Rejected Alternatives: Persisting hash maps as private fields with comment was rejected; it leaves same stale pointer failure. Passing handles into Burst jobs was rejected; jobs must receive transient resolved arrays only.
+- Scalability potential: Low can use coarse hash bucket counts and shorter path arrays; Middle/High/Ultra scale bucket count, path capacity and nav support density continuously from GlobalQualityWeight.
+- Hardware Impact: Array-backed hash DTOs are more cache-predictable than chained map storage on weak silicon. Expected gain is lower branch and pointer churn during threat/nav sampling, but exact microseconds require profiler proof after migration.
+- ## R3 - Telemetry Architecture
+- Problem: batch requires black-box proof for lock contention, stale handles, NaN matrices and dropped vegetation updates without managed string logs in hot paths.
+- Solution: Plan `VegetationTelemetryEntry` as `LayoutKind.Explicit, Size=64`, 300 entries, ring BufferID 74398, cursor BufferID 74399, dump file `Docs/AgentLogs/Dump_1316_Vegetation.bin`.
+- Rejected Alternatives: Unity `Debug.Log`, exception-driven diagnostics and dynamic List-based histories were rejected because they allocate and corrupt frame pacing.
+- Scalability potential: Low records only fault/fence events; Middle adds cull counts; High adds phase/job microseconds; Ultra can sample extra visual lanes while preserving fixed 64-byte DTO.
+- Hardware Impact: Fixed ring writes are O(1) and cache-stable. Estimated hot write cost is sub-1us per fault event on i3/MX350 because only one 64-byte row and one cursor int are touched.
+- ## R4 - Central Telemetry Implementation
+- Problem: Migration needs reliable proof lane before deleting persistent aliases; otherwise partial DataVault conversion would fail closed silently and leave no forensic buffer.
+- Solution: Added central `BufferID.VegetationMemoryPoolTelemetryRing=74398` and `VegetationMemoryPoolTelemetryCursor=74399`, explicit 64-byte `VegetationMemoryTelemetryEntry`, DataVault ring/cursor handles, lifecycle rebind/release hooks, cold/defrag telemet...
+- Rejected Alternatives: Anonymous local BufferID casts were rejected after pattern audit because this telemetry is cross-domain and must be centrally visible. managed queue/log file was rejected because it violates black-box fixed-ring requirement and alloca...
+- Scalability potential: Low records cold boot and defrag events only; Middle adds stale-handle events as lanes migrate; High records per-lane cull/resolve counters; Ultra can add visual overkill timing samples without changing DTO size or gameplay truth.
+- Hardware Impact: On i3/MX350, telemetry write is one 64-byte row plus one cursor int under DataVault locks. It does not save frame time by itself; it prevents blind corruption and supplies crash forensics for later exorcism.
+- ## R5 - Full Alias Substitution Hold
+- Problem: Static recount after telemetry implementation still reports all 75 primary aliases in `VegetationMemoryPool.cs`.
+- Solution: Do not mark Task 06 complete. Continue with descriptor substitution only after contiguous array lanes are separated from hash/list redesign so build does not enter broad compile wall.
+- Rejected Alternatives: Fake replacement through `VaultGenerationHandle >` or leaving aliases behind while reporting zero was rejected. Both are architecturally false.
+- Scalability potential: Low/Middle/High/Ultra migration remains viable, but each tier needs array-backed hash/list capacities driven by continuous GlobalQualityWeight rather than binary low/high modes.
+- Hardware Impact: No runtime gain claimed. Current patch adds proof infrastructure; old alias risk still exists until Task 06 is actually completed.
+- ## R6 - First Payload Lane Substitution
+- Problem: Defrag move records, aggregate copy records, and mega-wreck stream snapshots were still persistent `NativeArray ` aliases even though they are contiguous DTO lanes that fit IDataVault without hash/list redesign.
+- Solution: Added central BufferIDs 74406-74410, replaced five fields with `VaultGenerationHandle `, resolved write views through `TryAcquireVegetationMemoryBuffer`, released them in `finally`, and changed mega-wreck read accessors to `TryReadOnlyVegetationMe...
+- Rejected Alternatives: Keeping old arrays until full 75-lane rewrite was rejected because it wastes uncontested low-risk cut. Converting NativeParallelMultiHashMap/NativeList lanes in same pass was rejected because those require DTO-family redesign and cann...
+- Scalability potential: Low uses shorter defrag/mass-wreck payload capacities through requiredLength; Middle/High/Ultra can grow same Vault lanes continuously without changing gameplay truth or DTO layout. GlobalQualityWeight remains continuous and unmodified.
+- Hardware Impact: On i3/MX350 immediate gain is not frame-time claim; it removes five stale raw pointers from relocation hazard set. Expected microsecond savings are 0us until defrag contention occurs; expected fault-avoidance value is high because these lan...
+- ## R7 - Negative Proof Artifact
+Source lines scanned 650; retained 45; overflow-important omitted 510.
+
+FILE AgentLogs\Rationale_1317.md bytes=15414 done=0 blockers=6 pendingHits=3 selected=45
+- # Rationale 1317 - MEMORY_SOVEREIGN_PLAYER_INVENTORY_EXORCIST
+- Status: SCOPE PASS; GLOBAL COMPILE BLOCKED BY OTHER DOMAIN.
+- ## D0 - Batch Hygiene And Domain Lock
+- Problem: Agent 1317 had no status or rationale files in active batch folder.
+- Solution: Created fresh per-agent files before code mutation. Primary domain is `PlayerInventory.cs` and `Assets/_Project/Scripts/Inventory`.
+- Rejected Alternatives: Reusing another agent's log or writing chat-only state would violate batch traceability.
+- Scalability potential: Low/Middle/High/Ultra unaffected; this is execution trace only.
+- ## D1 - PlayerInventory Native Owner Exorcism
+- Problem: `PlayerInventory.cs` held 63 forbidden native field candidates before migration, including 49 persistent owner arrays and 14 kernel fields that were not recognized as transient jobs.
+- Solution: Replaced persistent owner fields with `InventoryVaultLane ` descriptors backed by `VaultGenerationHandle ` and `GlobalDataVault`; marked radioactive/reactive kernels as `IJob` so native fields classify as transient job parameters.
+- Rejected Alternatives: Keeping `NativeArray ` fields and only adding comments was rejected because it leaves relocation-dangling aliases. Replacing with managed arrays was rejected because it breaks Burst/DOD and GC policy.
+- Scalability potential: Low uses same data with lower cadence already controlled elsewhere; Middle/High/Ultra retain contiguous vault arrays and Burst job inputs for visual-overkill inventory chemistry/radiation effects.
+- Hardware Impact: Removes long-lived unmanaged aliases; expected memory-compaction safety gain is structural. Per-call vault resolution/write-lock cost is pending profiler verification; direct microsecond saving is not claimed.
+- ## D2 - Buffer ID Ownership
+- Problem: Fixed buffer IDs around 73200 risked collision with existing routing IDs and with multiple `PlayerInventory` instances.
+- Solution: Assigned instance-strided runtime range starting at 410000, above current observed `BufferID` enum maximum, and derived 49 lane IDs from component instance bucket.
+- Rejected Alternatives: Reusing legacy `ShinobuInventory*` IDs was rejected because only three lanes existed. Fixed IDs were rejected because bulk transfer can involve another `PlayerInventory` instance.
+- Scalability potential: Low/Middle/High/Ultra all keep one descriptor route per lane; extra instances receive separate vault lanes instead of aliasing.
+- Hardware Impact: 0 us in hot loops after cold base resolution; avoids data corruption that would cost crash, not microseconds.
+- ## D3 - Locking And Fault Telemetry
+- Problem: Migration created write paths that could silently fail when vault resolution or write-lock acquisition fails.
+- Solution: Wrapped mutating helpers with `TryAcquireWriteLock`/`finally ReleaseWriteLock`; encoded vault fault `BufferID` and generation into existing 64-byte telemetry ring without managed logs.
+- Rejected Alternatives: Throwing exceptions or logging strings was rejected due GC and main-thread stall. Holding locks across frames was rejected by mandate.
+- Scalability potential: Low skips failed visual/state maintenance safely; Middle/High/Ultra preserve deterministic data path and can spend saved stability budget on chemistry/radiation presentation.
+- Hardware Impact: Failure-only telemetry write is fixed struct assignment. Normal-path cost is one vault resolve or lock acquisition at mutation boundaries; profiler proof still required.
+- ## D4 - Inventory Folder Sweep
+- Problem: `Assets/_Project/Scripts/Inventory` still had 29 forbidden candidates before sweep: stack-like resolver buffer structs plus static `NativeHashMap` in `ItemTemplateRegistry`.
+- Solution: Converted resolver buffer structs to `ref struct` stack-only views and removed static native map, replacing lookup with bounded linear scan of managed template snapshot.
+- Rejected Alternatives: persistent static `NativeHashMap` was rejected because it is non-vault native owner. new vault hash table was deferred because template lookup is cold and no profiler evidence showed O(n) cost above 0.1 ms.
+- Scalability potential: Low/Middle tolerate cold O(n) lookup; High/Ultra can later upgrade to vault-owned open-address table if profiling proves need.
+- Hardware Impact: Removes one persistent native static allocation. Low-end cost risk is cold lookup only, not per-frame inventory tick.
+- ## D5 - Layout Guard And Compile Gate
+- Problem: DTO layout had to remain ARM64 explicit and provable after migration.
+- Solution: Added editor-only `ValidateInventoryMemorySovereigntyLayouts1317()` with exact `UnsafeUtility.SizeOf` and offset checks for inventory telemetry DTOs and vault generation handle size.
+- Rejected Alternatives: New editor source file was rejected because generated project files are stale and would not compile it until Unity regeneration. Runtime hot validation was rejected.
+- Scalability potential: Low/Middle/High/Ultra unaffected at runtime; editor guard stops unsafe DTO drift.
+- Hardware Impact: 0 us runtime outside editor. First build attempt found local unsafe pointer inference errors; fixed. Second build has 0 `PlayerInventory.cs` errors and is blocked by `SubmarineStructuralGrid.cs`, outside this domain.
+- ## D6 - APEX Re-Audit Purge
+- Problem: Broad post-review gates required no visible `throw new`, no `catch (Exception)`, and fresh native-field proof over exact C# files touched by agent 1317.
+- Solution: Re-ran Roslyn native field audit and narrowed its ledger to five touched C# files. Converted routing layout validation from exception to fail-closed `bool`. Replaced broad dump catches with specific I/O/path catches. Kept cold binary dump writers ...
+- Rejected Alternatives: Reporting broad catches as "cold only" was rejected because scanner would still show managed exception surface. Removing binary dumps was rejected because black-box mandate requires fixed-size postmortem artifacts.
+- Scalability potential: Low/Middle/High/Ultra unchanged. Runtime hot loops get no new managed allocation. Failure paths return numeric false-state and keep telemetry/dump lanes intact.
+- Hardware Impact: 0 us normal-frame cost. Re-audit shows 145 native field declarations in scope: 117 transient job parameters, 28 stack-only view fields, 0 persistent native aliases.
+- ## D7 - APEX Final Gate Closure
+- Problem: rejection protocol required fresh prompt extraction, syntax-tree native-field audit, hot-path allocation purge proof, AUP cast audit, compaction-lock proof, and refreshed machine-readable artifacts.
+Source lines scanned 115; retained 45; overflow-important omitted 40.
+
+FILE AgentLogs\Rationale_1318.md bytes=162285 done=0 blockers=61 pendingHits=65 selected=45
+- # Rationale_1318
+- Domain: Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs
+- ## Decision 000: Establish Memory-Sovereignty Audit Baseline
+- Problem: Batch assignment requires field-level native memory exorcism, but project state had no active agent status or rationale file for 1318.
+- Solution: Create local state files before source mutation, then drive work through task loops with source-backed evidence.
+- Rejected Alternatives: Chat-only state was rejected because context compression loses facts. Blind code edits were rejected because mandate compliance requires disk-backed task and rationale artifacts.
+- Scalability potential: Low uses static scans and source edits only; Middle adds compilation checks when safe; High/Ultra can add editor/runtime profiler proof after Unity access is available.
+- Hardware Impact: Static source work costs no runtime CPU. Target impact remains pending until actual source violations are measured and patched.
+- ## Decision 001: Primary Native Alias Hit List
+- Problem: DestructibleOrganicManager.cs was alleged to contain exactly 50 persistent native aliases. claim needed objective proof before mutation.
+- Solution: Ran existing Roslyn audit executable against Assets/_Project/Scripts/World and extracted DestructibleOrganicManager.cs subset. Target count is exactly 50. Ledger path: Docs/Reports/VAULT_EXORCISM_LEDGER_1318_TARGET_BEFORE.json.
+- Rejected Alternatives: Regex-only scan was rejected because it would mix locals/job fields with class fields. Manual eyeballing was rejected because task requires machine-readable proof.
+- Scalability potential: Low/Middle/High/Ultra all benefit from eliminating stale aliases because Vault relocation can proceed without hidden manager-held pointers.
+- Hardware Impact: Static scan has no runtime impact. Expected runtime gain is crash-prevention and preserved defrag capability, not honest microsecond saving yet.
+- ## Decision 002: DataVault Replacement Shape
+- Problem: GlobalDataVault stores flat NativeArray buffers, not NativeHashMap or NativeList containers. manager currently uses maps/lists as persistent fields.
+- Solution: Replace persistent containers with pointer-free wrappers around VaultGenerationHandle descriptors. NativeHashMap semantics become fixed-capacity UID-keyed explicit-layout entries in Vault arrays. NativeList semantics become Vault arrays plus manag...
+- Rejected Alternatives: Keeping NativeHashMap fields was rejected because it violates memory sovereignty. Moving native fields into another non-core type was rejected as fake pass. Managed List replacements were rejected because they would break Zero-GC and ...
+- Scalability potential: Low uses fixed-capacity open addressing with bounded probes; Middle/High/Ultra can increase capacity and keep visual overkill in VISUAL_SYNC without altering gameplay truth DTOs.
+- Hardware Impact: Open-addressed Vault maps avoid managed GC and stale pointers. Worst-case probe cost needs runtime profiling; static target is bounded O(capacity) fail-closed rather than relocation crash.
+- ## Decision 003: Broader World Sweep Boundary
+- Problem: Roslyn World-domain sweep found 400 forbidden persistent candidates across 271 files. This is broader than primary target and risks cross-agent conflict.
+- Solution: Isolate DestructibleOrganicManager.cs first. Mark broader-domain sweep as pending conflict-gated work after primary target compile proof.
+- Rejected Alternatives: Editing all World files immediately was rejected as merge-conflict bait under 20+ concurrent agents and outside primary hot target.
+- Scalability potential: Primary target removal makes dense flora destruction safer first; domain-wide cleanup can proceed file-by-file through same scanner.
+- Hardware Impact: No runtime impact yet. Avoids breaking unrelated World systems while CPU/build gates are already under load.
+- ## Decision 004: Primary Vault Descriptor Rewrite
+- Problem: manager held 50 persistent NativeArray/NativeList/NativeHashMap aliases that could survive GlobalDataVault relocation.
+- Solution: Replaced direct native fields with pointer-free Vault-backed array/list/map wrappers and explicit UID map entries. Bridge vegetation data is resolved as phase-local external view rather than stored as manager state.
+- Rejected Alternatives: Keeping Unity NativeHashMap containers was rejected because DataVault owns flat relocatable buffers. Replacing with managed Dictionary/List was rejected because it violates Zero-GC and deterministic DOD constraints.
+- Scalability potential: Low keeps fixed capacities and bounded probes; Middle/High can increase buffer capacities; Ultra can spend saved crash-risk budget on richer visual decomposition without changing truth ownership.
+- Hardware Impact: Low-end i3/MX350 gains relocation safety rather than measured frame time. Probe cost is bounded by fixed Vault capacity; runtime microsecond proof is pending Unity profiler access.
+- ## Decision 005: DropBuffer Queue Exorcism
+- Problem: DropBuffer.cs hid persistent NativeQueue and NativeArray budget behind manager field, leaving adjacent unmanaged owner in organics yield lane.
+- Solution: Moved entropy yield output to Vault buffers 73022 and 73023. EntropyYieldJob now writes to transient NativeArray plus two-int budget using Interlocked decrement. DropBuffer.cs is pointer-free compatibility stub.
+- Rejected Alternatives: Leaving NativeQueue as special case was rejected because it remains relocation-hostile owner. managed Queue was rejected because it adds GC and loses Burst write compatibility.
+- Scalability potential: Low drains bounded 256-entry array; Middle/High/Ultra can raise capacity by BufferID without changing job DTO layout.
+- Hardware Impact: Removes NativeQueue allocation and queue prewarm. Expected gain is lower memory ownership risk; per-drop cost is one Interlocked decrement and one contiguous write.
+- ## Decision 006: Registry Copy Collision (Superseded by Decision 008)
+- Problem: Eliminating SlowTick temp NativeList bridge cleanly required PersistentWorldRegistry overloads while that file already had large active edits from another agent.
+- Solution: Initial pass avoided collision; re-audit then added minimal NativeArray destination overloads without reverting or disturbing sibling-agent edits.
+- Rejected Alternatives: Broad registry refactor was rejected as cross-agent conflict. Claiming full Zero-GC slow-path proof before adding overloads was rejected as false.
+- Scalability potential: Low is now bounded by Vault scratch capacity and direct copy. Middle/High/Ultra can raise scratch capacity without changing caller contracts.
+- Hardware Impact: SlowTick Temp native allocation was removed in Decision 008; no hot-frame managed allocation remains in audited path.
+- ## Decision 007: Final Audit Boundary
+Source lines scanned 886; retained 45; overflow-important omitted 670.
+
+FILE AgentLogs\Rationale_1319.md bytes=17532 done=0 blockers=7 pendingHits=15 selected=45
+- # Rationale 1319 - MEMORY_SOVEREIGN_LOGISTICS_GRAPH_EXORCIST
+- State: STATIC PASS / BUILD BLOCKED OUTSIDE DOMAIN
+- ## Session Start
+- Problem: Agent state files were absent while batch protocol requires disk-backed memory.
+- Solution: Created `Docs/Tasks/Status_1319.md` and this rationale file before code mutation.
+- Rejected Alternatives: Chat-only state; invalid because context compression loses state and violates batch protocol.
+- Scalability potential: Low/Middle/High/Ultra unchanged. This is process state, not runtime logic.
+- Problem: Root-level `C:\hades\current_batch.md` was absent.
+- Solution: Used `Docs/Tasks/CURRENT_BATCH.md` and extracted ` ` with raw PowerShell regex.
+- Rejected Alternatives: Proceeding without prompt extraction; invalid because task count/domain would be unverified.
+- Scalability potential: Not runtime.
+- ## Primary Graph Decisions
+- Problem: `LogisticsNetworkGraph.cs` owned 50 persistent native aliases directly in graph object.
+- Solution: Replaced them with `VaultGenerationHandle ` descriptors and transient DataVault-resolved views; counts stayed scalar where no native container was needed.
+- Rejected Alternatives: Keep `NativeArray` fields with better disposal; still violates one-owner DataVault route and leaves physical aliases cached across compaction boundaries.
+- Scalability potential: Low uses smaller capacities/cadence through existing continuous quality; Middle/High/Ultra reuse same descriptor route with larger capacities and adaptive solve slices.
+- Hardware Impact: i3/MX350 avoids persistent-container churn and hidden ownership ambiguity; estimated 28 us hot-path risk removed, 210 us cold build control.
+- Problem: `NativeList`, native hash maps, native multimaps, and native queues were used where fixed graph capacities already existed.
+- Solution: Converted topology edges, producers, consumers, producer rates, consumer demand, and traversal to fixed vault-backed arrays plus counts/CSR adjacency.
+- Rejected Alternatives: Recreate native containers inside DataVault; wrong abstraction because graph capacities are bounded and Burst jobs need flat arrays.
+- Scalability potential: Low gets deterministic flat array walks; Middle/High/Ultra spend saved cycles on larger solve slices and visual feedback, not container indirection.
+- Hardware Impact: i3/MX350 saves branch/hash overhead and allocator pressure; estimated 28 us per solve/build pressure removed.
+- Problem: Read accessors could complete jobs indirectly.
+- Solution: Accessors now fail closed when evaluation or publication is pending; explicit completion remains outside read APIs.
+- Rejected Alternatives: Continue hidden `.Complete()`; creates unpredictable frame spikes and violates pure read doctrine.
+- Scalability potential: Low avoids stalls; Middle/High/Ultra can poll snapshots at higher cadence without mutating schedule state.
+- Hardware Impact: Worst-frame risk reduced; exact spike avoided depends on outstanding job length.
+- Problem: DTO alignment had no primary-file proof artifact for touched logistics summary/record structs.
+- Solution: Added explicit layouts and `ValidateMemorySovereignLayouts` using `UnsafeUtility.SizeOf` plus field offsets.
+- Rejected Alternatives: Rely on review memory or `StructLayout` alone.
+- Scalability potential: Same binary DTO layout from weak devices to Ultra hardware.
+- Hardware Impact: 0 us hot path; prevents ARM64 mispack faults.
+- Problem: Crash dump route was generic instead of agent/task specific.
+- Solution: Routed primary black box to `Docs/AgentLogs/Dump_1319_Logistics.bin` and retained 300-frame vault-backed ring.
+- Rejected Alternatives: Managed strings or chat-only crash explanations.
+- Scalability potential: Low captures minimal fixed ring; Middle/High/Ultra keep same ring contract without changing gameplay authority.
+- Hardware Impact: 0 us until fault; bounded binary dump on fault.
+- ## Domain Sweep Decisions
+- Problem: `ShinobuLogisticsRouter` had 25 class-level native aliases already represented by DataVault handles.
+- Solution: Converted those aliases to transient handle-resolved properties and kept job signatures as NativeArray views.
+- Rejected Alternatives: Leave cached physical aliases; violates DataVault compaction and sovereign ownership.
+- Scalability potential: Low/Middle/High/Ultra keep same fixed vault storage and no extra managed route.
+- Hardware Impact: 0 GC; minor resolve cost only when methods touch views.
+- Problem: `SubmarineOsThermalGridRuntime` used struct view packets with NativeArrays that were stack-local by design but not compiler-enforced as stack-only.
+- Solution: Changed `VaultViews` and `CsvImportViews` to `ref struct`.
+Source lines scanned 199; retained 45; overflow-important omitted 94.
+
+FILE AgentLogs\Rationale_1320.md bytes=41176 done=0 blockers=22 pendingHits=16 selected=45
+- # Rationale 1320 - MEMORY_SOVEREIGN_PROCEDURAL_AUDIO_EXORCIST
+- ## Initial Boundary Decision
+- Problem: Prompt requires removal of persistent native audio aliases while project rules forbid cross-domain edits without proof.
+- Solution: Primary write scope is `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs`; broader `Assets/_Project/Scripts/Audio` sweep is audit-first and edit-only for uncontested, direct violations.
+- Rejected Alternatives: Rewriting `GlobalDataVault` or unrelated audio services first would expand authority surface and collide with other agents. Disabling procedural audio would remove behavior instead of fixing ownership.
+- Scalability potential: Low uses bounded polyphony and telemetry only on faults; middle keeps current synthesis math with vault-owned buffers; high/ultra may spend saved CPU on richer DSP once ownership is safe.
+- Hardware Impact: i3/MX350 gains come from eliminating stale native aliases and avoiding defrag crashes, not from reducing synthesis cost yet. Estimated direct hot-path saving is 0 us until code inspection proves removed work.
+- ## Mandate Selection
+- Problem: Native audio memory touches DSP threading, ARM64 DTO layout, zero-GC, global authority, and crash evidence.
+- Solution: Loaded eight mandates: audio DSP SPSC, native memory/job protocol, zero-GC, ARM64 layout, telemetry/postmortem, registry DI, signal lane segregation, cinematic cheat protocol.
+- Rejected Alternatives: Reading all registry files would waste time and pollute task scope. Reading only audio mandate would miss DataVault and DTO laws.
+- Scalability potential: Mandate set covers Low/Middle/High/Ultra by continuous quality weight, not binary switches.
+- Hardware Impact: Prevents new allocations or locks that would spike weak silicon; estimated prevention value is frame-spike avoidance, not measurable steady-state microsecond claim yet.
+- ## Primary Target Source Reality
+- Problem: batch prompt described 45 forbidden native aliases in `PlayerCriticalProceduralAudioRenderer.cs`, but disk state already contained many `VaultGenerationHandle ` descriptors and phase-local view structs. concrete remaining risk was that view structs...
+- Solution: Converted synthesis view carriers to `ref struct`, added explicit acquire/release helpers for each writer group, and wrapped audio-block/telemetry/transition writes in `try/finally`.
+- Rejected Alternatives: Reintroducing persistent `NativeArray ` fields for convenience, or pretending prompt baseline exactly matched current disk state.
+- Scalability potential: Low tier still drops or silences block on lock failure; middle/high/ultra retain current continuous `GlobalQualityWeight` voice/reverb scaling and can spend recovered safety margin on richer DSP without changing DTO contracts.
+- Hardware Impact: Direct measured saving is 0 us because no profiler run was allowed. i3/MX350 gain is fault avoidance: no stale alias survives vault relocation window.
+- ## Audio Synthesis Telemetry Ring
+- Problem: synthesis path had granular/prologue black boxes, but no owning ring for cross-buffer resolve failures, lock contention, underruns, and non-finite output in main audio block.
+- Solution: Added `AudioSynthesisTelemetryEntry` as `[StructLayout(LayoutKind.Explicit, Size = 64)]`, BufferID 70891, capacity 300, and cold dump route to `Docs/AgentLogs/Dump_1320_Synthesis.bin`.
+- Rejected Alternatives: Managed exception/log strings in audio thread, variable-size telemetry, or shared generic log that loses BufferID/generation evidence.
+- Scalability potential: Low records bounded fault state only; middle/high/ultra can keep same ring while increasing synthesis fidelity because telemetry capacity and DTO layout do not change with quality.
+- Hardware Impact: One fixed 64-byte struct write on telemetry record. Measured saving 0 us; avoided managed GC pressure is point.
+- ## Native Audio Bridge Ownership
+- Problem: `NativeAudioFrameRingBuffer` still held four long-lived raw pointers for frames, shared state, telemetry, and dump bytes. That made final audio-domain audit stop at 4 forbidden persistent candidates.
+- Solution: Replaced persistent raw pointers with vault handles for frames, shared state, telemetry, and dump scratch. native plugin descriptor is still created from phase-local vault views at registration time.
+- Rejected Alternatives: Keeping `H8Memory.AllocateRaw` because plugin needs pointers. plugin still receives pointers, but C# no longer stores unmanaged physical addresses across phases.
+- Scalability potential: Low/middle/high/ultra all use same bridge contract; quality changes block content and cadence, not ownership route.
+- Hardware Impact: Direct measured saving 0 us. Low-end benefit is removal of dangling pointer crash risk during compaction; high-end benefit is safe memory relocation under larger audio buffers.
+- ## Domain Sweep Conversion
+- Problem: broader audio-domain audit treated ordinary nested view structs with `NativeArray ` fields as persistent candidates even when they were intended as phase-local carriers.
+- Solution: Converted uncontested audio view carriers in `AdaptiveStemAudioMixer`, `VocalWarningSystem`, `ProceduralAudioEvents`, `NativeAudioFrameRingBuffer`, and `PlayerCriticalProceduralAudioRenderer` to stack-only `ref struct` where appropriate.
+- Rejected Alternatives: Suppressing audit findings or special-casing file names in Roslyn tool.
+- Scalability potential: Stack-only views are invariant across Low/Middle/High/Ultra and preserve continuous quality math.
+- Hardware Impact: No measured microsecond gain. It closes compiler-enforced lifetime hole and prevents accidental heap capture.
+- ## Build Guard
+- Problem: Final compile verification is required by process, but project rule forbids launching dotnet build under CPU load above 50% or while another dotnet/compiler process is running.
+- Solution: Sampled CPU and compiler processes before build. CPU samples were 91.90%, 89.38%, 95.98%, then 92.24%, 58.98%, 86.93%, then 96.08%, 100%; multiple `dotnet` processes and `VBCSCompiler` were visible later. Compile launch was blocked.
+- Rejected Alternatives: Launching `dotnet build` anyway or marking compile as passed without running it.
+- Scalability potential: Not runtime-related; protects shared 20+ agent workstation from extra build contention.
+- Hardware Impact: Avoids build-induced stalls on already saturated hardware. Runtime microsecond saving is 0 us.
+- ## Final Static Audit
+- Problem: Need objective proof that audio-domain persistent native aliases are gone.
+Source lines scanned 281; retained 45; overflow-important omitted 195.
+
+FILE AgentLogs\Rationale_1321.md bytes=44551 done=0 blockers=26 pendingHits=15 selected=45
+- # Rationale 1321 - MEMORY_SOVEREIGN_CARTOGRAPHY_EXORCIST
+- Status: STATIC_GREEN_COMPILE_BLOCKED
+- ## Decision 001 - Batch Source Recovery
+- Problem: User-specified root current_batch.md is absent, but batch prompt is mandatory before work.
+- Solution: Use CLI extraction from Docs/Tasks/CURRENT_BATCH.md with AGENT_PROMPT id=1321 and ignore neighboring prompt blocks.
+- Rejected Alternatives: Stop for user clarification; use neighboring 1320/1322 prompt; infer tasks from chat. All violate strict parsing.
+- Scalability potential: No runtime impact. Prevents wrong-domain edits that would waste integration time on weak and high-end targets.
+- Hardware Impact: 0 us/frame. Avoids compile churn and unnecessary Unity import work on i3/MX350.
+- ## Decision 002 - Mandate Set
+- Problem: Cartography memory work crosses native ownership, Burst jobs, UI/PDA, telemetry, AUP, and global authority.
+- Solution: Read native memory/jobs, zero GC, ARM64 layout, registry/DI, signal lanes, UI zero-GC streaming, AUP determinism, and crash telemetry mandates before code.
+- Rejected Alternatives: Read only zero-GC mandate; rely on AGENTS.md summary. Insufficient for DataVault relocation, DTO layout, and blackbox requirements.
+- Scalability potential: Low uses bounded, fail-closed views; Middle keeps stable snapshots; High/Ultra can add presentation telemetry without bloating gameplay DTOs.
+- Hardware Impact: Static planning cost only. Expected runtime goal remains 0 B GC and sub-0.1 ms suspicious-system threshold.
+- ## Decision 003 - Initial Proof Strategy
+- Problem: Prompt claims 42 persistent Native* fields in CartographyGridJobs.cs; text grep can misclassify locals, comments, and generic constraints.
+- Solution: Use Roslyn or fallback C#-aware static parsing to separate field declarations from locals, then emit JSON evidence.
+- Rejected Alternatives: Plain rg count as final proof; manual visual claim only. Both are weak evidence.
+- Scalability potential: Static proof scales to entire PDA domain without runtime burden.
+- Hardware Impact: 0 us/frame. Cold tooling only.
+- ## Decision 004 - Domain Collision Policy
+- Problem: Worktree already contains unrelated changes from other agents and no 1321 status existed.
+- Solution: Create 1321-only status/rationale files and use git status before sibling-file edits. Do not revert or normalize unrelated files.
+- Rejected Alternatives: Clean worktree; edit broad docs first; read archived batch logs. These violate agent hygiene and conflict avoidance.
+- Scalability potential: No runtime impact. Reduces merge-conflict stalls.
+- Hardware Impact: 0 us/frame.
+- ## Decision 005 - Stack-Only View Exorcism
+- Problem: `CartographyVaultBuffers` and `CartographyVaultReadBuffers` contained 42 NativeArray/ReadOnly field-like aliases named by prompt. They were already resolved from `VaultGenerationHandle `, but ordinary structs can still be cached as persistent field...
+- Solution: Convert both view structs to `ref struct`, making every native view stack-only by compiler rule while preserving Burst job signatures that receive transient `NativeArray ` parameters.
+- Rejected Alternatives: Delete all NativeArray job fields; convert to managed arrays; pass handles into Burst jobs. Job fields are transient kernel parameters, managed arrays violate Zero-GC, and handles inside kernels create authority confusion.
+- Scalability potential: Low keeps relocation-safe stack windows; Middle keeps existing upload cadence; High/Ultra retain full visual density because no data path was disabled.
+- Hardware Impact: 0 B GC. Copy cost unchanged; compiler prevents accidental long-lived aliases. Expected saved crash/debug time dominates runtime microseconds.
+- ## Decision 006 - 64-Byte Telemetry Entry
+- Problem: cartography blackbox entry was 80 bytes, exceeding mandated 64-byte telemetry footprint.
+- Solution: Keep AUP grid/local coordinates, quality scalar, frame, revision, state hash, mutation microseconds, reveal counts, and map flags in 64-byte explicit layout. Retain LastBitIndex and total voxel count in `CartographyCounterDTO`, not in each telemet...
+- Rejected Alternatives: Keep 80 bytes; add packed bitfields; split into managed logs. 80 bytes violates task DOD, bitfields reduce inspectability, managed logs allocate and are not crash-proof.
+- Scalability potential: Low writes 19.2 KB for 300 frames; Ultra can sample every frame without growing blackbox.
+- Hardware Impact: 4.8 KB less ring memory per cartography vault and less dump I/O on i3/MX350.
+- ## Decision 007 - Fail-Closed Capacity Gate
+- Problem: `TryResolveViews` and `TryReadOnlyViews` proved handle generation through DataVault but did not verify every resolved view met expected capacity before job/GPU usage.
+- Solution: Add `HasExpectedCoreCapacity` for mutable and read-only views plus legacy capacity checks. Resolver returns false before consumers see undersized buffers.
+- Rejected Alternatives: Trust handle existence; validate only at allocation; throw exceptions. Stale or undersized buffers must fail closed without managed exceptions in active frame paths.
+- Scalability potential: Low devices skip unsafe visual updates instead of crashing; High/Ultra keep full buffer capacity when vault metadata is healthy.
+- Hardware Impact: About 18 length checks per resolution, sub-microsecond target; avoids hard fault cost.
+- ## Decision 008 - Tuning Write Lock
+Source lines scanned 325; retained 45; overflow-important omitted 233.
+
+FILE AgentLogs\Rationale_1322.md bytes=7204 done=0 blockers=2 pendingHits=1 selected=45
+- # Rationale 1322 - MEMORY_SOVEREIGN_FLUID_ENGINE_EXORCIST
+- ## Initial Boundary
+- Problem: Assignment exists in `Docs/Tasks/CURRENT_BATCH.md` under ` `; root `current_batch.md` is absent.
+- Solution: Use actual active batch file discovered by `rg --files`, then extract only 1322 XML block with PowerShell regex.
+- Rejected Alternatives: Reading neighboring prompts as context; this violates strict parsing and contaminates domain decisions.
+- Scalability potential: No runtime effect. Prevents wrong-domain edits.
+- Hardware Impact: No frame impact.
+- Problem: No existing `Status_1322.md`, `Rationale_1322.md`, or `LOG_1322.md` present.
+- Solution: Create current-batch status and rationale files before coding.
+- Rejected Alternatives: Chat-only tracking; rejected by project protocol.
+- ## Primary Memory Exorcism
+- Problem: `HectonFluidEngine.cs` held 39 persistent `NativeArray ` fields. These aliases survive across vault relocation windows and can become stale raw physical addresses.
+- Solution: Replace 39 fields with `FluidVaultBuffer `, pointer-free descriptor wrapper around `VaultGenerationHandle ` plus `BufferID` and required length metadata. All storage is now requested from `GlobalDataVault`.
+- Rejected Alternatives: Keep `NativeArray ` fields and register them with `NativeMemorySentinel`; sentinel registration does not make stale aliases relocation-safe.
+- Scalability potential: Low tier keeps same continuous LOD math and avoids crash stalls; mid/high/ultra tiers keep larger vault buffers without private aliases.
+- Hardware Impact: Removes hard-crash class on i3/MX350 during defrag. Normal resolve overhead is handle-level; no managed GC.
+- Problem: Cold boot previously allocated persistent fluid arrays directly and then disposed/reallocated on capacity changes.
+- Solution: Route primary buoyancy, GPU upload, brine, advection, splashdown, maelstrom, and abyssal telemetry buffers through `GlobalDataVault.EnsureGenerationHandle ` using `SystemID.Fluid` and local `BufferID` range `1322000-1322040`.
+- Rejected Alternatives: Reuse old buffer IDs from submarine flooding or ocean wave systems; that would collapse ownership provenance and break one-owner routing.
+- Scalability potential: Low devices can keep smaller capacities; high/ultra devices can grow capacity through vault ownership without invalidating class fields.
+- Hardware Impact: Capacity growth remains cold. Hot path avoids managed allocation and stale pointer lifetime.
+- Problem: Read accessors could expose old aliases or force buffer growth if implemented through normal ensure paths.
+- Solution: `FluidVaultBuffer.AsReadOnly()` refreshes stale handles through `TryGetGenerationHandle` and resolves with `TryReadOnlyHandle` only. It does not allocate, publish, complete jobs, or poll scene.
+- Rejected Alternatives: `GlobalRegistry.DataVault` polling in read properties; registry is cold identity/DI only.
+- Scalability potential: UI/debug readbacks degrade closed when handle is stale instead of blocking simulation.
+- Hardware Impact: Read accessor cost is bounded handle lookup; no GC.
+- Problem: Mutable writes needed clear lock/release discipline after alias removal.
+- Solution: `FluidVaultBuffer ` write path uses `TryAcquireWriteLock` and `ReleaseWriteLock` in `finally`; lock contention records to new fluid sovereignty ring when available.
+- Rejected Alternatives: Direct `TryResolveHandle` writes for all setters; faster but not relocation-fence explicit.
+- Scalability potential: Low tier gets safety over throughput; high/ultra can later replace setter-level locking with coarser dispatcher-phase write windows for visual overkill.
+- Hardware Impact: Setter-level lock is conservative bridge. It is heavier than ideal but does not allocate; future work should batch locks in `GatherData`.
+- Problem: new memory route needed black-box record for stale handles, contention, and non-finite force/torque failures.
+- Solution: Add explicit 64-byte `FluidTelemetryEntry`, vault-owned 300-entry ring, cursor buffer, event writer, and cold binary dump `Docs/AgentLogs/Dump_1322_FluidEngine.bin`.
+- Rejected Alternatives: Managed `List `/Unity log-only telemetry; useless for crash post-mortem and GC-hostile.
+- Scalability potential: Low/mid tiers record only faults/events; high/ultra can afford more detailed microsecond fields without DTO changes.
+- Hardware Impact: Fault/event writes only. Non-finite force/torque dump is cold I/O, not frame-normal.
+- Problem: Background-thread dump requested by batch conflicts with DataVault view lifetime because background thread would hold read alias after current phase.
+- Solution: Write binary dump synchronously in cold catastrophic path from read-only view, then release control. This keeps alias lifetime local and avoids background stale pointers.
+- Rejected Alternatives: Queue raw `NativeArray`/pointer to background worker; that violates relocation compatibility mandate.
+- Scalability potential: No impact in healthy runtime. Fault cost is accepted because alternative corrupts post-mortem data.
+- Hardware Impact: On i3/MX350 dump can hitch during catastrophic event, but it avoids undefined memory access.
+- Problem: Proof required domain sweep without fighting other agents.
+- Solution: `git status --short` confirmed only this agent's target/new validator in fluid scope; scanner over fluid/buoyancy physics files found zero persistent native field violations outside `HectonFluidEngine.cs`.
+- Rejected Alternatives: Editing clean sibling files to look busy; rejected as conflict risk and bureaucracy.
+- Problem: Compile verification was required, but project policy forbids builds under high CPU or active `dotnet`/`csc`.
+Source lines scanned 77; retained 45; overflow-important omitted 9.
+
+FILE AgentLogs\Rationale_1323.md bytes=21649 done=0 blockers=2 pendingHits=2 selected=45
+- # Rationale 1323 - Submarine Atmosphere Memory Sovereignty
+- Status: VERIFIED_GREEN_STATIC / COMPILE_BLOCKED_BY_BUILD_HYGIENE
+- ## Decision 001 - Domain Scope
+- Problem: Prompt names Echelon 5 survival physiology while target files are submarine atmosphere/gas dynamics and `Assets/_Project/Scripts/Atmosphere`.
+- Solution: Treat `SubmarineAtmosphereSystem.cs` as primary authority target and Atmosphere folder as secondary sweep. Gas partial pressure affects survival O2/CO2 truth, but file ownership is atmosphere-side.
+- Rejected Alternatives: Editing unrelated survival/player files would violate domain boundary and create cross-agent conflict.
+- Scalability potential: Low tier keeps coarse gas/visual fake cadence; middle keeps full compartment cadence; high/ultra spend saved CPU on richer VISUAL_SYNC steam, warning, and scrubber presentation without changing gameplay truth.
+- Hardware Impact: Avoiding cross-domain edits prevents compile churn; expected low-end gain is risk reduction, not measured frame time yet.
+- ## Decision 002 - GlobalDataVault Route Stance
+- Problem: Prompt demands replacement of persistent native collection fields with generation handles, but blind rewrite can break existing compile-visible APIs.
+- Solution: First build field-level hit list and ownership map; then replace only after confirming available `GlobalDataVault`/handle APIs on disk.
+- Rejected Alternatives: Inventing `VaultGenerationHandle ` signatures before reading Core memory APIs would be fake architecture and likely non-compiling.
+- Scalability potential: Low/middle/high/ultra behavior must preserve `GlobalQualityWeight`; memory route must not change solver truth identity.
+- Hardware Impact: Reduces stale-pointer/relocation risk on weak silicon; microsecond gain pending source and build audit.
+- ## Decision 003 - Task 01 Scanner Result
+- Problem: prompt says 37 forbidden fields, while `SubmarineAtmosphereSystem` class itself contains 33 persistent `NativeArray` fields.
+- Solution: Count all persistent class/static-helper native aliases in `SubmarineAtmosphereSystem.cs`: 33 solver arrays plus 4 static pressure-event `NativeQueue` fields. This matches 37. Transient job fields remain outside primary hit list.
+- Rejected Alternatives: Reporting only 33 solver arrays would hide two static event buses; counting `IJob` struct parameters would inflate number with non-persistent phase-local views.
+- Scalability potential: Low tier keeps event capacity bounded; middle/high/ultra can raise presentation cadence through continuous budget scalars without changing gas truth arrays.
+- Hardware Impact: ledger prevents stale pointer misses during DataVault relocation. Direct microsecond gain is not claimed; crash-risk surface reduction is measurable artifact.
+- ## Decision 004 - Buffer Range Selection
+- Problem: `SystemID.SubmarineAtmosphere` does not exist in `H8Memory.cs`, and `H8Memory.cs` is already dirty from another agent.
+- Solution: Use existing `SystemID.HabitatAtmosphere` and reserve local `BufferID` casts `72200..72238` for submarine atmosphere arrays, event payload lanes, telemetry ring, and cursor. `rg` found no collisions in project scripts or `H8Memory.cs`.
+- Rejected Alternatives: Editing central `BufferID` enum during concurrent work risks cross-agent merge conflict; reusing `AtmosphereLogistics*` IDs would violate one-owner-one-route.
+- Scalability potential: range separates survival-submarine gas truth from base logistics atmosphere lanes, allowing each tier to scale cadence/capacity independently while preserving DTO identity.
+- Hardware Impact: Local route avoids central file churn now. Expected low-end gain comes from relocation safety; no frame-time claim before build/profiler proof.
+- ## Decision 005 - DTO and Telemetry Scope
+- Problem: forbidden solver arrays store primitives (`float`, `int`, `uint`, `byte`, `int2`), not custom gas DTOs.
+- Solution: Leave primitive ABI unchanged and add planned 64-byte explicit `AtmosphereTelemetryEntry1323` for blackbox state. Existing `HighPressureEventPayload` and `FatalPressureImplosionEventPayload` are already explicit 32-byte payloads.
+- Rejected Alternatives: Packing 33 scalar lanes into new monolithic compartment DTO would rewrite solver truth layout, change cache behavior, and exceed task’s memory-ownership blast radius.
+- Scalability potential: Low/middle/high/ultra can scale solver cadence and fake presentation; DTO layout remains fixed so saves, telemetry, and authority routes do not bifurcate.
+- Hardware Impact: 64-byte telemetry stride aligns ring entries to cache lines; low-end benefit is deterministic post-mortem visibility without managed allocation.
+- ## Decision 006 - Primary Vault Descriptor Substitution
+- Problem: `SubmarineAtmosphereSystem.cs` owned 33 solver `NativeArray ` fields and two static event buses owned 4 `NativeQueue ` fields, blocking DataVault relocation.
+- Solution: Replace persistent native aliases with `VaultGenerationHandle ` descriptors and local `BufferID 72200..72238` lanes under `SystemID.HabitatAtmosphere`; keep Burst job `NativeArray ` fields transient because they are phase-local scheduled views.
+- Rejected Alternatives: Managed arrays would violate zero-GC/cache rules; editing central `H8Memory.cs` during another agent's dirty change would create conflict; retaining DataVault-exempt queues would fail Task 06.
+- Scalability potential: Low tier can skip contended atmosphere step without corrupting state; middle/high/ultra keep same truth route and spend quality budget on presentation fakes, not alternate gameplay state.
+- Hardware Impact: Removes stale pointer owners from MonoBehaviour and static buses. Expected low-end gain is crash-risk reduction during compaction; no frame-time claim before profiler proof.
+- ## Decision 007 - Job Lock Window
+- Problem: Burst `AtmosphereStepJob` still requires raw `NativeArray ` views, but DataVault compaction must not relocate buffers while job is running.
+- Solution: Acquire DataVault buffer locks for every job input/output lane immediately before constructing job, release locks immediately after `DispatcherJobSwap.TryComplete`, then swap generation handles. DataVault replacement force-completes and releases t...
+- Rejected Alternatives: Passing handles into Burst jobs is useless to Burst and violates prompt; resolving views without lock would leave relocation window; same-frame `.Complete()` loops were not introduced.
+- Scalability potential: Weak devices can miss solver step on lock contention; middle/high/ultra retain same cadence when locks are available and continue to scale visual overkill through presentation systems.
+- Hardware Impact: Adds 26 lock/unlock calls around scheduled job. Cost must be profiled, but it buys relocation correctness and avoids hard crashes on i3/MX350-class devices.
+- ## Decision 008 - Blackbox Route
+Source lines scanned 196; retained 45; overflow-important omitted 100.
+
+FILE AgentLogs\Rationale_1324.md bytes=40257 done=0 blockers=16 pendingHits=5 selected=45
+- # Rationale 1324 - MEMORY_SOVEREIGN_GAS_DYNAMICS_EXORCIST
+- Status: COMPLETE - DOMAIN STATIC GREEN - PROJECT COMPILE BLOCKED OUTSIDE 1324
+- ## Decision 000 - Prompt Source Recovery
+- Problem: User specified root `current_batch.md`, but `C:\hades\current_batch.md` is absent.
+- Solution: Used CLI search and extracted `AGENT_PROMPT id="1324"` from `Docs/Tasks/CURRENT_BATCH.md` using attribute-aware regex. This is active batch file on disk.
+- Rejected Alternatives: Guessing from chat text was rejected because batch protocol requires disk extraction. Reading neighboring agent prompts as design input was rejected after locating correct block.
+- Scalability potential: No runtime impact. Preserves agent isolation under multi-agent batch execution.
+- Hardware Impact: 0 us runtime. No i3/MX350 frame impact.
+- ## Decision 001 - Relevant Mandates
+- Problem: Gas solver work touches native memory, Burst jobs, DTO layout, survival gas/pressure, telemetry, and global dependency routes.
+- Solution: Loaded native memory/job, zero-GC, ARM64 layout, survival O2/pressure, postmortem telemetry, visual-fake-first, and GlobalRegistry/DI mandates before code mutation.
+- Rejected Alternatives: Broad mandate dump was rejected because it inflates context and does not improve first five tasks. Ignoring gas survival law was rejected because partial pressure is player-survival truth.
+- Scalability potential: Low: coarse compartment math and skipped update on contention. Middle: normal cadence with compact DTOs. High: richer telemetry and visual feedback from saved CPU. Ultra: presentation overkill remains outside gameplay truth DTOs.
+- Hardware Impact: Expected runtime gain cannot be claimed before source inspection. Target is 0 B GC and removal of stale pointer crash class.
+- ## Decision 002 - Buffer Identity Ledger
+- Problem: Thirty-one class-scope NativeArray aliases made GasDynamicsSolver second unmanaged owner of atmospheric state.
+- Solution: Mapped every lane to SystemID.HabitatAtmosphere with stable BufferID values in Docs/Reports/GAS_DYNAMICS_NATIVE_ALIAS_LEDGER_1324.json; reused BufferID.HabitatBaseAwakeState for existing shared awake-state lane.
+- Rejected Alternatives: Editing global enum before conflict proof was rejected. Local private BufferID constants match existing project practice and avoid cross-domain churn.
+- Scalability potential: Low: fewer allocator stalls and no stale owner alias. Middle: same gas cadence with one truth route. High: richer atmosphere visualization can read snapshots without new truth buffers. Ultra: visual overkill stays downstream of stable...
+- Hardware Impact: i3/MX350 expected gain is stall avoidance, not claimed arithmetic speedup.
+- ## Decision 003 - DTO And Black-Box Target
+- Problem: Existing GasDynamicsTelemetryEntry is 32 bytes while assignment requires 64-byte ARM64-safe telemetry record.
+- Solution: Convert runtime telemetry to 64-byte explicit AtmosphereTelemetryEntry and preserve 300-frame DataVault ring.
+- Rejected Alternatives: Padding only dump writer was rejected because runtime DTO and crash artifact would disagree.
+- Scalability potential: Low: fixed 19.2 KB ring. Middle: stable state hash history. High: extra diagnostic fields without resizing. Ultra: richer postmortem facts without changing gameplay authority.
+- Hardware Impact: 300 x 64 bytes is 19.2 KB; expected i3/MX350 cost is negligible and deterministic.
+- ## Decision 004 - Descriptor Ownership And Lock Span
+- Problem: GasDynamicsSolver held 31 persistent NativeArray fields, making solver lifetime second owner beside DataVault.
+- Solution: Replaced class-scope physical lanes with VaultGenerationHandle descriptors. Runtime mutation resolves NativeArray views inside execution scope and owns write locks through try/finally; scheduled gas jobs keep state locks until TryCompleteStep rele...
+- Rejected Alternatives: Immediate resolve-and-cache was rejected because it preserves stale pointer failure. Passing VaultGenerationHandle into jobs was rejected because Burst jobs need resolved data-local views, not global descriptors. Releasing state locks...
+- Scalability potential: Low: one owner route reduces allocator stalls and stale aliases. Middle: existing cadence stays deterministic. High: telemetry can expand presentation feedback without changing gas truth. Ultra: saved ownership risk can buy visual atm...
+- Hardware Impact: i3/MX350 estimated gain is crash/stall avoidance, not arithmetic speedup. Lock overhead is estimated at 3 us per mutation batch, dwarfed by frame recovery from removing duplicate persistent ownership.
+- ## Decision 005 - BaseAwakeState Buffer Route - Superseded
+- Problem: BaseAwakeState already had global BufferID and external readers accessed it through `IGasDynamicsSolver`.
+- Solution: Initial pass reused `BufferID.HabitatBaseAwakeState` and did not release it from solver disposal.
+- Rejected Alternatives: Allocating private duplicate awake-state lane was correctly rejected because it creates split truth.
+- Scalability potential: Superseded by Decision 025. one-route choice was correct; non-release ownership conclusion was not.
+- Hardware Impact: Superseded by Decision 025. No runtime saving is claimed from old decision.
+- ## Decision 006 - DTO Layout Guard
+- Problem: Explicit layout claims are not proof if future edit changes field size or padding.
+- Solution: Added AreDtoLayoutsValid(), checking PendingBaseTransitionSignal is 64 bytes and AtmosphereTelemetryEntry equals TelemetryEntrySizeBytes before native state boot.
+- Rejected Alternatives: Documentation-only layout proof was rejected. Editor-only validation was insufficient because runtime boot must fail closed on bad DTO size.
+- Scalability potential: Low to Ultra: no hot path cost; cold boot prevents corrupted telemetry or transition DTO layout.
+- Hardware Impact: Cold boot UnsafeUtility.SizeOf checks only. Estimated frame cost: 0 us.
+- ## Decision 007 - Compile Wall Classification
+Source lines scanned 248; retained 45; overflow-important omitted 167.
+
+FILE AgentLogs\Rationale_1325.md bytes=108020 done=0 blockers=47 pendingHits=18 selected=45
+- # Rationale 1325 - Persistent World Registry Memory Sovereignty
+- Status: REAUDIT37 PRIMARY DOMAIN STATIC GREEN WITH EXTERNAL RESIDUALS. Reaudit37 build attempt failed on external Candice SQLite references; runtime profiler proof absent.
+- ## Decision 0001 - Scope Discipline
+- Problem: prompt names broad world sweep but authoritative primary target is `PersistentWorldRegistry.cs`, and sibling files may be actively modified by other agents.
+- Solution: Run primary AST scan and migration first; run `git status` before any sibling file inspection or mutation.
+- Rejected Alternatives: Blind folder-wide rewrites would create merge conflicts and route ownership damage.
+- Scalability potential: Low keeps memory traffic stable by removing stale aliases; Middle/High/Ultra can spend saved memory safety margin on larger residency windows without changing DTO truth.
+- Hardware Impact: i3/MX350 gain is crash-risk reduction and avoided relocation stalls; no measured frame delta yet.
+- ## Decision 0002 - Proof Before Rewrite
+- Problem: prompt asserts 19 forbidden fields, but source reality must decide actual patch.
+- Solution: Build machine-readable hit list from source syntax, then patch only confirmed field aliases.
+- Rejected Alternatives: Trusting prompt counts and deleting names that may not exist would break compilation.
+- Scalability potential: Low through Ultra all benefit from deterministic owner maps; no quality-tier branch introduced.
+- Hardware Impact: Static pass cost is offline; runtime impact pending source findings.
+- ## Decision 0003 - Mandate Set
+- Problem: Memory sovereignty touches native collections, DTO layout, DataVault routes, telemetry, and registry hot-path law.
+- Solution: Read 8 targeted mandates before code mutation and bind status ledger to those mandates.
+- Rejected Alternatives: AGENTS-only interpretation misses DataVault and ARM64 details.
+- Scalability potential: Low/Middle/High/Ultra behavior must remain continuous via `GlobalQualityWeight`, not binary device gates.
+- Hardware Impact: Prevents weak-silicon ARM64 misalignment and MX350 memory churn; exact microseconds pending implementation.
+- ## Decision 0004 - Primary Alias Count
+- Problem: assignment claims exactly 19 forbidden aliases, while source line scan also shows three adjacent `NativeParallelHashSet` fields.
+- Solution: Use existing Roslyn AST scanner as formal Task 01 proof for exact 19 prompt-targeted aliases and track three hash sets as sovereignty-relevant adjacent aliases for migration plan.
+- Rejected Alternatives: Inflating prompt count to 22 would falsify task metric; ignoring hash sets would leave persistent unmanaged aliases that still block defragmentation safety.
+- Scalability potential: Low removes relocation crash risk first; Middle keeps O(1)-style lookup capacity; High/Ultra can raise residency and save snapshot density through continuous budget math after aliases are handle-backed.
+- Hardware Impact: Scan-only decision has no runtime gain; it prevents estimated 0.2-1.0 ms stall class from stale pointer recovery paths on i3/MX350 by forcing DataVault ownership before runtime proof.
+- ## Decision 0005 - Vault Identity Route
+- Problem: prompt suggests speculative `SystemID.WorldRegistry`, but `H8Memory.cs` does not define that identity.
+- Solution: Use `SystemID.WorldStreaming` for all PersistentWorldRegistry DataVault handles and assign local stable `BufferID` constants in unused 74450-74517 range.
+- Rejected Alternatives: Adding core `SystemID` during localized registry patch would mutate shared identity API and create cross-agent risk; using `SystemID.External` would erase ownership evidence.
+- Scalability potential: Low keeps single owner for survival capacity; Middle/High/Ultra can scale buffer capacities through continuous quality math without changing authority route.
+- Hardware Impact: i3/MX350 avoids registry lookup ambiguity and release-lock stalls; expected direct frame gain is only after migration, not from identity selection.
+- ## Decision 0006 - DTO Churn Rejection
+- Problem: Task 04 demands DTO layout extraction, but target buffer DTOs already use explicit layouts with 8-byte-multiple sizes.
+- Solution: Preserve existing DTO definitions and add later validator proof instead of rewriting correct layouts.
+- Rejected Alternatives: Mechanical DTO rewrites would risk save-format drift and break binary persistence for no measurable gain.
+- Scalability potential: Low through Ultra preserve save identity and cache footprints; compact delta remains 4 records per 64-byte line.
+- Hardware Impact: Avoids regression risk; no runtime microseconds claimed.
+- ## Decision 0007 - Descriptor Wrapper Route
+- Problem: Replacing 19 field aliases with raw individual handle fields would require hundreds of invasive call-site edits in one pass and would raise compile-risk without adding safety beyond DataVault ownership.
+- Solution: Replace direct native fields with `VaultBacked*` descriptor structs that store only `IDataVault`, `VaultGenerationHandle `, `BufferID`, `SystemID`, and scalar capacity, while resolving physical arrays only inside method scope.
+- Rejected Alternatives: Keeping any `Native*` persistent field fails Roslyn proof; rewriting every method to raw handles immediately risks behavioral drift and wider save/load breakage.
+- Scalability potential: Low remains fail-closed if vault is unavailable; Middle preserves current capacity; High/Ultra can raise capacity through `maxTrackedItems` without changing public authority.
+- Hardware Impact: On i3/MX350 this removes stale-pointer relocation risk; direct microsecond savings are not claimed until compile/runtime profiling. Added per-access handle resolution is known cost to optimize after correctness proof.
+- ## Decision 0008 - Tombstone Job Lock Bridge [SUPERSEDED]
+Source lines scanned 731; retained 45; overflow-important omitted 581.
+
+FILE AgentLogs\Rationale_1326.md bytes=11639 done=0 blockers=7 pendingHits=4 selected=45
+- # Agent 1326 Rationale
+- State: VERIFIED_GREEN_STATIC / LATEST BUILD BLOCKED BY CPU AND ACTIVE CSC
+- Problem: `SubmarineStructuralGrid.cs` held 15 persistent native collection fields that could become stale physical aliases after GlobalDataVault relocation.
+- Solution: Replace every persistent alias with 16-byte `VaultGenerationHandle ` descriptor and resolve physical `NativeArray ` views only inside active dispatcher phase.
+- Rejected Alternatives: Managed arrays violate Zero-GC and Data Sovereignty. Cached NativeArray views preserve defrag crash class. Replacing solver with disabled logic would be gameplay lie.
+- Scalability potential: Low skips conflicted frames and keeps bounded 16-impact/300-entry caps. Middle runs same handles with normal cadence. High spends saved stability budget on denser visual deformation. Ultra can overdrive leak plume and damage visuals w...
+- Hardware Impact: On i3/MX350 this removes high-cost stall/crash path caused by stale native aliases. Exact measured microsecond gain is 0.0 because no profiler run was permitted; no fake frame-time claim is made.
+- Problem: BufferID ownership had to be established while `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` was already modified by other agents.
+- Solution: Use local `StructuralGridVaultRoute` range 1326000-1326014 inside target file and keep owner as `SystemID.VehiclesPhysics`.
+- Rejected Alternatives: Editing dirty global enum would create cross-agent merge risk. Reusing unrelated BufferIDs would break one-fact/one-owner routing.
+- Scalability potential: Low/Middle/High/Ultra all share identical BufferID identity, so quality scaling never changes authority or save identity.
+- Hardware Impact: No measured CPU delta; gain is deterministic routing with no hot GlobalRegistry polling.
+- Problem: Burst jobs still need physical arrays, but persistent physical fields are forbidden.
+- Solution: Lock vault buffer, resolve physical array, execute structural job with same-phase `Run()`, and release pin in same `finally` block.
+- Rejected Alternatives: Passing handles into Burst jobs is not executable by Burst. Holding pinned buffer views across frames blocks compaction. Async schedule/readback was rejected for this manager after second-pass audit.
+- Scalability potential: Low skips update on contention. Middle uses same math with ordinary cadence. High/Ultra can spend cycles on visual overkill after same phase releases pins.
+- Hardware Impact: On weak silicon this removes stale-alias and cross-frame pin risk. Exact measured microsecond gain is 0.0 due blocked compile/profiler.
+- Problem: Public read accessors could become hidden mutation/synchronization points.
+- Solution: Use pure `TryReadOnlyHandle` accessors and fail closed when handles are unavailable or stale.
+- Rejected Alternatives: Completing jobs inside getters, growing buffers, scene search, or GlobalRegistry hot polling violates global systems doctrine.
+- Scalability potential: All tiers consume same immutable snapshots; quality only changes cadence/fidelity, not truth ownership.
+- Hardware Impact: Prevents main-thread read spikes on i3/MX350; exact measured delta unavailable.
+- Problem: Crash diagnosis required 300-frame black box without managed hot-path logs or fresh fault-frame managed allocations.
+- Solution: Write 64-byte explicit `StructuralTelemetryEntry` records into DataVault-backed ring with numeric `FailureCode`; on invalid state copy into preallocated `StructuralTelemetryEntry[300]` snapshot and wake persistent background writer for `Docs/Agent...
+- Rejected Alternatives: `Debug.Log`, string formatting, `ThreadPool.QueueUserWorkItem` per fault, fresh managed snapshot arrays per fault, or background use of live vault-resolved NativeArray. latter would recreate stale alias class on another thread.
+- Scalability potential: Low still gets fixed-size telemetry. Middle/High/Ultra can fill CPU/GPU microsecond fields later without DTO layout changes.
+- Hardware Impact: Normal-frame cost is bounded native struct write only. Fault-frame cost is fixed 300-entry struct copy plus event signal; binary I/O stays on persistent writer.
+- Problem: Layout drift can silently corrupt ARM64 reads.
+- Solution: Add editor initialize validation for `VaultGenerationHandle `, `ImpactCommand`, and `StructuralTelemetryEntry` sizes/offsets; replace 8-byte padding with explicit byte padding in `ImpactCommand`.
+- Rejected Alternatives: Comments or documentation-only alignment rules.
+- Scalability potential: All device tiers share identical cache-line footprints.
+- Hardware Impact: Prevents unaligned access regressions on low-end ARM64-style targets; no runtime frame cost outside editor validation.
+- Problem: Solver loops still contained branch statements after first submission.
+- Solution: Convert Burst job inner-loop conditionals to `math.select`/mask arithmetic and keep damage falloff as cheap Padé-style approximation rather than FEM.
+- Rejected Alternatives: CPU-heavy physical crack simulation, async solver handoff with cross-frame pins, or branch-heavy early-continue loops inside SIMD lanes.
+- Scalability potential: Low runs cheap bounded loops; Middle uses same deterministic kernel; High/Ultra can buy presentation overkill with saved synchronization budget.
+- Hardware Impact: Branch removal improves SIMD predictability on i3/MX350-class hardware. Exact measured microseconds remain unavailable.
+- Problem: AUP local hit conversion subtracted in double precision but did not explicitly clamp double delta before final float cast.
+- Solution: Inserted `math.clamp` on `relativeWorldDouble` after `hitAup - rootAup` and before `new Vector3((float)...)`, bounded by `AupLocalCastClampMeters`.
+- Rejected Alternatives: Relying on finite checks alone or casting absolute AUP coordinates to float before origin subtraction. Both are too weak for 100km-scale jitter prevention.
+- Scalability potential: Low/Middle/High/Ultra share same deterministic local-space conversion; quality never changes spatial authority.
+- Hardware Impact: Prevents catastrophic float precision loss at large map offsets. Microsecond cost is negligible relative to safety of local structural hit placement.
+- Problem: Broad sweep touched dirty workspace with many sibling files under active ownership.
+- Solution: Limit writes to `SubmarineStructuralGrid.cs` plus required docs/reports and document bypass.
+- Rejected Alternatives: Forcing edits into `H8Memory.cs` or sibling systems would be architectural sabotage under current collaboration rules.
+Source lines scanned 87; retained 45; overflow-important omitted 27.
+
+FILE AgentLogs\Rationale_1327.md bytes=21397 done=0 blockers=8 pendingHits=5 selected=45
+- # Rationale 1327 - MEMORY_SOVEREIGN_FLORA_INTERACTION_EXORCIST
+- Status: STATIC VERIFIED GREEN FOR 1327 GATES - project compile attempted and failed in external systems before green build could be produced.
+- Problem: Persistent native collection aliases in flora interaction would block GlobalDataVault relocation and can become dangling pointers after compaction.
+- Solution: Inspect actual source first, then replace only verified persistent aliases with DataVault handles or document mismatch if flagged state is stale.
+- Rejected Alternatives: Blind mechanical rewrite of NativeArray text; unsafe because locals and third-party/native owner fields may be legal.
+- Scalability potential: Low uses skipped visual update on contention; Middle uses normal cadence; High increases near-field visual density; Ultra spends saved budget in VISUAL_SYNC only.
+- Hardware Impact: Expected i3/MX350 gain is from preventing relocation stalls and hot-path GC/native alias hazards; measured proof absent.
+- Problem: Batch mandates require selected technical rules before code.
+- Solution: Read eight relevant .agents-skills files covering native memory, zero GC, ARM64 layout, telemetry, phases, registry DI, signal lanes, and flora instancing.
+- Rejected Alternatives: Reading all registry files would waste context and not improve this task.
+- Scalability potential: Rules preserve continuous GlobalQualityWeight scaling instead of binary tiers.
+- Hardware Impact: Prevents i3/MX350 frame spikes from hidden allocations or same-frame job completion.
+- Problem: `FloraInteractionManager` held 14 direct persistent native aliases despite existing Vault plumbing for wake and sway buffers.
+- Solution: Migrate those aliases to `VaultGenerationHandle ` descriptors using local BufferID constants 71655-71668 and existing cached `IDataVault` route.
+- Rejected Alternatives: New `SystemID.WorldFlora`; enum mutation is global authority/API change outside this file and file already owns adjacent flora buffers under `SystemID.Vfx`.
+- Scalability potential: Low skips visual/reactive update on Vault contention; Middle preserves current cadence; High/Ultra spend savings in VISUAL_SYNC phase seed and shader detail, not extra gameplay truth.
+- Hardware Impact: i3/MX350 gains come from avoiding stale pointer retention and allowing Vault compaction; exact microsecond proof pending compile/runtime.
+- Problem: Reactive flora handle staging used `NativeList ` fields, which cannot be represented as direct Vault descriptor without retaining long-lived list alias.
+- Solution: Replace lists with Vault-owned `NativeArray ` buffers plus scalar count fields; use existing `HectonSpatialHash.CollectSphere(..., NativeArray )` overloads.
+- Rejected Alternatives: Wrapping `NativeList ` inside another owner object; still preserves persistent native alias outside `GlobalDataVault`.
+- Scalability potential: Fixed 64-slot query/register buffers fail closed under density pressure; higher tiers should raise capacity through Vault buffer resize only after profiler proof.
+- Hardware Impact: Removes list allocator metadata and auto-growth risk; estimated low-end win 3-8 us during dense cascade refresh, proof pending.
+- Problem: Descriptor substitution would leak Vault references if `OnDestroy` only defaulted generation handles.
+- Solution: Add `ReleaseFloraAuxiliaryVaultBuffers()` and invoke it before descriptor clearing and before DataVault hot-swap.
+- Rejected Alternatives: Relying on scene-owned Vault sweep; that hides reference lifetime and delays proof.
+- Scalability potential: Low/Middle avoid accumulated stale flora buffers after scene churn; High/Ultra keep compaction headroom for visual buffers.
+- Hardware Impact: Prevents retained auxiliary buffers from occupying reusable arena memory; i3/MX350 gain is memory-pressure avoidance, not per-frame speed.
+- Problem: `TryAcquireWriteLock` branches can fail mid-chain after earlier buffer was acquired.
+- Solution: Keep explicit fail-closed release calls and `finally` releases around ocean samples, parasite nodes, cascade events, phase seeds, template masks, and allelopathic masks.
+- Rejected Alternatives: Nested helper hiding lock topology; direct visibility is easier to audit under 20-agent edits.
+- Scalability potential: Lock contention skips visual/flora refresh for one frame rather than blocking global relocation.
+- Hardware Impact: Low-end devices avoid hard stalls from writer lock retention; measured contention cost pending runtime profiler.
+- Problem: Public kelp pushback sampling used Vault-resolved query buffer as scratch storage, which is not pure read.
+- Solution: Treat query buffer as mutating scratch lane and guard it with `TryAcquireWriteLock` plus `finally` release in `TryResolveKelpPushback` and cascade triggering.
+- Rejected Alternatives: Calling path "read-only" because output is density value; spatial query writes result handles.
+- Scalability potential: Low skips one pushback/cascade sample under contention; Middle/High/Ultra keep current smooth radius math and use saved cycles for denser visuals.
+- Hardware Impact: i3/MX350 avoids relocation stalls from scratch alias mutation; contention skip cost is visual-only.
+- Problem: New Vault handle failures needed owned proof artifact without managed hot-path logging.
+- Solution: Add `FloraMemoryTelemetryEntry` as explicit 64-byte DTO, allocate 300-entry Vault ring at BufferID 71669, and record failed resolve/write-lock/NaN details.
+- Rejected Alternatives: Reusing string logs or overloading sway telemetry row with buffer identity fields.
+- Scalability potential: Low records sparse failures; Middle/High/Ultra use same fixed ring and continue visual scaling through `GlobalQualityWeight`.
+- Hardware Impact: Normal frame cost is zero on success; failure path cost is accepted to preserve post-mortem proof on low-end hardware.
+- Problem: Background dumping live `NativeArray` after phase end would violate same relocation rule being fixed.
+- Solution: Copy crash ring into managed byte payload on catastrophic path, then queue only immutable bytes to thread pool for `Dump_1327_FloraInteraction.bin`.
+- Rejected Alternatives: background worker resolving or iterating Vault memory directly; unsafe if compaction happens before worker runs.
+Source lines scanned 189; retained 45; overflow-important omitted 111.
+
+FILE AgentLogs\Rationale_1328.md bytes=98954 done=0 blockers=24 pendingHits=8 selected=45
+- # Agent 1328 Rationale
+- ## Decision 000 - Startup Memory Authority
+- Problem: task requires removal of persistent native aliases from procedural wreck generation, but no source mutation is defensible before proving exact field set and GlobalDataVault API surface.
+- Solution: Start with CLI prompt extraction, mandate loading, Roslyn/static scans, and disk checklist before editing runtime code.
+- Rejected Alternatives: Regex-only replacement of `NativeArray` fields would risk local variables, DTO fields, or unrelated safe usage. Blind Vault API calls would risk inventing signatures.
+- Scalability potential: Low uses no new runtime work; Middle/High/Ultra only become relevant after continuous `GlobalQualityWeight` paths are verified in source.
+- Hardware Impact: i3/MX350 runtime gain is not claimed. Current action is static safety work only.
+- ## Decision 001 - Evidence Boundary
+- Problem: Runtime GC and frame-time claims are impossible without Unity/GCMonitor artifacts.
+- Solution: Mark all runtime performance claims as PENDING VERIFICATION until fresh logs exist; produce static JSON proof for persistent native field counts first.
+- Rejected Alternatives: Reporting "Zero GC achieved" from code review alone.
+- Scalability potential: Static proof prevents allocator hazards across all tiers; it does not prove visual scalability.
+- Hardware Impact: No microsecond gain claimed before source analysis.
+- ## Decision 002 - Vault Migration Shape
+- Problem: `ProceduralWreckGenerator.cs` owns 13 scene-lifetime native containers directly: 9 `NativeArray `, 2 `NativeList `, 1 `NativeQueue `, and 1 `NativeParallelMultiHashMap `. GlobalDataVault owns `NativeArray ` buffers only, so direct hash/queue/list d...
+- Solution: Replace persistent native fields with `VaultGenerationHandle ` descriptors and scalar counts. Lists become vault arrays plus explicit counts/capacities. propagation queue becomes vault array ring/stack with scalar cursor state. debris spatial hash...
+- Rejected Alternatives: Keeping `NativeParallelMultiHashMap` as "special case" preserves violation. Inventing DataVault hash-map API would be fake dependency. Hot registry polling for vault access is rejected; cache `IDataVault` cold and resolve phase-local ...
+- Scalability potential: Low uses existing `GlobalQualityWeight` debris budget and gravity slice to keep O(n) scan capped. Middle keeps visual debris density under same scalar. High/Ultra spend saved allocation safety margin on larger debris/render budgets th...
+- Hardware Impact: i3/MX350 expected gain is allocator-risk removal, not raw scan speed. Estimated hot saved cost from removing persistent queue/hash/list allocator ownership during scene teardown/bootstrap is 20-80 us per wreck lifecycle; near-field scan may...
+- ## Decision 003 - Write Lock Boundary
+- Problem: Locking every `WreckGridCell`, placement, debris, and telemetry scalar write would satisfy literal lock-every-write reading but would turn WFC collapse and debris generation into thousands of lock/unlock calls.
+- Solution: Treat generator writes as owner-phase DataVault writes through current-phase resolved handles. Use explicit `TryLockBuffer` / `TryUnlockBuffer` with `finally` only when DataVault-backed alias crosses into scheduled job or frame-yield boundary: BRG...
+- Rejected Alternatives: Per-index `TryAcquireWriteLock` in wrapper setter would be mechanically safe but would spend frame budget on lock churn rather than visuals. Passing `VaultGenerationHandle ` into jobs is rejected because jobs require concrete `NativeA...
+- Scalability potential: Low avoids lock churn during WFC and debris passes; Middle/High/Ultra keep same continuous quality paths while scheduled consumers remain relocation-protected.
+- Hardware Impact: i3/MX350 avoids thousands of owner-phase lock transitions per generated wreck. Estimated saved overhead versus per-index locks: 200-900 us per 4096-cell solve, static estimate only.
+- ## Decision 004 - Verification Wall
+- Problem: repository already has external compiler work active (`csc.exe`, `dotnet.exe`, `VBCSCompiler.exe`) and CPU sampled at 100%, so launching Roslyn or dotnet violates project build-lane guard.
+- Solution: Stop at non-compiler evidence until lane is quiet: diff review, persistent native field audit, brace/parenthesis count, `git diff --check`, and file SHA-256.
+- Rejected Alternatives: Forcing second compiler process would create false failures and violate user's explicit CPU/build rule.
+- Scalability potential: No runtime scalability claim; this protects shared workstation throughput while preserving objective static evidence.
+- Hardware Impact: No runtime gain claimed. Prevented additional compiler contention on current machine.
+- ## Decision 005 - Editor Validator Scope
+- Problem: one-time static report can rot after later agents edit `ProceduralWreckGenerator.cs`.
+- Solution: Add editor-only validator in `Assets/_Project/Scripts/World/Editor/ProceduralWreckGeneratorMemorySovereigntyValidator1328.cs` that scans target source for forbidden persistent native field ownership and rewrites agent JSON report. It is outside ru...
+- Rejected Alternatives: Runtime validator would add managed file IO and regex work to play mode. validator depending directly on internal DTO types could break across assembly boundaries.
+- Scalability potential: All tiers unaffected at runtime. Editor validation catches regressions before they reach low-end devices.
+- Hardware Impact: No runtime cost. Editor-only file scan is sub-millisecond to low-millisecond depending disk cache, not part of frame budget.
+- ## Decision 006 - BufferID Collision Correction
+- Problem: first migrated buffer range 70858-70870 collided with existing PowerGridJacobi buffer ownership. collision destroys GlobalDataVault descriptor sovereignty because two domains can resolve unrelated memory through same numeric route.
+- Solution: Move wreck generator to agent-scoped BufferID range 132800-132812: grid, propagation queue, all placements, filtered placements, runtime definitions, loot, debris, debris keys, clusters, artifacts, scorch decals, burial cuts, telemetry.
+- Rejected Alternatives: Keeping previous range and relying on type mismatch to catch it is unsafe. Random free IDs are rejected because proof artifact must be deterministic.
+- Scalability potential: Low/Middle/High/Ultra all benefit equally because handle identity no longer aliases another domain. Visual budget is not changed.
+- Hardware Impact: i3/MX350 gain is failure avoidance, not frame-time speed. Estimated avoided recovery cost after collision: entire wreck generation failure; steady-state microsecond claim is 0.
+- ## Decision 007 - Write-Lock Wrapper Correction
+- Problem: first pass wrote vault buffers through TryResolveHandle views. That made compaction-safety dependent on implicit contract instead of visible TryAcquireWriteLock/ReleaseWriteLock route.
+Source lines scanned 625; retained 45; overflow-important omitted 424.
+
+FILE AgentLogs\Rationale_1329.md bytes=51159 done=0 blockers=15 pendingHits=9 selected=45
+- # Rationale 1329 - MEMORY_SOVEREIGN_FABRICATOR_EXORCIST
+- Status: TASKS 01-20 COMPLETE / DOTNET BUILD GATED BY EXISTING DOTNET PROCESSES
+- ## Initial Domain Decision
+- Problem: `Fabricator.cs` owns 13 persistent native aliases in MonoBehaviour: one `NativeParallelHashMap ` and twelve `NativeArray ` fields.
+- Solution: Move persistent storage identity to `GlobalDataVault` descriptors and resolve physical views only inside Fabricator methods that need them.
+- Rejected Alternatives: Managed `List/Dictionary` fallback would violate zero-GC and DOD. Keeping `Allocator.Persistent` fields would violate memory sovereignty.
+- Scalability potential: Low uses fixed small scratch capacities; Middle/High/Ultra can keep same truth buffers and spend saved ownership complexity on presentation detail, not gameplay drift.
+- Hardware Impact: i3/MX350 avoids dangling alias risk during vault relocation; expected hot-path cost is microsecond-scale handle validation, not frame-scale GC.
+- ## Mandate Selection
+- Problem: task crosses native memory, inventory resources, struct layout, read accessor purity, and telemetry.
+- Solution: Loaded six mandates: native collections/job protocol, zero-GC, ARM64 layout, inventory/resource SOA, GlobalRegistry/DI, telemetry blackbox.
+- Rejected Alternatives: Reading unrelated graphics/audio mandates would inflate process without affecting Fabricator memory ownership.
+- Scalability potential: Continuous `GlobalQualityWeight` preserved where publication/cadence is touched; no binary quality split.
+- Hardware Impact: Static proof and cold-buffer ownership reduce runtime allocator churn on low-end silicon.
+- ## Buffer Route Decision
+- Problem: `Fabricator.cs` scratch state needs 13 former persistent containers, but existing `ShinobuFabricationTelemetryRing` is already type-owned by `FabricationAssemblerRuntime`.
+- Solution: Use unused IDs `71144`, `71148`, `71149`, and `71169`-`71179` for Fabricator-specific scratch and blackbox telemetry. Keep `71150`-`71168` untouched because ChemicalInfluenceGrid uses them as raw `BufferID` casts.
+- Rejected Alternatives: Reusing `ShinobuFabricationTelemetryRing` would create type collision with `FabricationTelemetryEntry`. Editing dirty inventory files to create new routes would widen conflict surface.
+- Scalability potential: Low and middle tiers use fixed capacities with no hot resize. High and ultra tiers preserve same gameplay truth route and can spend cycles in visual fabrication systems.
+- Hardware Impact: i3/MX350 avoids hash map ownership and allocator churn in Fabricator; expected lock/resolve overhead remains sub-10 us per user craft check.
+- ## Loop 1 Verification
+- Problem: first five tasks are static-discovery work with no code mutation yet.
+- Solution: Created JSON proof artifact and updated status before starting code edits. Compile was not launched for Loop 1 because no runtime source file was changed.
+- Rejected Alternatives: Running build after zero source changes would consume coordinator CPU budget without increasing proof quality.
+- Scalability potential: artifact records low/middle/high/ultra behavior explicitly instead of binary quality switch.
+- Hardware Impact: No runtime impact; this is static ownership proof.
+- ## Descriptor Substitution
+- Problem: Fabricator previously retained physical native aliases across frames, blocking vault relocation.
+- Solution: Replaced native fields with 16-byte `VaultGenerationHandle ` descriptors. Method bodies acquire vault write locks, pass transient `NativeArray ` views to jobs/helpers, then release in `finally`.
+- Rejected Alternatives: Keeping Fabricator-owned `NativeParallelHashMap ` for availability would preserve stale pointer. Editing dirty `PlayerInventory.cs` to add another route would collide with another agent.
+- Scalability potential: Low tier pays fixed scratch capacities; Middle/High/Ultra preserve one truth route and can increase visual assembly work elsewhere without changing crafting authority.
+- Hardware Impact: i3/MX350 avoids persistent hash-map allocator ownership and relocation faults. Expected user-action lock/resolve overhead remains microsecond-scale.
+- ## Availability Job Reconciliation
+- Problem: Existing `CraftingSystem.CanCraft` consumed `NativeParallelHashMap `, which would force Fabricator to keep hash map alias or modify dirty inventory code.
+- Solution: Added `EvaluateRecipeAvailabilityLinearJob` and overload using `NativeArray ` availability pairs filled from local inventory plus accessible logistics counts.
+- Rejected Alternatives: Reusing `PlayerInventory.TryCopyAvailableItemCountsNonAlloc` would require either Fabricator hash map or edits to dirty inventory ownership files.
+- Scalability potential: Pair scan is bounded by recipe cost count, not total inventory. Low devices avoid hash-map mutation; high devices still use same deterministic recipe truth.
+- Hardware Impact: On i3/MX350, 32-pair linear scan is cheaper and more predictable than maintaining persistent native hash table for user-driven craft checks.
+- ## Black Box Route
+- Problem: Vault lock failures need postmortem artifact without managed string logging in hot path.
+- Solution: Added 300-entry DataVault telemetry ring and cold fault path that snapshots ring and queues background write to `Docs/AgentLogs/Dump_1329_Fabricator.bin`.
+- Rejected Alternatives: `Debug.Log` or exception-only traces would allocate strings and lose last-frame state. Synchronous write on main path would stall craft caller.
+- Scalability potential: Minimum hardware pays nothing unless vault failure occurs. High/Ultra receive same fault artifact without gameplay divergence.
+- Hardware Impact: Normal path cost is fixed native entry write on failure only; disk I/O is background and cold.
+- ## Validator Route
+Source lines scanned 351; retained 45; overflow-important omitted 235.
+
+FILE AgentLogs\Rationale_1330.md bytes=57623 done=0 blockers=27 pendingHits=19 selected=45
+- # Rationale_1330
+- Role: DATA_MONOLITH_BAKER_AND_OFFLINE_SCHEMA_COMPILER
+- Status: ACTIVE / PENDING VERIFICATION
+- ## Decision 000 - Phase 0 Authority Setup
+- Problem: user referenced `C:\hades\current_batch.md`, but active repository batch file exists at `C:\hades\Hecton8\Docs\Tasks\CURRENT_BATCH.md`.
+- Solution: Extracted ` ` with CLI regex from active batch file and treated root absence as source-location mismatch, not as missing assignment.
+- Rejected Alternatives: Stop and ask for file move; use chat prompt only; read neighboring agent prompts.
+- Scalability potential: No runtime impact. Maintains deterministic disk-backed agent state for weak and high-end host workflows.
+- Hardware Impact: Saves host CPU by avoiding blind full-repo build/reimport; estimated low-end i3/MX350 host gain is avoiding minutes of saturated CPU.
+- ## Decision 001 - Mandate Set
+- Problem: Data Monolith work crosses editor tooling, binary DTO layout, runtime parser quarantine, DataVault ownership, and telemetry.
+- Solution: Selected 8 mandates: registry README, CSV binary bridge, ARM64 DTO layout, Zero-GC, native memory/jobs, LZ4/dictionary reality, GlobalRegistry/DI, and crash telemetry.
+- Rejected Alternatives: Read all 80 mandates; read only DataMonolith docs; rely on prompt prose.
+- Scalability potential: Low tier keeps compact binary tables; middle tier allows staged reload; high/ultra can carry richer editor manifests without changing gameplay truth.
+- Hardware Impact: Prevents runtime text parsing and heap churn on i3/MX350 class machines; no measured microseconds yet.
+- ## Decision 002 - Build Throttle
+- Problem: prompt forbids build spam and repo reports recent CLI compile pass, but source may have changed.
+- Solution: Phase 0 uses static scans and AST-oriented file inspection only. `dotnet build` remains reserved for structural milestone after edits and CPU/process gate check.
+- Rejected Alternatives: Build before understanding domain; build after every local patch.
+- Scalability potential: Preserves host resources for 20+ concurrent agents and avoids csc contention.
+- Hardware Impact: Avoids full-solution CPU saturation; estimated saved wall time depends on host load, not claimed as runtime gain.
+- ## Decision 003 - Source Inventory Is Disk-Truth, Not Prompt-Truth
+- Problem: prompt references legacy expectation of remaining text data, but current workspace scan found 354 config-like CSV/JSON/TXT files across Assets, Data, ProjectSettings, Packages, and Tools.
+- Solution: Wrote `Docs/Reports/DATA_MONOLITH_PHASE0_ARCHAEOLOGY_1330.json` as proof ledger. DataMonolith-owned `Data/Balance` tables map to `BufferID.DataMonolithPayload` sections; cross-domain `Assets/_SourceData` CSVs remain owner-gated until route cards e...
+- Rejected Alternatives: Claim old count; bulk-migrate cross-domain authoring data into monolith without owners; create per-table BufferIDs that contradict current `H8StaticDataArena` section model.
+- Scalability potential: Low tier gets one resident native blob and section spans; middle/high/ultra can add richer authoring sources only through owner-approved sections without runtime parser relapse.
+- Hardware Impact: Prevents release-time CSV scans on i3/MX350 class hardware. Phase 0 did not claim measured frame microseconds; it removed planning ambiguity before code work.
+- ## Decision 004 - H8BIN Fact Drift Requires Documentation Patch
+- Problem: Active source/blob use H8DM format version 2, schema hash `0x33313331`, checksum `0x19D880780D6E1B46`, but architecture docs still state version 1 and schema `0x58303032`.
+- Solution: Patch architecture documents to current binary facts and keep Unity profiler proof status unchanged.
+- Rejected Alternatives: Re-bake to match stale docs; ignore doc drift; report readiness against wrong hash.
+- Scalability potential: All tiers depend on same binary contract. Stale docs cause wrong boot diagnostics and invalid integration handoffs.
+- Hardware Impact: No direct runtime gain; avoids wasted validation time on cheap developer machines by keeping checksum/header facts exact.
+- ## Decision 005 - DTO Layout Is Already Mostly Explicit
+- Problem: Task 06 requested explicit alignment, but current `H8DataMonolithTypes.cs` already declares explicit sizes/offsets for DataMonolith DTO set and active blob has 26 aligned sections.
+- Solution: Treat Phase 1 as targeted guard/facade/report hardening, not blind DTO rewrite. Any struct edit must preserve active section record sizes and `H8DataMonolithLayoutGuard` invariants.
+- Rejected Alternatives: Rewrite all DTOs for optics; change schema without migration; add padding without section proof.
+- Scalability potential: Stable DTOs protect low-end boot cost and allow high-tier content growth through section counts, not runtime text parsing.
+- Hardware Impact: Avoids schema churn and rebake/reimport cost; no claimed runtime microsecond delta yet.
+- ## Decision 006 - Endian Contract Is Fail-Closed Little-Endian
+- Problem: Header/directory writes are explicit little-endian, but record bodies are copied as raw struct bytes.
+- Solution: Keep current fail-closed rule: editor baker refuses big-endian hosts and runtime validation rejects non-little-endian machines before reading structs. True big-endian support would be separate per-record byte-swap writer.
+- Rejected Alternatives: Pretend raw struct copy is portable; add slow runtime byte-swapping; mutate DTO layout for unneeded platforms.
+- Scalability potential: Cheap devices avoid runtime conversion; high-end devices get same immutable section pointers.
+- Hardware Impact: Saves per-record runtime conversion cost; exact microseconds depend on table count and were not measured in Phase 0.
+Source lines scanned 374; retained 45; overflow-important omitted 234.
+
+FILE AgentLogs\Rationale_1331.md bytes=31208 done=0 blockers=0 pendingHits=6 selected=45
+- # Rationale 1331 - WORKSPACE_HYGIENE_AND_STRAY_META_FILE_PURGER
+- ## Initialization
+- Problem: Workspace hygiene task requires destructive filesystem changes under concurrent agent activity.
+- Solution: Use deterministic PowerShell scan ledger before mutation; scope paths to C:\hades\Hecton8 root and Assets, with explicit exclusion of Assets\_Project\Scripts and path-boundary validation before deletion.
+- Rejected Alternatives: Wildcard deletion and Unity refresh are rejected; wildcard deletion can remove valid Unity metadata, and Unity refresh violates I/O-only mandate.
+- Scalability potential: Low tier uses linear directory enumeration with no compile/editor load; middle/high/ultra use same deterministic path logic because this is cold tooling, not runtime fidelity.
+- Hardware Impact: Avoiding Unity and dotnet preserves CPU for sibling agents; estimated low-end i3/MX350 gain is elimination of compile/editor contention for this task.
+- ## Loop 0 Dry Scan
+- Problem: PowerShell recursive scan exceeded 120 s timeout on Unity tree before mutation.
+- Solution: Replaced it with Tools/workspace_hygiene_1331.py using os.walk, in-place directory pruning for Assets/_Project/Scripts, exact .meta base checks, and JSON output under Docs/Reports.
+- Rejected Alternatives: Increasing PowerShell timeout without changing traversal was rejected because it repeated slow path; broad wildcard deletion was rejected because it cannot prove Unity GUID safety.
+- Scalability potential: Low tier performs one linear pass and emits compact JSON; middle/high/ultra receive no different behavior because hygiene tooling is correctness-bound, not visual-fidelity-bound.
+- Hardware Impact: Measured dry scan wall cost was 27394750 us for classification after Python rewrite; no compiler/editor process was started, so parallel coding agents retained compile budget.
+- Problem: Empty directory cleanup initially targeted architectural placeholder folders such as AddressableAssetsData and StreamingAssets/Hecton8/PDA.
+- Solution: Constrained empty-folder deletion to junk duplicate/temp folder names and critical-name exclusions; dry run now targets only root temp file and duplicate XR copy folders with companion metas.
+- Rejected Alternatives: Deleting every empty Assets folder was rejected because empty Unity folders can be deliberate GUID anchors and route placeholders.
+- Scalability potential: Low/middle/high/ultra all benefit from avoiding unnecessary AssetDatabase churn; no runtime quality tier is affected.
+- Hardware Impact: Avoids needless Unity reimport work on i3/MX350; estimated gain is prevention of multiple editor import passes rather than runtime frame saving.
+- ## Purge Execution
+- Problem: Dry-run target list included tracked files, including root temp prompt XML and duplicate Unity folder metas.
+- Solution: Deleted only explicitly classified temp file and duplicate empty XR copy folders plus their companion metas, with every action recorded in WORKSPACE_HYGIENE_ACTIONS_1331.json.
+- Rejected Alternatives: Rewriting Git state or staging changes was rejected; task is filesystem hygiene, not source-control policy.
+- Scalability potential: Low devices avoid redundant Unity import checks from duplicate folder metas; middle/high/ultra retain deterministic folder structure without changing runtime behavior.
+- Hardware Impact: 23809 bytes removed. Microseconds saved at runtime: 0 claimed because this is static filesystem hygiene. Editor import churn reduction remains PENDING VERIFICATION until Unity import logs exist.
+- Problem: Report metric initially counted companion metas as temp files.
+- Solution: Corrected script and final JSON to separate temp_files_deleted=1 from companion_meta_deleted=6, then recomputed report SHA-256.
+- Rejected Alternatives: Leaving inflated counts was rejected because QA_Evidence_Text_Filter_Audit forbids fake precision.
+- Scalability potential: Accurate metrics make future low/middle/high/ultra cleanup comparisons valid; no gameplay scalability route changed.
+- Hardware Impact: No runtime impact. Static report integrity improved; hash now covers corrected payload.
+- Problem: Unity refresh is needed after metadata cleanup but invoking Editor violates task.
+- Solution: Wrote Docs/AgentLogs/AssetDatabaseRefresh_1331.md as marker for next human/pipeline Editor launch.
+- Rejected Alternatives: Unity batchmode AssetDatabase.Refresh was rejected by no-Unity/no-compile resource throttling constraint.
+- Scalability potential: Same marker path works for all hardware tiers; refresh cost should be paid by pipeline, not by this I/O task.
+- Hardware Impact: Preserved CPU budget on i3/MX350 during concurrent agent work by avoiding Unity process startup.
+- ## APEX Override Re-Audit
+- Problem: User rejected prior closure and demanded seven runtime C# quality gates.
+- Solution: Re-extracted 1331 prompt from active batch file, enumerated shared dirty worktree, separated 1331-owned touched files from foreign C# changes, and created Tools/workspace_hygiene_apex_reaudit_1331.py to emit machine-readable report.
+- Rejected Alternatives: Scanning and modifying 79 dirty C# files in Assets/_Project/Scripts was rejected because 1331 batch prompt explicitly forbids that domain and files belong to other active agents.
+- Scalability potential: Low/middle/high/ultra runtime tiers are unaffected because 1331 created no runtime C# system; proof is negative C# touched-file set plus static filesystem hygiene.
+- Hardware Impact: No dotnet, MSBuild, or Unity process was started. i3/MX350 compile/editor budget remains reserved for coding agents.
+- Problem: Runtime gates such as NativeCollection exorcism, AUP, compaction locks, and telemetry rings require C# runtime files, but 1331 touched none.
+- Solution: Marked those gates green only for 1331-owned touched set with scannedFiles=0, native fields=0, hot-path hits=0, AUP casts=0, and foreign dirty C# listed separately in report.
+- Rejected Alternatives: Claiming whole repository is green was rejected; unrelated C# files are not 1331 evidence and cannot be touched under this mandate.
+- Scalability potential: result prevents cross-agent domain sabotage while preserving deterministic proof for this agent's own work.
+- Hardware Impact: Static scan cost was about 1000000 us for APEX report; no runtime savings claimed.
+Source lines scanned 196; retained 45; overflow-important omitted 122.
+
+FILE AgentLogs\Rationale_1332.md bytes=107566 done=0 blockers=54 pendingHits=34 selected=45
+- # Agent 1332 Rationale
+- Problem: Agent status/rationale files were absent at session start.
+- Solution: Create status and rationale artifacts before source edits. This satisfies state-machine persistence and keeps compressed chat from becoming authority.
+- Rejected Alternatives: Chat-only progress. It violates batch reporting and anti-amnesia protocol.
+- Scalability potential: Low/Middle/High/Ultra unaffected; this is process state, not runtime.
+- Hardware Impact: 0 us runtime impact on i3/MX350; editor filesystem write only.
+- Problem: Task domain is narrow but touches input, UI, file I/O, rendering presentation, and telemetry.
+- Solution: Bound first pass to `Hecton8.Input` assembly and `Assets/_Project/Scripts/UI/PauseControlsPanel.cs`, `Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs`; expand only for proven interface/validator/shader hooks.
+- Rejected Alternatives: Whole-repo refactor or direct global registry surface invention. Both raise merge conflict and authority-route risk with 20+ agents.
+- Scalability potential: Low uses cheapest parser/UI path; Middle adds static tests; High/Ultra may spend saved CPU on richer presentation filters in VISUAL_SYNC only.
+- Hardware Impact: Expected gain is removal of UI-open delegate/string allocations; measured proof absent until profiler/GCMonitor.
+- Problem: `controls.json` requirement asks zero managed allocation but .NET/Unity file APIs have unavoidable managed boundary costs in cold I/O.
+- Solution: Treat disk read/write as cold menu/settings operation, use bounded byte buffers and manual ASCII/UTF-8 parsing, document any unavoidable managed framework allocation as cold-only and outside hot path.
+- Rejected Alternatives: `JsonUtility`, `Newtonsoft.Json`, `InputActionRebindingExtensions.SaveBindingOverridesAsJson`, or `StringBuilder`. They allocate managed strings/objects and hide reflection/boxing.
+- Scalability potential: Low/Middle/High/Ultra share identical save layout; quality weight must not mutate save identity or DTO layout.
+- Hardware Impact: Main gain is avoiding menu-frame heap churn and pause stutter on i3/MX350; exact microseconds pending static/profiler proof.
+- Problem: First scan found no `ControlRemapper.cs` or `AccessibilitySettings.cs`; current rebind owner persisted `controls.json` through Unity JSON strings and delete-then-move file replacement.
+- Solution: Add owner-local input remap backend and accessibility VISUAL_SYNC bridge without mutating public input interfaces. APEX reaudit removed legacy Unity JSON/PlayerPrefs fallback from active service because it created managed string escape hatch.
+- Rejected Alternatives: Keeping `File.ReadAllText`, `LoadBindingOverridesFromJson`, or managed path decoding as compatibility rescue. Compatibility is lower priority than explicit controls.json zero-GC contract.
+- Scalability potential: Low uses scalar shader params and minimal parser work; Middle/High/Ultra use same save identity while shaders can spend GlobalQualityWeight on stronger visual correction/blending.
+- Hardware Impact: Expected low-end gain is removal of File.ReadAllText/File.WriteAllText and Unity SaveBindingOverridesAsJson managed strings from standard save/load path; exact i3/MX350 delta pending profiler.
+- Problem: Telemetry needs exact 300-frame black-box route, but editing Core `BufferID` enum increases merge risk and public-surface churn.
+- Solution: Use owner-local numeric `BufferID` casts `70534` for ring and `70535` for cursor, owned by `SystemID.UI`, with 64-byte `InputBindingTelemetryEntry`. IDs sit in observed input/Babel gap.
+- Rejected Alternatives: Add enum members to `H8Memory.cs`, use ad-hoc high IDs, or use managed logs only. Enum expansion is public churn; high IDs were less defensible after static BufferID inspection; managed logs are not forensic state.
+- Scalability potential: Low can write only fault/success summaries; Middle/High/Ultra can sample additional duration/hash fields without changing DTO size or save identity.
+- Hardware Impact: 19.2 KB native ring plus one int cursor. Cold write target 1-4 us per entry on i3/MX350, pending measurement.
+- Problem: Accessibility filters were absent, and CPU-side color correction would violate visual-sync presentation route.
+- Solution: Implement 16-byte `AccessibilityConfigDTO` and upload through double-buffered global CBuffer in `DispatcherPhase.VisualSync`.
+- Rejected Alternatives: Runtime `PostProcessVolume` allocation, material instance mutation, MPB on standard geometry, or CPU pixel arrays. All are either allocation-heavy or SRP-batcher hostile.
+- Scalability potential: Low strength/mode values feed cheap branchless lerp; Middle adds stronger filter curves; High/Ultra can use same scalar config to enable richer shader math without CPU work.
+- Hardware Impact: CPU upload is one 16-byte dirty CBuffer write, expected below 3 us on i3/MX350 after initialization; GPU cost belongs to shader pass and is quality-weighted.
+- Problem: `RebindingManager` used captured lambdas in `OnCancel`, `OnComplete`, and conflict callbacks.
+- Solution: Store active rebind context in fields and route completion/cancel/conflict through cached method delegates initialized once in Awake/OnEnable.
+- Rejected Alternatives: Capturing local variables per rebind, static delegates without instance state, or changing public conflict event contract. Captures allocate; static delegates cannot hold per-operation state; public API mutation is forbidden.
+- Scalability potential: Low/Middle/High/Ultra share identical UI event behavior; quality weight is irrelevant to input truth.
+- Hardware Impact: Expected gain is removal of per-rebind managed delegate allocations and resulting menu-frame GC spikes on i3/MX350; exact bytes pending profiler.
+- Problem: Existing `controls.json` save path deleted destination before moving temp file, creating crash window.
+- Solution: Write bounded ASCII JSON bytes to `.tmp`, flush, verify file length, then use `File.Replace` when destination exists and `File.Move` for first write.
+- Rejected Alternatives: `File.WriteAllText`, `StringBuilder`, Unity `SaveBindingOverridesAsJson`, or delete-then-move. They either allocate managed strings or lose atomicity.
+- Scalability potential: Low devices avoid heap churn; Middle/High/Ultra keep same save identity and do not spend extra CPU for cosmetic behavior.
+- Hardware Impact: Cold save cost is storage-bound. expected gain is GC avoidance, not raw disk speed; measured microseconds pending.
+- Problem: malformed controls file could clear current overrides before all records were known to be applicable.
+- Solution: Parse into fixed DTO records, validate every action/binding/path against current runtime, and only then call `ClearBindingOverrides`.
+- Rejected Alternatives: Apply while parsing or clear before validation. Both can leave partial input state after corrupted JSON.
+- Scalability potential: Low/Middle/High/Ultra all fail closed to current/default controls; no quality switch affects authority.
+Source lines scanned 823; retained 45; overflow-important omitted 616.
+
+FILE AgentLogs\Rationale_1333.md bytes=119951 done=0 blockers=50 pendingHits=35 selected=45
+- # Rationale 1333 - COMPUTE_SHADER_DISPATCH_SIZER_AND_AUDITOR
+- Status: VERIFIED GREEN / APEX PURGE RE-AUDIT PASSED / COMPILE WALL CLEARED
+- ## Decision 001 - Audit Before Mutation
+- Problem: Compute shader portability cannot be repaired safely by blind replacement of `[numthreads]`; `groupshared`, barriers, and C# dispatch math can depend on exact group width.
+- Solution: Build static ledgers first, then edit only verified offenders and dispatcher call sites. DOD pattern: one fact -> one owner -> one proof artifact.
+- Rejected Alternatives: Direct find/replace of `512` to `256`; too likely to break reductions or miss C# callers.
+- Scalability potential: Low uses 32/64-thread default where viable; Middle keeps 64-thread baseline; High may use 128/256 only with capture; Ultra can spend saved cycles on denser visual compute, not gameplay truth changes.
+- Hardware Impact: Expected i3/MX350 gain is driver safety and lower register/shared-memory pressure. Measured microseconds saved: 0 us because no GPU capture was executed.
+- ## Decision 002 - Build Throttling
+- Problem: Full build and Unity import are expensive and forbidden as repeated validation loops.
+- Solution: Use static scanners and source-level audits first; run at most one `dotnet build` only after CPU/process gates allow it.
+- Rejected Alternatives: Build after every shader/C# edit; wastes host CPU and violates batch directive.
+- Scalability potential: Verification cost stays low on weak machines while report artifacts remain deterministic.
+- Hardware Impact: Host CPU protected. Runtime impact: 0 us.
+- ## Decision 003 - SonarMap Thread Reduction
+- Problem: `Hecton_SonarMap.compute` `CSRaymarch` used 8x8x8 = 512 threads per group, violating 256-thread mobile ceiling.
+- Solution: Reduce kernel to 4x4x4 = 64 threads and replace hardcoded predator slot axis with `_SonarDispatchParams.x`. DOD pattern: change group dimensions and dependent index math together.
+- Rejected Alternatives: 256-thread group kept at 8x8x4; more compatible than 512 but still heavier on mobile occupancy and unnecessary for shader's visual fake path.
+- Scalability potential: Low gets 64-thread safe dispatch; Middle keeps same output cadence; High can spend saved cycles on denser sonar taps; Ultra can raise sample density through quality-weighted element counts, not unsafe group size.
+- Hardware Impact: On i3/MX350 and Quest-class GPUs this removes driver-compatibility risk. Measured microseconds saved: 0 us; exact GPU delta requires capture.
+- ## Decision 004 - Dynamic Query Ownership
+- Problem: Dispatch group counts were spread across owner systems and render-graph bridges, so file-local query rule would falsely flag payload-only bridges.
+- Solution: Owner systems cache `GetKernelThreadGroupSizes`; bridges submit payload `DispatchGroups` only. scanner now classifies owner query files separately from external payload-sized bridges.
+- Rejected Alternatives: Duplicating kernel queries inside render-graph bridges; it would break ownership and force bridge files to understand owner initialization.
+- Scalability potential: Low/Middle/High/Ultra all consume same cached group facts while quality only changes work item count, cadence, or visual density.
+- Hardware Impact: Hot path stays integer-only and allocation-free. Measured microseconds saved: 0 us CPU; removed hardcoded dispatch risk.
+- ## Decision 005 - Vendor Boundary
+- Problem: Remaining 512-thread compute files are in `Crest` FFT and `GPUInstancer`; Crest has shared memory/barriers, and GPUInstancer is third-party package code.
+- Solution: Mark them as vendor over-limit in report instead of mutating them blindly. DOD pattern: one fact -> one owner; first-party code reaches zero, vendor risk is explicit.
+- Rejected Alternatives: Editing vendor FFT/group macros without package ownership or GPU regression proof; high risk of breaking ocean or instancing packages.
+- Scalability potential: Low devices must disable/replace unsafe vendor paths or carry vendor patches; Middle/High/Ultra can run them only with platform gating.
+- Hardware Impact: First-party runtime is compatible; vendor risk remains. Measured microseconds saved: 0 us.
+- ## Decision 006 - Prime Count Dispatch Fuzzer
+- Problem: Static scanner proves shape, but tail coverage for prime work item counts needs executable contract.
+- Solution: Add `ComputeDispatchSizingEditTests` with prime counts, 1,000,003, and near-`int.MaxValue` coverage using long-backed integer ceiling.
+- Rejected Alternatives: Trusting visual inspection of `(count + group - 1) / group`; integer overflow and tail drops are easy to miss.
+- Scalability potential: Low through Ultra use same math; only work-item count changes continuously with quality/budget.
+- Hardware Impact: Test-only. Runtime impact: 0 us.
+- ## Decision 007 - Telemetry And DTO Scope
+- Problem: prompt requests universal compute telemetry rings and DTO layout refactors, but active codebase already has multiple domain-specific rings and explicit layouts; broad DTO mutation would exceed dispatch-sizing domain without HLSL pair proof.
+- Solution: Preserve existing telemetry/DTO contracts, add scanner hashes, and mark universal telemetry/DTO work as partial instead of faking completion.
+- Rejected Alternatives: Adding managed failure logs or refactoring structs without paired HLSL stride validation.
+- Scalability potential: Low stays stable because no DTO route churn; Middle/High/Ultra retain existing telemetry routes until dedicated layout pass can prove every pair.
+- Hardware Impact: No new runtime cost. Measured microseconds saved: 0 us.
+- ## Decision 008 - Build Gate Fail-Closed
+Source lines scanned 507; retained 45; overflow-important omitted 335.
+
+FILE AgentLogs\Rationale_1334.md bytes=6957 done=0 blockers=0 pendingHits=2 selected=45
+- # Rationale 1334 - DOCUMENTATION_CONSOLIDATION_AND_FLUFF_PURGER
+- Evidence class: STATIC_DOC + CLI_TEXT_SCAN
+- ## Decision 001 - Scope Boundary
+- Problem: prompt requests broad documentation surgery while parallel agents may be editing code and docs.
+- Solution: Limit write scope to `Docs/` and root `.md`/`.txt`; all executable assets are forbidden. Track all changed paths for boundary audit.
+- Rejected Alternatives: Editing source constants to match docs is outside assignment and would create cross-domain churn.
+- Scalability potential: Low/Middle/High/Ultra unaffected at runtime; clearer docs reduce wrong agent work across all hardware targets.
+- Hardware Impact: 0 runtime gain measured. Static process avoids build/editor CPU load on i3/MX350 host.
+- ## Decision 002 - Evidence Language
+- Problem: Documentation cleanup can easily produce false verification claims.
+- Solution: Use `STATIC_DOC` and `CLI_TEXT_SCAN` labels only unless fresh runtime artifact exists. No `VERIFIED` language for runtime claims.
+- Rejected Alternatives: Reporting source-text hits as runtime proof violates `QA_Evidence_Text_Filter_Audit`.
+- Scalability potential: Keeps future low/middle/high/ultra quality decisions tied to measured artifacts, not prose.
+- Hardware Impact: 0 runtime gain measured; prevents wasted compile/profiler passes from stale instructions.
+- ## Decision 003 - Build Suppression
+- Problem: Prompt forbids compilation and user explicitly bans `dotnet build`.
+- Solution: Use PowerShell/Python text scans only; maintain command log proof for zero build/editor invocation.
+- Rejected Alternatives: Running `dotnet build` to prove no source impact is unnecessary and forbidden for this docs-only task.
+- Scalability potential: Preserves CPU budget for parallel compile agents.
+- Hardware Impact: Avoids saturating low-end i3/MX350 workstation during concurrent work.
+- ## Decision 004 - Superseded SignalBus Report Archive
+- Problem: Active `Docs/Reports` contained repeated 1303 SignalBus/tether audit revisions; eleven markdown variants alone consumed about 520k words and duplicated same route topic.
+- Solution: Keep V16 as current active evidence snapshot; move 47 older 1303 revision artifacts to `Docs/_Archive/Reports_1334_2026-05-26/SignalBus1303Superseded/` with SHA-256, mtime, byte-size, and original-path manifest.
+- Rejected Alternatives: Compressing raw evidence reports by hand would destroy forensic detail. Deleting old versions would break provenance.
+- Scalability potential: Low/Middle/High/Ultra runtime unchanged; future agents read one active proof instead of stale iterations, reducing wrong implementation routes.
+- Hardware Impact: 0 runtime gain measured. Static active-corpus read volume dropped by 473831 words before final report overhead.
+- ## Decision 005 - TASTE Root Exception
+- Problem: `DOC_GOVERNANCE.md` says root text anchors are only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`, but root `AGENTS.md` explicitly requires reading `TASTE.md`.
+- Solution: Leave `TASTE.md` in root and record it as authority conflict/exception. Do not edit `AGENTS.md`; it is explicitly forbidden.
+- Rejected Alternatives: Moving `TASTE.md` into `Docs/` would make `AGENTS.md` stale and break first-read workflow for gameplay/design reviews.
+- Scalability potential: Taste authority still enforces weak/middle/high/ultra presentation rules; no gameplay truth route changes.
+- Hardware Impact: 0 runtime gain measured.
+- ## Decision 006 - Stale Data Monolith Wording Correction
+- Problem: stricter 1334 contradiction fuzzer flagged two active sentences where `static_data.h8bin` could be read as absent or not yet real.
+- Solution: Reworded both to current source/filesystem fact: `static_data.h8bin` exists; import/boot/runtime proof remains pending.
+- Rejected Alternatives: Suppressing fuzzer pattern would hide real comprehension hazard for future agents.
+- Scalability potential: Keeps Data Monolith readiness separated from runtime proof across low/middle/high/ultra targets.
+- Hardware Impact: 0 runtime gain measured; prevents agents from rebuilding or rebaking due to stale absence language.
+- ## Decision 007 - Final Report Hash
+- Problem: report cannot contain SHA-256 of itself without changing its own bytes.
+- Solution: Store `selfSha256ExcludingSelfField`: SHA-256 over canonical sorted JSON before adding self-hash fields.
+- Rejected Alternatives: Whole-file self-hash inside same JSON is mathematically unstable without external sidecar or fixed-point scheme.
+- Scalability potential: Static provenance only; no runtime scalability effect.
+- ## Decision 008 - APEX Override Runtime Gate Scope
+- Problem: rejection requested deep C#/runtime gates, but agent 1334's tracked write set contains no `.cs`, `.shader`, `.compute`, `.prefab`, or `.asset` files.
+Source lines scanned 84; retained 45; overflow-important omitted 16.
+
+FILE AgentLogs\Rationale_1335.md bytes=136551 done=0 blockers=35 pendingHits=28 selected=45
+- # Agent 1335 Rationale - VR Somatic Comfort
+- Status: SOMATIC_PROVIDER_VAULT_LEASE_FOVEATED_SHADER_PATCH_BUILD_BLOCKED_CPU_GATE
+- ## Decision 000 - Scope And Mandate Binding
+- Problem: Batch task demands VR comfort work, but root `C:\hades\current_batch.md` is absent.
+- Solution: Used CLI extraction from actual active batch file `Docs/Tasks/CURRENT_BATCH.md`; located ` `.
+- Rejected Alternatives: Reading neighboring prompts was rejected by strict parsing. Guessing from user summary was rejected because task count and constraints must come from XML block.
+- Scalability potential: Low keeps single shader scalar and cheap dither; middle/high/ultra can spend saved bandwidth on richer visor degradation without new gameplay truth.
+- Hardware Impact: Avoiding post-process stack clones and extra render passes protects i3/MX350 and mobile XR fill-rate; current estimate is audit-only until source and shader paths are measured.
+- ## Decision 001 - Mandate Selection Before Coding
+- Problem: Comfort tunneling touches hot UI/render code, Burst math, AUP deltas, shader work, and telemetry.
+- Solution: Bound work to eight mandates: Zero-GC, ARM64 layout, Native Memory/Jobs, AUP, VR Stencil, Noir/Dither Shader, Foveated LOD, Execution Phases.
+- Rejected Alternatives: Broad registry/docs reading was rejected as bureaucracy. Physics/AI mandates were rejected because assigned domain is Presentation/UX and Visor.
+- Scalability potential: Continuous `GlobalQualityWeight` drives intensity, cadence, and shader richness; no low/high binary switch.
+- Hardware Impact: Static mandate binding prevents expensive Unity post stack or per-frame transform polling from entering implementation.
+- ## Decision 002 - Actual Runtime Owner
+- Problem: prompt names `Assets/_Project/Scripts/UI/VRSomaticComfortController.cs`, but that file is absent on disk.
+- Solution: Bound implementation to live owner: `Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs`, `Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs`, `Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs`, and `Assets/_Project/Art/Shad...
+- Rejected Alternatives: Creating new UI controller was rejected because it would invent parallel owner and violate one fact/one route. Moving existing provider into UI was rejected as cross-domain churn.
+- Scalability potential: Weak devices keep existing single scalar/vector shader route; middle/high/ultra tiers can consume same scalar in richer visor passes without changing gameplay truth.
+- Hardware Impact: Reusing existing DataVault + late-frame shader upload route avoids new component lookup/update loop and protects low-end i3/MX350-class hardware from managed dispatch overhead.
+- ## Decision 003 - 64-Byte Comfort Telemetry Row
+- Problem: existing comfort ring row was 80 bytes and carried three separate pressure floats, wasting one quarter of 64-byte cache row target.
+- Solution: Repacked `ComfortTelemetryEntry` to 64 bytes: pressure is stored as max continuous scalar at offset 44, lock contention count at offset 48, state hash at 52, sequence at 56, AUP hash at 60. Both local and global layout validators now assert contract.
+- Rejected Alternatives: Keeping 80-byte row was rejected because batch explicitly demanded 64-byte telemetry row. Renaming existing 96-byte horizon `SomaticTelemetryEntry` was rejected because it would collide with separate horizon-lock black box ownership.
+- Scalability potential: Low tier writes one compact row per frame. Middle/high/ultra can add offline analysis by reading same binary dump without changing runtime row width.
+- Hardware Impact: 300 rows shrink from 24000 bytes to 19200 bytes, saving 4800 bytes per comfort ring and reducing cache traffic during black-box copies. Estimated CPU saving: 0.3 to 1.2 us per full ring scan on i3/MX350-class memory.
+- ## Decision 004 - Screen-Space Dither Instead Of Smooth Gradient
+- Problem: VR tunnel mask used `length()` plus `smoothstep()` in fullscreen fragment path.
+- Solution: Replaced mask with squared radius math, linear saturate ramp, and eye-stable IGN dither using `frac`, `dot`, and `step`; also replaced pure black with near-black visor floor color.
+- Rejected Alternatives: Smoothstep vignette and additional blur passes were rejected due fill-rate/ALU pressure. lookup texture was rejected because current shader already has deterministic screen-space noise and no extra sampler is needed.
+- Scalability potential: Low uses same dither mask with minimal ALU. Middle can keep peripheral blur. High/ultra can spend saved cost on richer brownout/static while consuming same continuous `vrComfortTunnel` scalar.
+- Hardware Impact: Removed one reciprocal square root path and two cubic Hermite smoothstep evaluations from comfort tunnel block. Estimated mobile XR GPU saving: 8 to 18 us per eye at full-rate fragment coverage, depending on display resolution and overdraw.
+- ## Decision 005 - Fuzzer And Build Throttle
+- Problem: private evaluator job had no direct automated fuzzer, and full build is forbidden while CPU load is above 50 percent.
+- Solution: Added test-only `RunSomaticComfortFuzzerForTests` harness that feeds 10000 deg/s-equivalent angular spikes through private Burst evaluator and Editor test wrapper that asserts DTO offsets and shader mask terms. `dotnet build` remains blocked while...
+- Rejected Alternatives: Making Burst job public was rejected because it would widen runtime API. Running build under high CPU was rejected by explicit coordinator rule. Profiler allocation proof was not fabricated.
+- Scalability potential: Low/middle/high/ultra all use same EWMA path; only thresholds and pressure/foveation scalars vary continuously with `GlobalQualityWeight`.
+- Hardware Impact: No runtime overhead; test code is wrapped in `UNITY_EDITOR`/`UNITY_INCLUDE_TESTS`. Build throttling avoids saturating sibling agents on shared hardware.
+- ## Decision 006 - APEX Broad Catch Purge
+- Problem: Re-audit found broad managed exception catches in crash dump paths inside touched provider files.
+- Solution: Replaced broad catches with specific IO/access/argument/not-supported catches and numeric telemetry fault publication helpers. Kept editor-only layout validator throws because they are not production simulation hot paths and are required by layout...
+- Rejected Alternatives: Hiding broad catches in report was rejected. Removing editor validator throws was rejected because it would weaken ABI drift detection.
+- Scalability potential: Low tier fails closed without black-screening frame; middle/high/ultra keep identical behavior because crash dump logic is outside normal frame execution.
+- Hardware Impact: Runtime hot path cost remains 0 us. Crash-path dispatch avoids catch-all exception masking and records numeric fault codes.
+- ## Decision 007 - Native Collection Sovereignty Re-Audit
+Source lines scanned 492; retained 45; overflow-important omitted 375.
+
+FILE AgentLogs\Rationale_1336.md bytes=116905 done=0 blockers=24 pendingHits=72 selected=45
+- # Rationale 1336 - SHADER_WARMUP_AND_VARIANT_COLLECTION_COMPILER
+- Status: STATIC GREEN - LOOP 27 BUILD BLOCKED BY MISSING UNITY CSPROJ / HOST CPU AND GRAPHICSSTATE TRACE GAP - UNITY IMPORT/PROFILER PENDING
+- ## Decision 001 - Prompt Source
+- Problem: User ordered extraction from root `current_batch.md`, but that file is absent.
+- Solution: Located live batch at `Docs/Tasks/CURRENT_BATCH.md` with CLI `rg`, extracted ` ` by regex including attributes.
+- Rejected Alternatives: Using archived batch files; reading neighboring prompts; guessing task count from chat text.
+- Scalability potential: No runtime effect. Prevents wrong-domain edits in multi-agent batch.
+- Hardware Impact: 0 us/frame. Avoided irrelevant code churn on i3/MX350.
+- ## Decision 002 - Mandate Set
+- Problem: Shader warmup spans bootstrap, async, graphics, DTO layout, telemetry, and budgets.
+- Solution: Read eight relevant mandates before code: bootstrap sequence, zero-GC, async standard, shader stutter, URP hot path, ARM64 struct layout, crash telemetry, performance budgets.
+- Rejected Alternatives: Reading whole registry; using only AGENTS.md; starting edits from prompt text alone.
+- Scalability potential: Low/Middle/High/Ultra path remains constrained by owned variants and boot gating, not runtime first-use compilation.
+- Hardware Impact: Static decision. Expected gameplay first-use shader spike removal; exact microseconds pending Unity profiler.
+- ## Decision 003 - Initial Bootstrap Finding
+- Problem: Existing bootstrap contains shader variant collection fields but may still block main thread.
+- Solution: Source scan identified `WarmConfiguredShaderVariantCollectionsAsync` and `collection.WarmUp()` in `GameBootstrapper.cs` as primary target.
+- Rejected Alternatives: Adding `Shader.WarmupAllShaders`; moving warmup into gameplay; creating new global rendering manager.
+- Scalability potential: Low/MX350 warms only curated collections during boot; Middle/High/Ultra may carry richer variant assets without changing gameplay authority.
+- Hardware Impact: Potentially removes first-use shader stalls; exact saved microseconds pending implementation and profiler proof.
+- ## Decision 004 - Warmup API Route
+- Problem: Unity 6 local docs expose `ShaderWarmup.WarmupShaderFromCollection`, not confirmed `ShaderVariantCollection.WarmUpAsync` method.
+- Solution: Use manifest-driven `ShaderWarmup.WarmupShaderFromCollection(collection, shader, setup)` and yield via `AwaitableDebtMonitor.NextFrameAsync` after continuous GlobalQualityWeight batch size of 1/2/4/8.
+- Rejected Alternatives: `Shader.WarmupAllShaders`; legacy `collection.WarmUp()`; coroutine; dummy material instantiation.
+- Scalability potential: Low = one shader attempt/frame; Middle = two; High = four; Ultra = eight. Same truth route, higher boot cadence only.
+- Hardware Impact: Low i3/MX350 avoids single blocking warmup wall. Saved gameplay microseconds pending profiler, expected to move driver stalls to boot veil.
+- Route impact: Flashlight/visor/PDA/caustic route shaders compile before simulation.
+- Proof required: Unity compile and profiler run.
+- Parked work rejected: Whole-project shader warmup.
+- ## Decision 005 - Manifest Fail-Closed
+- Problem: SVC assets do not expose their shader list at runtime, so blind per-collection async warmup cannot prove coverage.
+- Solution: Add explicit `Shader[] shaderWarmupShaders` to `GameBootstrapper` and `BootstrapController`, wire current `00_BOOTSTRAP` scene with shader GUIDs from configured SVC assets.
+- Rejected Alternatives: Reflection into SVC internals; falling back to `collection.WarmUp()` when manifest is missing.
+- Scalability potential: Low/Middle/High/Ultra vary batch cadence, not manifest ownership.
+- Hardware Impact: 0 us/frame. Boot now fails closed instead of entering world with untracked compile debt.
+- Route impact: Startup correctness is visible before player control.
+- Parked work rejected: Runtime scene search for shaders.
+- ## Decision 006 - Telemetry Ring
+- Problem: Failure without native black box would leave no reproducible proof of warmup stalls or missing assets.
+- Solution: Add explicit 64B `BootstrapTelemetryEntry`, allocate 300 entries from GlobalDataVault under local bootstrap buffer id `(BufferID)76000`, record native DTO states through DataVault writer locks.
+- Rejected Alternatives: `List ` timings; `Debug.Log` as primary telemetry; duplicate `74410` buffer ID.
+- Scalability potential: Fixed 19.2 KB ring across all devices. Ultra can generate more boot events but ring remains bounded.
+- Hardware Impact: Fixed 64B writes on boot/failure only; no gameplay frame tax on i3/MX350.
+- Route impact: Boot failures become diagnosable, not anecdotal.
+- Proof required: Size/offset edit test and compile.
+Source lines scanned 1133; retained 45; overflow-important omitted 723.
+
+FILE AgentLogs\Rationale_1337.md bytes=103496 done=0 blockers=21 pendingHits=22 selected=45
+- # Rationale_1337
+- ## Session Start
+- Problem: Agent prompt was not in workspace root `current_batch.md`; active batch file is `Docs/Tasks/CURRENT_BATCH.md`.
+- Solution: Extracted only ` ` using PowerShell regex over full file.
+- Rejected Alternatives: Reading neighboring prompts or archived batches; both violate strict parsing and batch hygiene.
+- Scalability potential: N/A, routing decision only.
+- Hardware Impact: Avoids wasted scans and build invocations on i3/MX350-class host.
+- Problem: Physics culling can break constraints if treated as pure distance-only sleeping.
+- Solution: Phase 0 will map rigidbody state owners, AUP provenance, and keep-awake/constraint dependencies before code mutation.
+- Rejected Alternatives: Add per-object Update distance checks, Camera.main polling, Vector3.Distance loops, or immediate Sleep/Wake in Burst job.
+- Scalability potential: Low uses contracted radius and aggressive cadence; Middle keeps primitive colliders near player; High expands radius and smoother wake bands; Ultra spends saved CPU on richer near-field debris/visual physics while distant bodies remai...
+- Hardware Impact: Target gain is reduced PhysX integration/contact work on i5-1135G7/MX350; exact microseconds remain pending code and measurement.
+- ## Phase 0 Decisions
+- Problem: prompt names `PhysicsCullingOverseer.cs`, but codebase already owns culling in `GlobalPhysicsStateManager` plus `Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs`.
+- Solution: Harden existing owner and document adjacent root edits as critical cross-domain surgery; avoid second culling authority.
+- Rejected Alternatives: Creating new overseer file with duplicate tracked body lists; that would violate one fact -> one owner and risk conflicting Sleep/Wake decisions.
+- Scalability potential: Low keeps one compact Vault lane and changed-index drain; Middle/High/Ultra reuse same job while expanding radius/fidelity continuously.
+- Hardware Impact: Avoids duplicate O(N) scans and duplicate native buffers on i3/MX350.
+- Problem: AUP body cache is stale because `TryUpdateTrackedBodyAupCache` returns prior value before sampling current Rigidbody position.
+- Solution: Refresh current runtime-position-derived AUP each culling slow tick, only falling back to last valid AUP when current position is invalid or origin resolution fails.
+- Rejected Alternatives: Using stale cache for speed; it can sleep moving constraints or newly activated debris at wrong coordinate. Searching scene AUP owners per body is rejected as hot-path scene polling.
+- Scalability potential: Low through Ultra all need correct truth coordinates; quality may alter radius, not position authority.
+- Hardware Impact: Adds one existing position sample/origin conversion per tracked body per 0.1s slow tick; prevents expensive false sleep/wake churn and invalid broadphase transitions.
+- Problem: Physics culling radius scale is constant and violates continuous GlobalQualityWeight policy.
+- Solution: Map HomeostasisBrain.GlobalQualityWeight through smoothstep to radius scale from 0.5x to 1.5x, squared for job.
+- Rejected Alternatives: Binary quality tiers or build-time hardware switches; both violate continuous quality doctrine.
+- Scalability potential: Low = 25m debris wake from 50m base, Middle = near 50m, High/Ultra = up to 75m physical fidelity radius.
+- Hardware Impact: Low-end hardware contracts active physics volume; top-tier machines spend saved CPU on larger near-field simulation instead of more truth owners.
+- Problem: Telemetry rings exist but are 32B and do not prove job/sync microseconds, quality, or dump route.
+- Solution: Widen culling telemetry entries to 64B with explicit offsets and write cold binary dump from fixed 300-entry rings.
+- Rejected Alternatives: Debug.Log telemetry or managed List snapshots; both allocate and are not postmortem-safe enough.
+- Scalability potential: Same fixed 300-entry ring at all quality levels; telemetry captures how quality changes radius and cost.
+- Hardware Impact: 64B writes are O(1) and cold dump is crash/over-budget only; no frame-loop managed allocation.
+- ## Implementation Decisions
+- Problem: Existing culling DTO is 40B, not 64B, but it is already Vault-owned route consumed by Burst jobs.
+- Solution: Retained `PhysicsCullingDTO` stride and widened telemetry DTOs to 64B, where black-box mandate needs fixed-ring postmortem state.
+- Rejected Alternatives: Expanding hot culling DTO to 64B only for symmetry; that would add 24B per body to hottest job lane without consumer need.
+- Scalability potential: Low keeps tighter memory bandwidth; Middle/High/Ultra retain same culling truth and spend quality only on radius/fidelity.
+- Hardware Impact: Saves roughly 48KB over 2048 tracked bodies versus forced 64B hot DTO expansion.
+- Problem: Culling needed continuous quality without mutating gameplay truth.
+- Solution: Quality scales only `HardwareRadiusSqScale`; it does not change DTO identity, authority ownership, save identity, or culling command semantics.
+- Rejected Alternatives: Low/high tier branch tables and separate DTO layouts; both violate scalability pillar.
+- Scalability potential: Low 0.5x radius, middle continuous transition, high/ultra 1.5x radius.
+- Hardware Impact: On i3/MX350 fewer distant bodies remain active; on high-end machines more near-field physics can stay alive.
+- Problem: Black-box dump must preserve last 300 frames without heap snapshots.
+Source lines scanned 633; retained 45; overflow-important omitted 467.
+
+FILE AgentLogs\Rationale_13AI.md bytes=54334 done=0 blockers=10 pendingHits=15 selected=45
+- # Rationale_13AI
+- ## Session Start
+- Problem: 13AI has no active XML batch prompt in `Docs/Tasks/CURRENT_BATCH.md`, but user provided direct AI-domain audit/fix assignment.
+- Solution: Treat direct user assignment as controlling scope, record XML task count as 0, and create disk-backed state files before source edits.
+- Rejected Alternatives: Reading archived batch prompts or adjacent active prompts would violate strict parsing and contaminate architectural decisions.
+- Scalability potential: Applies to AI systems only; no runtime cost.
+- Hardware Impact: 0 us runtime. Administrative proof only.
+- Problem: AI domain touches fish, creature cognition, swarms, navigation, encounter pacing, and neutral/hostile drone behavior.
+- Solution: Select 8 mandates covering cognition, director, SDF nav, flocking, funnel pathfinding, execution phases, SignalBus lanes, and Zero-GC policy; read Registry/DI as supplemental dependency reference, not as selected mandate.
+- Rejected Alternatives: Generic Unity NavMesh/MonoBehaviour AI patterns are rejected because project requires Burst/data-local/SDF-driven authority; counting supplemental Registry/DI as ninth selected mandate would violate 2-8 mandate cap.
+- Scalability potential: Low uses cadence/stride/path LOD and visual/acoustic fakes; Middle uses full nearby truth; High/Ultra spend saved time on richer presentation and sensory response, not new gameplay truth.
+- Hardware Impact: Mandate selection only; later fixes must target MX350/i3 frame budget and zero GC.
+- ## Scoped Fixes
+- Problem: `AcousticEchoLocationRuntime.TryUpdatePredatorEcho()` and echo producer routes could bootstrap/refresh DataVault state from `Try*` call sites. That violates read-accessor purity and risks hidden owner work from creature AI consumers.
+- Solution: Added `TickOwnerFrame()` and called it from `FaunaDirector.Tick()` after acoustic signal drains. `TryUpdatePredatorEcho()` now reads cached trail state only. `TryEnqueueEchoTap()` uses no-acquire pending tap view and records invalid producer data ...
+- Rejected Alternatives: Leaving `EnsureInitialized()` in reader was rejected because it hides DataVault setup and job scheduling behind query. Dumping black-box files directly from producer rejection was rejected because file I/O belongs to owner/fault phase...
+- Scalability potential: Low tier avoids first-call ownership spikes during predator cognition. Middle keeps acoustic breadcrumbs without changing truth ownership. High/Ultra can spend saved main-thread slack on richer acoustic head-sweep presentation while t...
+- Hardware Impact: 0 verified us saved; profiler proof absent. Static estimate: removes one DataVault bootstrap/ensure plus possible owner refresh from each predator query path, 5-30 us cold-spike risk on i3/MX350 and 0 B/frame GC target maintained.
+- Problem: `StressDrivenSpawnDirector` used constant `AuthoritativeQualityWeight = 1f` in places that should scale cadence/capacity/probe work, effectively forcing Ultra spawn work on weak devices while blurring quality truth versus behavior truth.
+- Solution: Renamed fixed behavior scalar to `AuthoritativeBehaviorWeight` and kept it only for gameplay-truth cognition values. Candidate scoring, budget selection, spawn probability bias, hidden spawn radius/probe count, cull radius, and debug reporting now...
+- Rejected Alternatives: Binary low/ultra branches were rejected. Changing behavior truth with device quality was rejected because quality must not alter authority route or gameplay identity.
+- Scalability potential: Low uses 3 hidden probes and lower spawn pressure. Middle interpolates budgets and radius. High increases probes and density. Ultra spends available CPU on richer encounter placement rather than changing species truth.
+- Hardware Impact: 0 verified us saved; profiler proof absent. Static work reduction at quality 0: hidden probes drop from up to 19 to 3, 16 fewer placement probes per spawn attempt, 84.2% less probe work on that branch.
+- Problem: Phantom drone quality produced `phantomDrawCount` but indirect args, dispatch groups, and compute capacity still used full `PhantomDroneCount`, so weak hardware paid for invisible/low-priority swarm work.
+- Solution: `UpdatePhantomDroneArgs(int phantomDrawCount)` writes actual instance count. `RenderPhantomSwarm()` dispatches only continuous draw count and passes that as compute capacity.
+- Rejected Alternatives: Keeping full dispatch and clipping in shader was rejected because it wastes compute and vertex work. binary disable path was rejected because `GlobalQualityWeight` must scale continuously.
+- Scalability potential: Low reaches zero phantom draw/dispatch. Middle draws proportional swarm. High and Ultra restore dense phantom overkill without code path switches.
+- Hardware Impact: 0 verified us saved; profiler proof absent. Static work reduction: quality 0 draws/dispatches 0 instead of 500 phantom drones; quality 0.5 draws about 250 instead of 500.
+- Problem: Real headless drone rendering had append/culling resources but `TryRenderGpuCulledFleet()` returned false, so procedural draw used full `HeadlessDroneCapacity` and relied on vertex/fragment clipping for inactive drones.
+- Solution: Activated GPU culling path: reset append counters, bind culling state/matrix/render-instance buffers, upload frustum planes and distance, dispatch cull compute, copy visible count into indirect args, and draw from compacted visible matrix buffer. ...
+- Rejected Alternatives: CPU-compacting active drone matrices was rejected because slot sparsity would require extra per-frame CPU copy work. Setting instance count to active managed count was rejected because active slots are not guaranteed dense. Enabling e...
+- Scalability potential: Low avoids drawing offscreen/far/inactive drones when compute is available. Middle scales by actual visible fleet. High/Ultra can keep drone count high without forcing every drone through vertex path.
+- Hardware Impact: 0 verified us saved; profiler proof absent. Static work reduction: visible count replaces 512-capacity draw; if 40 drones are visible, vertex instances drop by 472, 92.2% instance reduction on that draw.
+- Problem: `AmbientBiotaDirector` exposed DataVault read-only views while `_jobPending` could still be writing same buffers. `ReadOnly` does not mean phase-safe.
+- Solution: Public `BiotaAups`, `BiotaVelocities`, and `BiotaStates` now fail closed to default while owner job is pending. Existing `IAmbientBiotaService` signatures remain unchanged.
+- Rejected Alternatives: Changing `IAmbientBiotaService` was rejected because it is cross-domain contract. Completing job from getter was rejected because hidden `.Complete()` in read accessor violates execution-phase doctrine.
+- Scalability potential: Low/Middle avoid race reads during drift/spawn jobs. High/Ultra retain full ambient density after LateFrame completion without exposing mutable in-flight buffers.
+- Hardware Impact: 0 verified us saved; correctness fix. It may skip one residency/ecosystem read during active owner job instead of risking race.
+- ## Boid Black Box Route
+- Problem: `HectonBoidController` controlled GPU fish flock behavior but had no 300-frame native Black Box in 13AI lane. crash/NaN in target, grid, acoustic ping, dispatch count, or runtime buffers would leave no local forensic trail.
+- Solution: Added `BoidBlackBoxEntry[300]` in DataVault with `(BufferID)71979`, owner `SystemID.AIEcology`, and `LateFrameTick()` owner writes. Each row records frame, flags, boid count, target, bounds, spatial grid, dispatch group count, predator count, fove...
+- Rejected Alternatives: managed `Queue`/array was rejected for GC and ownership reasons. persistent owner-local `NativeArray` was rejected because project doctrine says cross-domain native ownership belongs in DataVault. Writing telemetry from getters/reader...
+- Scalability potential: Low tier pays one bounded 128B row write after owner work and gets crash forensics. Middle/High/Ultra retain same truth route and can spend saved bug time on richer fish presentation; `GlobalQualityWeight` is recorded continuously but...
+- Hardware Impact: 0 verified us saved. Estimated added normal-frame cost is fixed DataVault write of 128B plus primitive hash math; suspicious until profiler proves it below 0.1 ms, but bounded and owner-phase. On i3/MX350 this is preferable to post-crash bl...
+- Problem: 13AI fault dumps used system-specific paths (`Dump_ACOUSTIC_ECHO_LOCATION_AI.bin` and initial boid `Dump_13AI_HectonBoidController.bin`) while session rule requires `Docs/AgentLogs/Dump_[YourID].bin`.
+Source lines scanned 311; retained 45; overflow-important omitted 188.
+
+FILE AgentLogs\Rationale_13ATMA.md bytes=40204 done=0 blockers=8 pendingHits=12 selected=45
+- # Rationale_13ATMA
+- Status: BUILD FAILED - EXTERNAL VENDOR/WORKSPACE DEPENDENCY ERRORS
+- ## Decision 001 - Missing Batch XML
+- Problem: User ID `13ATMA` has no ` ` block in `Docs/Tasks/CURRENT_BATCH.md`. Neighboring prompts 1323/1324 are submarine gas-memory tasks, not sky/celestial beauty.
+- Solution: Treat direct user message as active one-task directive and keep all proof artifacts under `13ATMA`.
+- Rejected Alternatives: Inheriting 1323/1324 would violate strict parsing and cross-domain ownership. Waiting for wipe is not required because `Status_13ATMA.md` was missing, not stale.
+- Scalability potential: Keeps audit bounded to Echelon 7/presentation atmosphere so low/middle/high/ultra decisions stay about visual sky/weather cost, not unrelated gas solver memory.
+- Hardware Impact: Avoids touching submarine gas systems and triggering compile risk on i3/MX350 with no domain gain.
+- ## Decision 002 - Mandate Set
+- Problem: Atmosphere/celestial work can drift into expensive simulation, global polling, and pretty-but-useless visuals.
+- Solution: Use eight mandates: `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First`, `OPT_Zero_GC_Policy_AllocFree_Mandate`, `CORE_Weather_Abyssal_FlowField_Currents`, `REND_Abyssal_Lighting_Voxel_Occlusion_Shadows`, `REND_Shader_Noir_Aesthetics_Dithering_Fog`, ...
+- Rejected Alternatives: Scientific orbit/weather simulation by default; binary low/high quality switches; hot registry polling; clean decorative skybox.
+- Scalability potential: Low uses LUT/dither/depth fog and cheap celestial wave math; middle adds denser fog/light detail; high adds richer raymarch/shafts; ultra buys overkill presentation without changing gameplay truth.
+- Hardware Impact: MX350 path targets 0 B hot-path GC and sub-0.1 ms suspicious-system budget; high-tier saved cycles buy more fog, shafts, and celestial presentation.
+- ## Decision 003 - Edit-Mode Sky Preview Was Dead
+- Problem: `ObserverRelativeCelestialBody` and `SkySystemFollowCamera` are `[ExecuteAlways]`, but their editor code paths returned when `!Application.isPlaying`. That made authored sky placement, Scene View sky follow, sunrise/sunset/orbit preview, and `OnVal...
+- Solution: Removed play-mode rejection from editor compile guards while preserving `EditorApplication.isCompiling` early-out. Added editor tests that prove `SkySystemFollowCamera` applies Scene View follow from `OnEnable` and `ObserverRelativeCelestialBody` ...
+- Rejected Alternatives: Leaving preview as play-mode-only; adding separate editor tool; forcing designers to call private methods or enter play mode. Those options hide broken authored orbit/sky layout until runtime.
+- Scalability potential: Low/middle/high/ultra all benefit because authored sky geometry is validated before runtime. Low devices avoid wasted runtime correction; high/ultra devices get reliable cinematic composition for moons, horizons, and orbital silhouettes.
+- Hardware Impact: Estimated runtime gain is indirect but real: fewer runtime fallback solves and no editor-authored bad placement shipping to i3/MX350. Scene preview cost remains editor-only.
+- ## Decision 004 - Hot Registry Reads In Observer Placement
+- Problem: `ObserverRelativeCelestialBody` resolved `GlobalRegistry.Player` while finding observer camera and resolved `GlobalRegistry.Atmosphere` from `ResolveTimeSeconds()`. That violates local rule that hot runtime context owners publish once and consumers...
+- Solution: Added cold cached `IPlayerRuntimeContext` and atmosphere runtime binding, refreshed by `IGlobalRegistryHotSwapListener`. `ResolveTimeSeconds()` now only reads cached atmosphere reference or presentation clock. `CurrentDirection` calls non-mutating...
+- Rejected Alternatives: Keeping repeated registry reads; using `Camera.main`; doing scene search from getter. Standard Unity convenience routes are too opaque and too costly for sky placement path.
+- Scalability potential: Low tier uses cached camera/time routes with no scene scan unless fallback is missing. Middle/high/ultra can spend saved budget on richer fog/shaft/celestial visuals without changing truth ownership.
+- Hardware Impact: Removes repeated global lookups from celestial late-frame placement. Estimated savings on i3/MX350: 2-8 us/frame in bad fallback scenes, plus removes nondeterministic lookup order risk.
+- ## Decision 005 - Public Celestial Direction Getter Needed To Be Pure
+- Problem: `CurrentDirection` could call `ResolveParentDirection()`, which cached `_parentObserverRelativeBody`, and could pass through observer resolution. Read accessors must not mutate global/local state or perform hidden component caching.
+- Solution: Added `allowReferenceCaching` solve parameter. Owned placement paths keep caching allowed; public `CurrentDirection` passes `false`. Added regression test proving `_parentObserverRelativeBody` remains null after reading `CurrentDirection`.
+- Rejected Alternatives: Documenting getter as impure; returning stale direction only; duplicating whole orbit solver. Those either violate doctrine or add maintenance risk.
+- Scalability potential: Pure read route lets other systems sample celestial direction safely at any quality tier without causing hidden hierarchy work. Ultra visuals can query more often without accidental cache mutation.
+- Hardware Impact: Prevents surprise `TryGetComponent` work from read consumers. Estimated gain on MX350 scenes with multiple orbiting bodies: 1-5 us per sampling burst and lower frame-time variance.
+- ## Decision 006 - Weather Biome Depth Route Was Hot Singleton Poll
+- Problem: `GlobalWeatherDirector.ResolveCurrentBiomeDepthMeters()` called `BiomeMatrixDirector.ActiveRuntimeInstance` during weather tick/LUT state updates. That is hot singleton lookup in presentation-weather path.
+- Solution: Cached `BiomeMatrixDirector` from `GlobalRegistry.BiomeMatrix` during dependency resolution and refreshed it on `GlobalRegistryServiceSlot.BiomeMatrixRuntime` hot swap.
+- Rejected Alternatives: Keeping `ActiveRuntimeInstance`; querying scene objects; moving biome depth ownership into weather. biome matrix is already fact owner; weather only needs cached read.
+- Scalability potential: Low tier gets cheap fog LUT/depth blend. Middle/high/ultra can increase LUT/fog richness without accumulating global lookup cost.
+- Hardware Impact: Estimated MX350 gain: 1-3 us per weather update path and cleaner dependency proof for frame spikes.
+- ## Decision 007 - Build Gate Blocked By Machine Load
+- Problem: Local rules forbid launching `dotnet build` when another dotnet/csc build is running or CPU is above 50 percent. first legal build window opened, so `dotnet build Hecton8.slnx --no-restore` was executed. It failed after warning-heavy Unity/package ...
+- Solution: Static proof was completed with `git diff --check` and targeted `rg` scans. build failure is recorded as unresolved workspace compile failure, not green pass. No second compile was launched while CPU was above threshold.
+- Rejected Alternatives: Starting another build despite explicit prohibition; reporting compile success without running it; killing unknown active build jobs; pretending warning noise was failure cause without actual error lines.
+- Scalability potential: Avoids creating false contention in 20+ agent workspace. Build queue remains available for integrator when machine is not saturated.
+- Hardware Impact: Prevents avoidable CPU and IO contention on low-end/loaded hardware. Runtime microsecond claims remain estimates until clean Unity compile/test pass is available.
+- ## Decision 008 - Firmament Bake Used Binary VRAM Buckets
+Source lines scanned 204; retained 45; overflow-important omitted 107.
+
+FILE AgentLogs\Rationale_13GEO.md bytes=39352 done=0 blockers=6 pendingHits=18 selected=45
+- # Rationale_13GEO
+- Status: PENDING VERIFICATION
+- ## Decision 001 - Active Directive Source
+- Problem: `Docs/Tasks/CURRENT_BATCH.md` has no ` `; strict batch extraction cannot produce XML task list.
+- Solution: Use user's direct 13GEO domain assignment as active directive, with XML task count recorded as 0. Constrain work to Echelon 2 terrain/MapMagic/geology and documented cross-domain interfaces only.
+- Rejected Alternatives: Editing prompts for neighboring IDs would steal another agent's task and violate strict parsing. Waiting for new batch tag would leave domain audit undone.
+- Scalability potential: Scope control reduces merge conflicts on weak team throughput while preserving deep terrain improvements for low, middle, high, and ultra hardware tiers.
+- Hardware Impact: No runtime impact; process decision prevents accidental broad edits and compile churn on shared machines.
+- ## Decision 002 - Continuous Seam Presentation Scaling
+- Problem: `WorldGenerativeGeologySeamExecutionDirector` and `WorldGenerativeGeologyIntegrationDirector` used fixed budgets for seam plan execution, tracked plan capacity, refresh distance, collar segments, debris count, and gap-dither particles. That violate...
+- Solution: Feed `HomeostasisBrain.GlobalQualityWeight` through smoothstep curves. Low weight keeps minimum survival seam evidence with fewer plans, wider refresh hysteresis, 3 collar segments, sparse debris, and smaller dither. High/ultra weight restores ful...
+- Rejected Alternatives: Adding explicit Low/Medium/High enum switches would violate scalar-quality contract. Leaving inspector constants fixed would make weak devices pay for hidden visual overdraw and high-end devices receive no visual overkill.
+- Scalability potential: Low = sparse seam masks and silhouettes; middle = stable seam collars and moderate dither; high = full configured plans and debris; ultra = configured maximum visual density without changing terrain truth ownership.
+- Hardware Impact: Estimated low-end gain is 40-75 us during seam reconciliation bursts on i3/MX350-class hardware, with savings spent on clearer high-end seam evidence rather than gameplay authority changes.
+- ## Decision 003 - Terrain Blend Mask Shader Parameter De-binarization
+- Problem: `WorldGenerativeGeologyTerrainSeamApplier` pushed binary `lowTierVisualOnly` shader parameter even though heightmap job already consumes continuous `GlobalQualityWeight`.
+- Solution: Keep legacy bool telemetry/ABI fields intact, but route active shader vector and terrain telemetry through `seamExpensiveWeight` as float. blend mask now moves continuously from survival visual-only masking to full expensive seam blending.
+- Rejected Alternatives: Editing `HybridTerrainSeamJobs` ABI fields during parallel batch risks breaking stale generated csproj callers. Removing all bool telemetry in one pass would create unnecessary merge conflict with already modified file.
+- Scalability potential: Low = shader mask hides seam cuts without expensive visual emphasis; middle = partial mask strength; high/ultra = full mask response and richer seam detail.
+- Hardware Impact: Estimated low-end gain is visual-stability, not CPU reduction; avoids binary shader jumps and preserves no-extra-truth behavior.
+- ## Decision 004 - Voxel Bridge Debt Deferred
+- Problem: Static scan found `WorldGenerativeGeologyVoxelBridgeDirector` still has `Allocator.Persistent` native construction, managed `CancellationTokenSource`, and interpolated diagnostic strings. file is already modified by another agent and is in risky me...
+- Solution: Do not overwrite active neighboring work. Record debt for integrator and limit this pass to clean/separable seam planner and terrain applier edits.
+- Rejected Alternatives: Patching modified voxel bridge would risk clobbering another agent's current migration. Ignoring debt would hide real DataVault/zero-GC violation.
+- Scalability potential: Fixing it later should move cave request scratch buffers into DataVault and replace managed async cancellation with explicit state machines; this benefits low, middle, high, and ultra equally by removing crash and GC risk.
+- Hardware Impact: Current unfixed risk can exceed 0 B/frame and can fragment native memory; no gain claimed until owning agent or integrator completes that migration.
+- ## Decision 005 - Verification Gate Scope
+- Problem: Full compile/build verification is forbidden while CPU is above 50% or another `dotnet`/`csc` process is active. machine had active `dotnet` processes and CPU sampled at 100.0%; DataVault audit also timed out after 124 seconds.
+- Solution: Run only static gates that do not violate shared-machine rules, record exact blockers, kill timed-out audit process, and leave status as PENDING VERIFICATION.
+- Rejected Alternatives: Launching `dotnet build` anyway would violate project protocol and compete with other agents. Claiming compile success without compiler would be false reporting.
+- Scalability potential: Avoiding unauthorized compile contention protects shared integration loop across low, middle, high, and ultra target work.
+- Hardware Impact: No runtime gain claimed; process decision avoids CPU contention on shared workstation.
+- ## Decision 006 - Voxel Bridge Continuous Budget And Cancellation Cleanup
+- Problem: `WorldGenerativeGeologyVoxelBridgeDirector` still used fixed runtime volume, spawn, async launch, pool warmup, grid cap, and resolution budgets. It also created one managed `CancellationTokenSource` per pending voxel request and allocated persisten...
+- Solution: Drive voxel volume capacity, spawn budget, async launch budget, pool warm padding, pool warmup, grid dimension cap, and resolution scale from continuous `HomeostasisBrain.GlobalQualityWeight`. Replace per-request CTS with request-state cancellatio...
+- Rejected Alternatives: Full async pipeline rewrite would collide with neighboring dirty voxel work. Removing lifecycle CTS would leave heavy voxel pipeline unable to stop on disable. Using discrete low/mid/high tiers would violate scalar quality contract.
+- Scalability potential: Low = fewer active voxel volumes, lower grid cap, smaller resolution scale, smaller pool warm target; middle = partial density; high = configured budget; ultra = configured maximum without changing terrain truth ownership.
+- Hardware Impact: Static low-end estimate is 60-140 us saved during bursty voxel seam reconciliation plus removal of per-request CTS allocations and empty persistent native allocations.
+- ## Decision 007 - Cached DataVault Route For Terrain Seam Applier
+- Problem: `WorldGenerativeGeologyTerrainSeamApplier` hot buffer paths repeatedly read `GlobalRegistry.DataVault`, violating cold-DI rule for GlobalRegistry.
+- Solution: Cache `_dataVault` through `ResolveReferences()` and update it from `OnGlobalRegistryServiceReplaced` when DataVault slot changes. Buffer open/acquire paths now use cached route.
+- Rejected Alternatives: Reworking terrain seam buffer ownership into new service would be larger than safe patch scope and risk another agent's edits. Leaving hot `GlobalRegistry.DataVault` reads would keep known doctrine violation.
+- Scalability potential: Low, middle, high, and ultra devices all get single stable DataVault route; quality scaling remains independent from memory authority.
+- Hardware Impact: Microsecond gain is small but real in repeated seam buffer opens; bigger value is contract correctness and reduced hot global dependency.
+- ## Decision 008 - Second Pass Verification Scope
+Source lines scanned 220; retained 45; overflow-important omitted 119.
+
+FILE AgentLogs\Rationale_13GPU.md bytes=41770 done=0 blockers=15 pendingHits=9 selected=45
+- # Rationale_13GPU
+- Status: STATIC VERIFIED / COMPILE GATE BLOCKED BY HOST CONTENTION; prior project graph blocker remains
+- ## Decision 001: Identity and Batch Mismatch
+- Problem: `Docs/Tasks/CURRENT_BATCH.md` does not contain ` `, while user explicitly assigned ID `13GPU` and GPU/flora/rocks/detail domain.
+- Solution: Use `13GPU` as operational ID, create `Status_13GPU.md`, `Rationale_13GPU.md`, and `LOG_13GPU.md`, and treat user directive plus active domain roster as authority. Read nearest relevant batch prompt only as domain context if needed, not as identity.
+- Rejected Alternatives: Silently adopting `1316` would violate strict ID parsing and could collide with another vegetation-memory agent. Blocking session would leave confirmed domain problems unexamined.
+- Scalability potential: Low/Middle/High/Ultra work remains scoped to continuous `GlobalQualityWeight`, GPU Resident Drawer, manual BRG only where procedural data lacks MeshRenderer ownership, and fake-first presentation.
+- Hardware Impact: No runtime change. Prevents process collision on i3/MX350 shared machine.
+- ## Decision 002: Scatter Budget Continuous Scaling
+- Problem: `ScatterBudgetController` applied scatter/scavenge/collider budgets through discrete Surface/MidDepth/Deep thresholds. It had no hysteresis and did not consume `HomeostasisBrain.GlobalQualityWeight`, violating continuous scalability pillar and risk...
+- Solution: Added 3m minimum / 5m default depth hysteresis band for debug/stable band label, replaced profile selection with smooth depth blending across threshold windows, and scaled scavenge radius/spawn cadence plus collider radius/op cadence through smoot...
+- Rejected Alternatives: Editing already-modified GPU scatter or indirect vegetation renderer files would create cross-agent collision. Binary low/high quality switches were rejected because they violate systemic mandate. Rewriting ScavengePopulator or Proxim...
+- Scalability potential: Low uses smaller radius/cadence to keep weak devices stable; Middle interpolates density without profile cliffs; High keeps longer residency and richer detail; Ultra increases visible density/collider processing without changing save ...
+- Hardware Impact: Estimated 35-80 us saved on i3/MX350 during depth-boundary churn by avoiding repeated budget reapplication and collider/scavenge spike oscillation. Profile proof absent; status remains PENDING VERIFICATION.
+- ## Decision 003: Build Deferral
+- Problem: Project rules forbid `dotnet build` when CPU is over 50% or another compiler is running. CPU counter returned `100.0%`.
+- Solution: Skipped build. Performed static diff and pattern scans only.
+- Rejected Alternatives: Running `dotnet build` under saturated CPU would violate host policy and interfere with other agents.
+- Scalability potential: No runtime change.
+- Hardware Impact: Prevented unnecessary host contention on shared machine.
+- ## Decision 004: BRG Culling Fail-Closed Guards
+- Problem: `HectonBatchRendererGroupUtility` accepted invalid instance matrices, culling planes, sphere centers, radii, and bounds. NaN/Inf in shared BRG culling can leak into signed-distance tests and make corrupted instances visible or poison culling output.
+- Solution: Added finite checks inside `BuildMatrixVisibilityMaskJob`, `IsSphereVisible`, and `IsBoundsVisible`. Invalid inputs now write invisible/false and return before draw command population.
+- Rejected Alternatives: Rewriting BRG allocation/output ownership was rejected because Unity owns callback TempJob output and current utility is shared route. Editing already-modified procedural vegetation renderers was rejected to avoid cross-agent collision.
+- Scalability potential: Low/Middle/High/Ultra use same fail-closed guard. guard does not change quality behavior; it prevents corrupt data from wasting GPU submissions or crashing presentation.
+- Hardware Impact: Estimated 15-40 us saved on i3/MX350 during corrupt culling frames by stopping bad instances before draw range emission. Normal valid frames pay only scalar finite checks.
+- ## Decision 005: HLOD Upload Compaction
+- Problem: `HectonHLODRenderer.BindNativeInstances` copied every incoming HLOD instance into upload arrays and merged bounds without validating matrix, bounds, fade, or origin-shift data. One corrupted instance could inflate/NaN global bounds or upload unusab...
+- Solution: Added compacting validation. Invalid HLOD instances are skipped; valid instances are uploaded contiguously. Origin shift and `SetGlobalBounds` now reject non-finite bounds/offsets.
+- Rejected Alternatives: Per-instance compute culling was rejected as unproved job/compute path for far-field HLOD renderer. Clearing whole batch on first bad instance was rejected because it destroys valid visual coverage.
+- Scalability potential: Low keeps far-field coverage stable by rejecting poison data without extra buffers. Middle/High/Ultra preserve valid overdraw/detail opportunities because batch is compacted rather than dropped wholesale.
+- Hardware Impact: Estimated 20-60 us saved on i3/MX350 during poisoned HLOD batches by avoiding invalid BRG bounds churn and useless GPU work. No normal-frame runtime proof yet.
+- ## Decision 006: Scatter Spatial Cache Input Guard
+- Problem: `WorldProceduralScatterWorkingMemory.TryRegisterGridPlacement` accepted non-finite placement positions and negative spacing into native scatter spatial buckets. That can corrupt spacing acceptance for flora/rocks and make placement nondeterministic.
+- Solution: Added zero-allocation finite position check and non-negative finite spacing guard before capacity growth and native bucket insertion.
+- Rejected Alternatives: Rewriting spatial capacity growth was rejected because it is shared with dirty scatter backends and not necessary for confirmed bug. Throwing exceptions was rejected because runtime scatter should fail closed, not crash.
+- Scalability potential: Low/Middle/High/Ultra all keep deterministic placement cache hygiene. Quality can scale density elsewhere, but invalid spatial truth is never accepted.
+- Hardware Impact: Estimated 10-30 us saved on i3/MX350 during corrupted scatter placement passes by avoiding bad bucket entries and downstream spacing comparisons.
+- ## Decision 007: Compile Blocked By Existing External Dependency
+- Problem: limited `Assembly-CSharp.csproj` build was first skipped by CPU guard at `52.8%`. later policy-valid filtered build ran and failed outside 13GPU domain: `CandiceSQLiteProvider.cs` cannot resolve `Mono.Data` and `SqliteDataReader`.
+- Solution: Recorded compile as blocked by external dependency. filtered error list contains only Candice SQLite dependency errors and no errors in touched GPU/scatter/HLOD files.
+- Rejected Alternatives: Editing unrelated third-party Candice save provider would exceed assigned GPU/flora/rocks/detail domain. Launching full solution rebuild adds noise after filtered runtime assembly build already isolated blocking errors.
+- Hardware Impact: No runtime change. Compile proof is blocked by pre-existing external dependency, not by touched files.
+- ## Decision 008: Instance Culling Compute Fail-Closed Guards
+- Problem: `InstanceCulling.compute` trusted `_HectonCullDistanceMeters`, `_HectonInstanceBoundsRadius`, matrix rows, frustum planes, voxel SDF transform constants, UVW coordinates, and sampled SDF values. single NaN/Inf can leak into GPU branch conditions, i...
+Source lines scanned 436; retained 45; overflow-important omitted 164.
+
+FILE AgentLogs\Rationale_13j.md bytes=51358 done=0 blockers=6 pendingHits=7 selected=45
+- # Rationale_13j
+- State: SOURCE VOLATILE / BUILD BLOCKED BY CPU GUARD
+- ## Decision 001: Missing Active XML Prompt
+- Problem: `Docs/Tasks/CURRENT_BATCH.md` has no ` `, and repo-wide `rg` found no `13j` block.
+- Solution: Record XML task count as 0 and treat user's direct assignment as current directive while staying inside domain roster for mesh generation of flora, fauna, and structures.
+- Rejected Alternatives: Inventing XML prompt or reading neighboring `1315`/`1316` tasks would contaminate architectural decisions. Waiting for wipe is not justified because `Status_13j.md` and `Rationale_13j.md` were absent, not stale.
+- Scalability potential: Low tier avoids unnecessary broad rewrites; middle/high/ultra receive targeted fixes only after source proof.
+- Hardware Impact: Saves investigation churn, no runtime impact yet. Estimated i3/MX350 gain: 0 us until code changes land.
+- ## Decision 002: Mandate Selection
+- Problem: user assigned broad domain spanning procedural mesh generation, flora, fauna, and structures.
+- Solution: Read mandates for voxel SDF/MC, instanced flora, swarm/boids, creature cognition, procedural wreckage, registry DI, zero-GC, fake-first, and ARM64 DTO layout before code.
+- Rejected Alternatives: Reading all 80 mandates wastes context; reading only flora would miss fauna/structure mesh contracts.
+- Scalability potential: Low/Middle/High/Ultra decisions will use continuous `GlobalQualityWeight` and domain-specific Math LOD instead of binary switches.
+- Hardware Impact: No runtime impact yet. Expected gain depends on discovered defects.
+- ## Decision 003: Flora Density Decimation
+- Problem: Flora density used small integer decimation step, causing visible density pops and binary-ish quality behavior.
+- Solution: Added deterministic per-instance keep probability driven by continuous `GlobalQualityWeight`, stress, max density, and minimum decimation cap; mirrored it in CPU BRG culling and GPU culling shader.
+- Rejected Alternatives: Full BRG/manual-renderer migration in this pass; too large for dirty multi-agent worktree. Standard fixed LOD tiers are too coarse and visibly pop on weak devices.
+- Scalability potential: Low uses stable sparse probability; Middle raises keep probability smoothly; High/Ultra keep near-full density without changing gameplay truth or DTO layout.
+- Hardware Impact: Low-end i3/MX350 estimate: 40-220 us saved during dense vegetation culling frames by keeping fewer instances stable without modulo-step bands.
+- ## Decision 004: Fauna Query Purity
+- Problem: `FaunaSpatialHashRegistry` query methods repaired stale native/managed state with unregister calls inside `TryGet*`/collect paths.
+- Solution: Query paths now skip stale/ineligible handles and set bounded stale telemetry bit; owner cleanup remains outside query path.
+- Rejected Alternatives: Scene object repair inside query; it violates pure read accessor doctrine and can mutate native spatial state during AI reads.
+- Scalability potential: Low avoids query spikes when objects despawn; Middle/High/Ultra can add owner-phase native-only stale cleanup without changing query contracts.
+- Hardware Impact: Low-end i3/MX350 estimate: avoids 30-180 us stale-query spikes in bad despawn frames; typical frames near 0 us.
+- ## Decision 005: Wreckage Determinism and Authored Weights
+- Problem: Wreckage generation ignored authored module `Weight`, rejected valid quality `0.0`, and structural shear included `Frame` in topology RNG.
+- Solution: Valid quality now uses trigger flag plus finite check; module choice uses fixed integer weight units; structural shear seed uses stable node/sector data only.
+- Rejected Alternatives: Float cumulative authority selection was rejected after self-review; frame-based topology is visual-only acceptable, not structural authority.
+- Scalability potential: Low can choose cheap modules through authored weights; Middle/High/Ultra can increase density/visual debris through quality without changing topology ownership.
+- Hardware Impact: Determinism gain, not raw frame-time. Expected i3/MX350 runtime delta: ~0-5 us due max 16-rule integer loop.
+- ## Decision 006: Fauna Boid GPU Safety and Depth Occlusion
+- Problem: Boid compute could underflow `_BoidCount - 1`, and boid material had no depth-only path for occlusion.
+- Solution: Clamped compute reads with `activeBoidCount`; added cheap `DepthOnly` pass using same boid index, visible-index lane, alive flag, LOD dither, scale jitter, and velocity orientation.
+- Rejected Alternatives: ShadowCaster pass; too expensive for 5000 fish on low-tier. Full VAT/tail depth deformation; visual overkill in depth and not worth vertex cost.
+- Scalability potential: Low gets conservative depth occlusion without shadows; Middle/High/Ultra keep forward VAT detail while depth remains cheap and stable.
+- Hardware Impact: Depth pass adds GPU work but buys occlusion correctness; expected low-end cost depends visible boids, roughly 0.03-0.18 ms, offset by reduced overdraw in dense scenes.
+- ## Decision 007: Geology Hash Safety
+- Problem: `Mathf.Abs(stableHash)` can stay negative for `int.MinValue`, corrupting geology variant/debris index selection.
+- Solution: Normalized stable hashes with unsigned avalanche hashing and positive mask in mesh builder and profile.
+- Rejected Alternatives: `Math.Abs` or branch special-case; signed arithmetic still invites modulo edge cases and weaker distribution.
+- Scalability potential: Applies identically from weak to ultra devices; no quality route change.
+- Hardware Impact: Runtime estimate: 0 us meaningful; fixes rare deterministic corruption.
+- ## Decision 008: ARM64 DTO Layout
+Source lines scanned 381; retained 45; overflow-important omitted 254.
+
+FILE AgentLogs\Rationale_13KRA.md bytes=52673 done=0 blockers=6 pendingHits=4 selected=45
+- # 13KRA Rationale
+- Status: CODED / STATIC VERIFIED / RUNTIME BUILD BLOCKED BY EXISTING CANDICE SQLITE ERRORS; EDITOR BUILD BLOCKED BY EXISTING MAPMAGIC DUPLICATE-SYMBOL ERRORS; SLNX BUILD TIMED OUT AND CHILD PROCESSES WERE STOPPED
+- ## Decision 001 - Assignment Source
+- Problem: `Docs/Tasks/CURRENT_BATCH.md` does not contain ` `; strict batch extraction returned no prompt.
+- Solution: Treat chat-provided domain directive as active single broad audit-and-fix task, record missing XML condition, and continue only inside named lighting/underwater VFX boundary.
+- Rejected Alternatives: Fabricating XML task count; borrowing `RENDER_ABYSSAL_LIGHTING` or other archived prompts; editing ocean/Crest domains by inference.
+- Scalability potential: Keeps work constrained to presentation systems that can scale from cheap depth LUT/fog cheats to high-end visual overkill without changing gameplay truth.
+- Hardware Impact: Avoids cross-domain churn and expensive dependencies on i3/MX350; estimated saved integration/debug cost is unmeasured but material.
+- ## Decision 002 - Mandate Set
+- Problem: assignment spans lighting, caustics, fog, god rays, VFX, and quality scaling, but forbids ocean/Crest ownership.
+- Solution: Use eight mandates: abyssal lighting, noir fog/dithering, fluid VFX aesthetics, URP hot-path/HLOD, MX350 compute, zero-GC, visual-fake-first, and frame/VRAM budgets.
+- Rejected Alternatives: Reading physics/ocean mandates as primary authority; using online docs before local project authority; relying on generic Unity graphics knowledge.
+- Scalability potential: Low = LUT/dither/fake fog; Middle = richer stratified fog and caustics; High = gated half-res shafts; Ultra = denser sensory overload without new truth.
+- Hardware Impact: MX350 path stays shader/LUT/baked-first; expected gain is avoiding any >0.1 ms unproven runtime simulation in this domain.
+- ## Decision 003 - Light Shaft DataVault Allocation Guard
+- Problem: `ScreenSpaceLightShaftRuntime.LateFrameTick` executed `EnsureBuffers()` and could call `GlobalDataVault.EnsureGenerationHandle` from hot frame phase after handle was invalidated or never cold-created.
+- Solution: Make buffer creation explicit with `EnsureBuffers(bool allowAllocation)`. Cold ownership phases (`OnEnable`, DataVault service replacement) pass `true`; hot frame presentation passes `false` and fails closed when handles are unavailable or allocat...
+- Rejected Alternatives: Allocating lazily during `LateFrameTick`; searching scene for fallback dependencies; moving ownership into ocean/Crest systems; rewriting shaft renderer into new architecture without profiler proof.
+- Scalability potential: Low = no shaft buffer allocation spikes, cheap cached snapshots only. Middle = same contract with moderate cadence. High = denser shafts/god-ray visuals behind existing quality weight. Ultra = visual overkill from shader/RenderGraph f...
+- Hardware Impact: i3/MX350 avoids allocator/lock path spikes in presentation phase; estimated direct fault-frame saving is ~14 us plus reduced tail-latency risk under DataVault churn.
+- ## Decision 004 - Dynamic Point Light Storage Allocation Split
+- Problem: `DynamicPointLightCullingDirector.EnsureNativeStorage(false)` looked like no-alloc runtime call, but boolean only blocked mock data generation. `Tick`, `GenerateMockLightCullingData`, and `TryCommitExternalSourceCount` could still allocate DataVaul...
+- Solution: Add explicit `allowAllocation` to `EnsureNativeStorage` and `AcquireBuffer`. Cold owner phases allocate; runtime tick/read/commit paths resolve existing buffers only and fail closed when unavailable.
+- Rejected Alternatives: Leaving allocation hidden behind old boolean; moving dynamic light ownership to Unity `Light` objects; completing jobs or reallocating during late frame; broad rewrite of culling pipeline.
+- Scalability potential: Low = existing buffers only, no allocation spikes. Middle = stable cadence with reduced active lights. High = more fake bounce/dynamic payload density. Ultra = near-field overkill from existing continuous quality and thermal weights.
+- Hardware Impact: i3/MX350 avoids repeated vault allocation attempts when storage is invalid; estimated savings are ~22 us per bad hot-frame attempt plus reduced hitch risk from allocation locks.
+- ## Decision 005 - Caustic Vault Lock and Black Box Ownership
+- Problem: `AbyssalDeferredCausticsRuntime` owned caustic buffers but did not check `DataVault.IsAllocationLocked` before calling `EnsureGenerationHandle`; black-box dump path used historical agent ID.
+- Solution: Fail closed before caustic buffer allocation when vault is locked, and route caustic dumps to `Docs/AgentLogs/Dump_13KRA.bin`.
+- Rejected Alternatives: Allocating during lock windows; changing ocean swell ownership; changing caustic math or RenderGraph contracts; simulating physical photon transport instead of analytic screen-space lies.
+- Scalability potential: Low = existing analytical caustic buffer or no caustic, no allocation. Middle = quality-weighted fake wave inputs. High = deeper profile-driven caustic intensity. Ultra = more chromatic/SDF visual overkill through existing DTOs.
+- Hardware Impact: i3/MX350 avoids locked-vault allocation spikes; estimated direct saving is ~16 us on fault attempts, with deterministic fail-closed behavior under memory pressure.
+- ## Decision 006 - Domain Black Box Proof Artifact Owner
+- Problem: Multiple lighting/scalability critical systems still wrote crash dumps to old filenames (`SHINOBU`, `LIGHTING_SURGEON`, `DRS_SURGEON`, `LIGHT_DIRECTOR`), making proof artifacts non-attributable to agent 13KRA.
+- Solution: Normalize dump filenames in 13KRA domain to `Dump_13KRA.bin` while leaving DTO layouts, authority routes, and gameplay truth unchanged.
+- Rejected Alternatives: Keeping legacy owner names; inventing separate per-system dump names that violate prompt's `Dump_[YourID].bin` rule; editing ocean/Crest systems.
+- Scalability potential: Low/Middle/High/Ultra unchanged at runtime; only crash forensics ownership changes.
+- Hardware Impact: 0 us frame cost. Debug impact is faster post-crash route ownership because one agent file owns current lighting/VFX dump evidence.
+- ## Decision 007 - Interior GI No-Alloc Tick Recovery
+- Problem: `InteriorGIProbeVolumeRuntime.Tick` called `EnsureNativeState()` every frame when native storage was not ready. That path could allocate all probe/GI buffers, write tuning, and schedule boot clear from hot simulation phase.
+- Solution: Add `allowAllocation` to `EnsureNativeState` and buffer acquisition. `Tick` resolves existing storage only; cold owner phases still allocate; `_nativeReady` is set only after all required buffers resolve.
+- Rejected Alternatives: Reallocating probe buffers from `Tick`; using Unity Light/probe scene searches; changing probe DTO layout; touching ocean/Crest adaptation.
+- Scalability potential: Low = no probe allocation recovery in hot frames. Middle = existing lower-resolution GI cadence. High = stronger fake bounce through current quality. Ultra = more visual GI density through existing resolution/quality gates.
+- Hardware Impact: i3/MX350 avoids full probe-buffer acquisition attempts from simulation frames; estimated saving is ~28 us on invalid-storage frames plus lower hitch risk.
+- ## Decision 008 - Thermal DRS Hot Handle No-Alloc Default
+Source lines scanned 347; retained 45; overflow-important omitted 215.
+
+FILE AgentLogs\Rationale_13pro.md bytes=69808 done=0 blockers=19 pendingHits=26 selected=45
+- # Rationale_13pro
+- Domain: Prologue orbital flight, Aegir approach, Hecton orbit, capsule descent.
+- Status: STATIC PATCH COMPLETE / COMPILE BLOCKED BY CPU AFTER OUT-OF-DOMAIN WALL
+- ## Decision 0 - Prompt Authority
+- Problem: `Docs/Tasks/CURRENT_BATCH.md` has no ` `, while user supplied explicit `13pro` prologue domain directive in chat.
+- Solution: Treat direct user assignment as primary task source and record XML task count as 0. Continue with disk-backed status/rationale.
+- Rejected Alternatives: Applying neighboring `13xx` batch prompts would contaminate domain decisions and violate strict parsing.
+- Scalability potential: Keeps work confined to prologue/celestial/presentation so low, middle, high, and ultra device behavior is not polluted by unrelated domain changes.
+- Hardware Impact: No runtime impact. Prevents wrong-file churn and avoidable compile churn on i3/MX350.
+- ## Decision 1 - Mandate Set
+- Problem: Prologue needs cinematic orbital/descent presentation without turning into expensive real orbital physics or cross-domain global authority pollution.
+- Solution: Use execution/bootstrap, GlobalRegistry, AUP, visual-fake-first, zero-GC, URP/HLOD, and Addressables mandates before coding. Use `TASTE.md` for noir identity instead of widening mandate count.
+- Rejected Alternatives: Real Kepler/orbital mechanics, per-particle atmospheric reentry, direct scene polling, and binary low/high quality switches.
+- Scalability potential: Low uses deterministic camera rails, LUTs, impostors, and cadence throttles. Middle adds richer fog/silt/cockpit response. High adds denser window VFX and longer LOD. Ultra spends saved cycles on overkill material/light/audio presenta...
+- Hardware Impact: Target is avoiding >0.1 ms hot systems on i3/MX350; expected gain is from fake-first orbital visuals and no per-frame allocations rather than measured proof yet.
+- ## Decision 2 - Prologue Runtime Patch
+- Problem: current prologue presentation had three concrete rule violations: orbital sequence waited for atmospheric heat before playing orbital silence, `OrbitalRelativityDirector` changed Math LOD immediately on threshold crossings, and reentry haptic path ...
+- Solution: Start sequence with non-pausing orbital silence beat before atmospheric wait, add 3-frame Math LOD hysteresis gate, compute locked-capsule leading-edge orientation from cached rotation, and keep haptics on canonical SignalBus route consumed by `In...
+- Rejected Alternatives: real Kepler/reentry solver, direct tool haptic coupling, same-frame LOD threshold switches, early look/input freeze during orbital sightseeing, and Transform-driven celestial ownership.
+- Scalability potential: Low devices hold impostor/mesh decisions stable and avoid duplicated haptic queue work. Middle/high devices can keep richer mesh/VFX modes without flicker. Ultra spends continuous quality budget on shader/VFX presentation rather than ...
+- Hardware Impact: Estimated hot-path saving is small but real: one direct haptic enqueue avoided every `hapticIntervalSeconds` during reentry, one per-frame TransformDirection avoided when capsule lock is active, and LOD renderer toggles are debounced to avo...
+- ## Decision 3 - Prototype Planet Rotation
+- Problem: `_PROLOGUE_CONTENT/Scripts/PlanetRotation.cs` used `Update()` and `Transform.Rotate()` as planet spin owner, directly conflicting with celestial route card forbidding transform-driven celestial truth.
+- Solution: Disable obsolete prototype component on enable and leave actual orbital/planet presentation to shader globals and active prologue/celestial systems.
+- Rejected Alternatives: Keeping transform spinner for visual motion, adding unreferenced custom asmdef to pull `GlobalQualityWeight` into prototype content, or editing prefab/scene YAML to remove components while workspace is dirty.
+- Scalability potential: Low/middle/high/ultra now share one authority route; visual richness should be bought through material/shader phase and `OrbitalRelativityDirector` quality weighting, not duplicate object rotation.
+- Hardware Impact: Removes per-frame MonoBehaviour `Update()` and transform write from any prefab still carrying prototype script; expected gain is microsecond-level but prevents deterministic authority conflict on weak hardware.
+- ## Decision 4 - Verification Gate
+- Problem: project requires compile verification, but AGENTS forbids launching `dotnet build` while CPU load is above 50 percent or another `dotnet`/`csc` is running.
+- Solution: Ran scoped static checks and CPU/process gate. `dotnet` and `csc` were absent, but CPU load was 76 percent then 72 percent, so compile was not launched.
+- Rejected Alternatives: Starting build under forbidden CPU pressure, editing unrelated generated project files to create fake prologue csproj, or claiming runtime proof from static diff.
+- Scalability potential: Protects shared multi-agent machine from build contention; low/middle/high/ultra runtime claims remain static until Unity import/profiler can run cleanly.
+- Hardware Impact: No runtime impact. Verification debt remains: Unity import/Console and GC/profiler proof are still required when CPU/build gate is clear.
+- ## Decision 5 - Prologue VFX/Audio Second Pass
+- Problem: `OrbitalDropReentryVfxController` sampled `GlobalQualityWeight` only on enable, so thermal/quality pressure during 10-15 minute descent could not downshift or upshift presentation. It also published VFX state and wrote Vault telemetry every LateFra...
+- Solution: Refresh quality once per frame, skip VFX state signal and black-box write while controller is idle/settled, add DataVault allocation guards, and gate late-frame registration behind play mode plus dispatcher availability for VFX and audio.
+- Rejected Alternatives: Per-frame idle telemetry forever, editor-time GlobalRegistry writes, raw scene disablement, and quality policy sampled only during scene load.
+- Scalability potential: Low devices avoid idle lane pressure and Vault locks. Middle/high/ultra keep continuous quality response during active plasma/whiteout/hydrated fade without changing DTO layout or authority route.
+- Hardware Impact: Saves one `ReentryVfxStateSignal` publish and one Vault write-lock/write/unlock per idle frame per enabled VFX controller. On i3/MX350 this is microsecond-level but removes avoidable hot-path pressure before prologue actually enters reentry.
+- ## Decision 6 - Prologue Duration And Orbit Presentation
+- Problem: `OrbitalRelativityDirector` default pacing was not 10-15 minute prologue. `startDistanceMeters=12000` at `320 m/s` produces seconds-scale approach, so narrative sequence waits almost immediately for reentry instead of selling Aegir/Hecton orbit.
+- Solution: Move default approach to `260000 m` at `300 m/s`, set reentry envelope to `70000 m`, whiteout to `5000 m`, and add triangle-wave diamond orbit offset in presentation only. orbit fake scales continuously from survival to overkill through `GlobalQua...
+- Rejected Alternatives: Real Kepler/orbital gravity, spinning scene transforms, per-particle atmosphere, second celestial authority, and binary low/high cinematic branches.
+- Scalability potential: Low uses small diamond parallax and impostor continuity. Middle holds stable mesh/cloud handoff. High adds richer orbit travel through larger presentation offsets. Ultra increases apparent orbital sweep without changing DTO layout or ...
+- Hardware Impact: Replaces likely real-orbit temptation with two triangle waves and scalar lerps during presentation. Expected cost is sub-10 us on i3/MX350 and buys minutes of visible orbital travel without simulation debt.
+Source lines scanned 478; retained 45; overflow-important omitted 312.
+
+FILE AgentLogs\Rationale_13SIK.md bytes=89816 done=0 blockers=19 pendingHits=23 selected=45
+- # Rationale_13SIK
+- Status: STATIC VERIFIED / BUILD BLOCKED BY CPU GATE
+- ## 2026-05-27 Intake
+- Problem: User assigned ad-hoc ID `13SIK`, but active `Docs/Tasks/CURRENT_BATCH.md` contains no ` `.
+- Solution: Proceed as ad-hoc Tools/Interaction domain audit while recording task count `0` from absent XML and keeping all decisions in this rationale file.
+- Rejected Alternatives: Fabricating batch prompt or borrowing neighboring agent prompts would contaminate architecture decisions.
+- Scalability potential: Audit targets continuous `GlobalQualityWeight`, zero-GC hot paths, and tool interaction contracts before implementation.
+- Hardware Impact: No runtime change yet. Static audit only; microsecond savings not claimed.
+- ## 2026-05-27 Mandate Selection
+- Problem: Tools interact with world state, physics, scanner UI, haptics, VFX, and power; blind edits can violate ownership.
+- Solution: Use eight mandates: tool interaction/raycast/heat, hand interaction, zero-GC, GlobalRegistry DI, SignalBus lane split, ARM64 DTO layout, physics integrity, and visual-fake-first.
+- Rejected Alternatives: Reading all 80 registry files wastes context; editing only obvious `Tools/` names misses root-level `*Tool.cs` runtime classes.
+- Scalability potential: Low uses bounded query slots and visual fakes; middle/high/ultra scale continuous quality, richer presentation, and telemetry without changing gameplay authority.
+- Hardware Impact: Audit phase only. Expected repair targets are GC allocations, synchronous physics queries, direct force/joint ownership, and per-frame service lookups that hurt i3/MX350 first.
+- ## 2026-05-27 Performance Budget Scalar
+- Problem: `PerformanceBudgetController` used binary throttle/restore behavior: all registered systems jumped from `1f` to `_throttleMultiplier` only after max frame time was exceeded, then jumped back at target. This violates continuous `GlobalQualityWeight`...
+- Solution: Replace binary branch with continuous scalar from frame-time pressure, hysteresis, drop/recover rates, and `HomeostasisBrain.GlobalQualityWeight`. owner still calls existing `IBudgetManagedSystem.SetPerformanceLevel(float)` route; no new hot regis...
+- Rejected Alternatives: Keeping `IsThrottled` as control path was rejected because it preserves low/high switch. Adding new global quality owner was rejected because Homeostasis already owns scalar.
+- Scalability potential: Low uses low scalar for cheaper cadence/capacity in managed systems; middle recovers gradually; high/ultra can spend scalar on overkill visuals without changing gameplay truth.
+- Hardware Impact: Expected i3/MX350 gain is not raw average frame time; gain is avoiding mode-flip spikes when pressure crosses thresholds. Estimated transition cost avoided: ~18 us per managed system burst, bounded by 32 registered systems.
+- ## 2026-05-27 ToolKinematics DataVault Ownership
+- Problem: `ToolKinematicsRuntime.TryResolveVaultView` could call `DataVault.EnsureGenerationHandle` from fixed, postfixed, slow, and read paths. That lets hot/read code create or grow native buffers and violates pure read accessor and DataVault ownership doc...
+- Solution: Add explicit `allowCreate` flag. Cold bootstrap/rebind calls use `TryResolveAllBuffers(true)`; fixed/read/postfixed/slow paths use `false` and fail closed if ownership is missing.
+- Rejected Alternatives: Leaving hot fallback creation was rejected because it hides capacity bugs inside frame work. Recreating buffers per missing view was rejected because it moves allocation into most latency-sensitive tool path.
+- Scalability potential: Low devices avoid surprise native allocation or buffer clear during interaction; middle/high/ultra keep deterministic preallocated buffers and use saved time for beam/heat presentation, not ownership repair.
+- Hardware Impact: Estimated i3/MX350 worst-case stall avoided: 4-40 us on stale handle or capacity mismatch, with larger spikes avoided when buffer clear touches multiple tool arrays.
+- ## 2026-05-27 Build Gate
+- Problem: Project rule forbids `dotnet build` when CPU is above 50% or compiler processes are active.
+- Solution: Sampled processor load and compiler processes before attempting build. CPU was 72-76%; no `dotnet`, `csc`, or `MSBuild` process was visible, but CPU alone blocks build.
+- Rejected Alternatives: Running build anyway was rejected because it violates coordination rule and would add noise to other agents' work.
+- Scalability potential: No runtime change. Verification route stays deterministic and avoids starving parallel agents.
+- Hardware Impact: Build skipped; no runtime microsecond claim.
+- ## 2026-05-27 Direct Tool Hit Registry-Only Route
+- Problem: `ToolHitUtility` remained shared direct impact path for knife, harpoon, stun pistol, sampler, analyzer, and propulsion tools. After queued signal owner was fixed, this utility still performed `TryGetComponent` and bounded parent traversal on active...
+- Solution: Remove utility fallback scans. `ToolHitUtility` now resolves cuttable, damage receiver, and pickup facts only from `InteractableRegistry.TargetInfo`. Rigidbody impulse routing uses `Collider.attachedRigidbody`, which is Unity's native compound-col...
+- Rejected Alternatives: Keeping fallback traversal was rejected because it hides authoring/registration bugs in active tool use. Adding second damage-target map was rejected because `InteractableRegistry` already owns collider-to-role payloads. Registering e...
+- Scalability potential: Low tier gets direct tool impacts with cached target facts and no parent search. Middle tier keeps deterministic damage/pickup truth as object counts grow. High tier can afford denser fauna, salvage, and hull interaction effects. Ultr...
+- Hardware Impact: Estimated i3/MX350 gain is 0.2-6.0 us per direct hit miss depending on transform depth and interface probes removed. Steady-frame cost added is 0 us; `RegisterTree`/`InvalidateTree` cost is cold lifecycle work.
+- ## 2026-05-27 Build Gate Twenty-First Pass
+- Problem: Twenty-first-pass direct tool-hit edits need compile verification, but local rules forbid builds when max CPU is above 50% or build/compiler processes are active.
+- Solution: Sampled CPU and build processes. CPU samples were 100%, 93.66%, and 58.3%; average 83.99%, max 100%, with no `dotnet`, `csc`, `MSBuild`, or `VBCSCompiler` process visible. Build was not launched.
+- Rejected Alternatives: Running `dotnet build` at max CPU 100% was rejected because it violates parallel-agent coordination rule and would produce noisy evidence.
+- ## 2026-05-27 Final Build Gate Sample
+- Problem: All second-pass code edits need compile verification, but build gate remained closed.
+- Solution: Re-sampled CPU and compiler processes. CPU ranged 81-100%; no compiler process was visible. Build remained blocked by CPU load.
+Source lines scanned 635; retained 45; overflow-important omitted 379.
+
+FILE AgentLogs\Rationale_13US.md bytes=52465 done=0 blockers=5 pendingHits=13 selected=45
+- # Rationale_13US
+- Domain: Inventory, Player, Player Control, Tools/Equipment interaction
+- Status: STATIC VERIFIED; LATEST CLI BUILD ATTEMPT TIMED OUT AFTER 124S AND WAS STOPPED; NO NEW COMPILE RESULT
+- ## Decision 001 - Prompt Authority
+- Problem: required batch extraction found no ` ` in `Docs/Tasks/CURRENT_BATCH.md`; active domain was supplied directly by user.
+- Solution: Treat user assignment as active domain boundary and record task count as 0 XML tasks. Use project docs and domain roster for authority.
+- Rejected Alternatives: Guessing neighboring batch prompt such as `1317` would import another agent's task and violate strict parsing.
+- Hardware Impact: 0 us/frame; prevents wrong-domain edits rather than saving CPU.
+- ## Decision 002 - Mandate Selection
+- Problem: domain spans inventory storage, player kinematics, controls, and tools, with high risk of hot-path GC and dependency violations.
+- Solution: Load inventory SoA, tools interaction, player kinematics/AUP, input abstraction, cold-DI/GlobalRegistry, SignalBus, zero-GC, and frame-budget mandates.
+- Rejected Alternatives: Reading all 35+ mandates would burn time and increase unrelated influence; reading only inventory would miss player-control defects.
+- Scalability potential: Low tier requires fixed buffers and cheap math; middle/high/ultra can buy richer haptics/tool visuals without changing gameplay truth.
+- Hardware Impact: Audit-only so far; target gains depend on defects found.
+- ## Decision 003 - PlayerInventoryManager Runtime Context Route
+- Problem: `PlayerInventoryManager` mirrored player inventory/tool references through `IUpdatable` Core-lane tick that read `BootstrapState` and could call `TryGetComponent` every frame, duplicating `PlayerRuntimeContextService`.
+- Solution: Move service to `ISlowTickable` in `PriorityLayer.Player`, cache `IPlayerRuntimeContext` from cold/hot-swap routes, and allow `BootstrapState`/`TryGetComponent` fallback only during explicit cold initialization.
+- Rejected Alternatives: Keeping per-frame tick with throttle still leaves hot GlobalRegistry/bootstrap polling owner; inventing new signal would duplicate existing player runtime context contract.
+- Scalability potential: Low tier removes repeated scene/component checks from player frames; middle/high/ultra retain same service facade and can spend frame budget on player presentation instead of identity polling.
+- Hardware Impact: Estimated 4-20 us saved on low-end i3/MX350 during normal play, higher during missing-context respawn windows because repeated component fallback is no longer in cadence.
+- ## Decision 004 - Active Tool Inventory Hashing
+- Problem: `PlayerToolManager.HasToolInInventory` recomputed `LocHash.Compute(targetData.PersistentId)` inside grid-cell scan.
+- Solution: Resolve target hash once before scanning and compare integer cell hashes only.
+- Rejected Alternatives: Building new inventory index would cross owner boundaries and risk stale authority; comparing ScriptableObject references would not match hash-only SOA grid route.
+- Scalability potential: Low tier avoids repeated string hashing per slot check; middle/high/ultra keep identical gameplay truth with spare budget available for tool animation/haptics.
+- Hardware Impact: Estimated 2-15 us per inventory tool-availability check on i3/MX350 depending on grid size and hash implementation.
+- ## Decision 005 - Active Tool Durability Signal Keys
+- Problem: tool tick drained durability signals and could compute `LocHash`/`Animator.StringToHash` when broken-signal rows were present.
+- Solution: Cache active tool item hash and metadata hash on equip/spawn, clear them on despawn, and compare durability events against cached numeric keys only.
+- Rejected Alternatives: Resolving hashes lazily after first broken signal still leaves string work in gameplay tick; changing signal payloads would be cross-domain.
+- Scalability potential: Low tier removes string work from hot tool-event path; higher tiers preserve exact break/replacement behavior and can use saved budget for richer break feedback.
+- Hardware Impact: Estimated 1-5 us saved on durability event frames; 0 allocation change.
+- ## Decision 006 - Inventory Read Accessor Purity
+- Problem: `PlayerInventory.GetDurabilitiesReadOnly()` was read accessor but called `SyncDurabilityBytesFromQuality()`, mutating `_durabilities`, `_itemDurability`, and `_durabilitySnapshotDirty`.
+- Solution: Move durability byte synchronization into `NotifyInventoryChanged()` owner mutation phase, before SoA snapshot publication, and make accessor return current read-only view only.
+- Rejected Alternatives: Renaming accessor to imply mutation would still violate consumers' read expectations; forcing consumers to call sync method spreads ownership.
+- Scalability potential: Low/middle tiers get deterministic read cost; high/ultra can issue more UI/crafting reads without hidden owner mutation.
+- Hardware Impact: Estimated 3-30 us moved out of arbitrary read sites into bounded inventory owner mutation; avoids repeated full-slot sync from presentation readers.
+- ## Decision 007 - Input Dispatcher Cold Work Fence
+- Problem: `PreSimulationInputTick()` could call deterministic buffer acquisition/clearing and replay writer setup, including DataVault handle creation and file/thread setup.
+- Solution: Keep cold preparation in initialization, enable, and DataVault rebind paths; input tick now captures state and uses deterministic lanes only if already prepared.
+- Rejected Alternatives: Retrying file/thread setup from player input frame hides IO latency in most sensitive control path; disabling input when deterministic buffers are absent would break fallback playability.
+- Scalability potential: Low tier avoids first-frame/retry hitches in control input; higher tiers keep replay/deterministic lanes when cold setup succeeds.
+- Hardware Impact: Prevents millisecond-scale one-off stalls on weak storage/CPU; steady-state frame cost unchanged except removal of hot readiness work.
+- ## Decision 008 - Deferred InventoryGrid DataVault Migration
+Source lines scanned 422; retained 45; overflow-important omitted 268.
+
+FILE AgentLogs\Rationale_13VOD.md bytes=112028 done=0 blockers=5 pendingHits=12 selected=45
+- # Rationale_13VOD
+- ## Session Bootstrap
+- Problem: No ` ` exists in `Docs/Tasks/CURRENT_BATCH.md`; user supplied direct domain assignment.
+- Solution: Treat direct user message as one broad audit-and-fix directive and keep evidence in 13VOD status/log files.
+- Rejected Alternatives: Claiming nonexistent XML task count would corrupt batch protocol; reading neighboring prompt blocks would pollute scope.
+- Scalability potential: Audit will target continuous `GlobalQualityWeight`, Math LOD, and visual-fake-first water behavior across weak, middle, high, and ultra devices.
+- Hardware Impact: None yet. Baseline discovery only; no runtime code changed.
+- ## CurrentVolume Read-Accessor Purity
+- Problem: `CurrentVolume.SampleAt`, `SampleCombinedCurrent`, and `Sample` were read paths but refreshed transform/AUP/sample-time caches during sampling. Hot consumers include buoyancy gather, player current, ambient motion, flow visualizer, tether force, an...
+- Solution: Moved cache refresh into dispatcher-owned update/fixed lanes, kept sample methods reading cached fields, and added dispatcher hot-swap rebind. Shared ambient sample time now has owner-phase writer and pure fallback read.
+- Rejected Alternatives: Recomputing matrices per sample was pure but burns CPU across every current consumer; migrating all consumers to new native snapshot contract is correct long-term but too broad for this pass.
+- Scalability potential: Low devices avoid repeated transform/AUP cache writes inside every sample; middle/high/ultra keep continuous authored flow vectors and can spend saved cycles on denser presentation.
+- Hardware Impact: Estimated 2-8 us/frame saved when 8-32 volumes are sampled by buoyancy/player/presentation paths; zero managed allocation added.
+- ## CurrentVolume Direction Fidelity and Capacity
+- Problem: Authored directional/radial/vortex currents collapsed to dominant axes, producing taxicab water forces; active volume `List`/`HashSet` had initial capacity but no hard runtime cap.
+- Solution: Replaced axis snapping with finite `rsqrt` normalization and capped active registration at 32 with dev-build error reporting.
+- Rejected Alternatives: Keeping axis snapping was cheaper but visibly wrong and polluted gameplay drag coupling; allowing registry growth is easy but violates deterministic capacity.
+- Scalability potential: Weak devices still use scalar math only; high/ultra devices receive smooth authored flow without changing storage layout.
+- Hardware Impact: Adds few scalar ops per affected volume sample; avoids managed resize spikes if content exceeds authored volume cap.
+- ## Seaglide Quality-Invariant Force Law
+- Problem: `GlobalQualityWeight` changed seaglide authoritative force output by blending speed approximation, drag law, fallback flow magnitude, and flow force strength.
+- Solution: Made thrust/drag/flow forces use quality-1 deterministic path for every device; `GlobalQualityWeight` now only scales cavitation presentation in this job.
+- Rejected Alternatives: Keeping low-quality force shortcuts would make hardware settings alter movement truth; adding another approximate force path needs profiler/error proof not present here.
+- Scalability potential: Weak devices pay small exact-math cost for identical physics; high/ultra spend quality on cavitation/VFX rather than authority divergence.
+- Hardware Impact: Estimated +0.2-1.0 us for active seaglide rows on i3/MX350 class hardware; removes cross-device movement divergence.
+- ## Ocean Provider Arbitration Cadence
+- Problem: `OceanKinematicsRuntimeService.Tick` refreshed provider availability every core frame, polling Crest/fallback providers in hot lane.
+- Solution: Provider selection refreshes immediately on register/unregister/hot-swap and otherwise probes availability at 0.5 s cadence.
+- Rejected Alternatives: Removing all probes risks missing late Crest collision-provider readiness; keeping every-frame arbitration violates no-hot-polling.
+- Scalability potential: Weak devices avoid needless per-frame Crest provider checks; high/ultra keep fast enough recovery for late provider availability.
+- Hardware Impact: Estimated 0.5-3 us/frame saved while ocean runtime is active, depending on provider count and Crest readiness.
+- ## Ambient Water Motion LOD
+- Problem: Ambient decorative water motion used hard distance bands without `GlobalQualityWeight` and flickered when objects sat near thresholds.
+- Solution: Added one-byte per-object LOD band hysteresis and quality-scaled cadence masks; gameplay authority is untouched.
+- Rejected Alternatives: Full per-object native LOD tables were excessive for 128 decorative props; leaving fixed divisors ignored continuous-quality mandate.
+- Scalability potential: Low quality keeps authored cadence; middle/high/ultra continuously increase visual update density while hysteresis prevents band chatter.
+- Hardware Impact: Estimated neutral to -4 us/frame on low-end scenes with many props; one byte state per prop and no managed allocations.
+- ## Crest Underwater Pass Bridge
+- Problem: `CrestBridge.EnsureUnderwaterPass` could run `GetComponent` from repeated underwater ownership calls, and `_copyOceanMaterialParamsEachFrame` was assigned every time.
+- Solution: Return cached `UnderwaterRenderer` when it already belongs to camera; write Crest copy flag only when it changes.
+- Rejected Alternatives: Rewriting `HectonUnderwaterVisuals` camera-stack ownership is larger visual-system change; this bridge fix removes hot component lookup without moving ownership.
+- Scalability potential: Weak devices avoid repeated Unity component lookup; high/ultra keep same Crest visual pass without extra bridge churn.
+- Hardware Impact: Estimated 0.5-2 us/frame saved when underwater visuals are active and ownership checks run every LateFrame.
+- ## Surface Weather Cached Water Routes
+- Problem: Surface weather visual sync read `GlobalRegistry.FluidSurfaceCurrent` and `GlobalRegistry.OceanKinematics` through `ResolveSurfaceY()` / `ResolveOceanKinematics()` while applying water and ocean bindings.
+Source lines scanned 617; retained 45; overflow-important omitted 484.
+
+FILE AgentLogs\Rationale_ADHOC_TASTE_AUDIT.md bytes=42172 done=0 blockers=7 pendingHits=5 selected=45
+- # ADHOC_TASTE_AUDIT Rationale
+- Evidence class: STATIC_DOC / STATIC_SOURCE unless upgraded.
+- ## Decision 1: Use Ad Hoc ID
+- Problem: User gave no ` ` and no batch path, but asked for project taste audit.
+- Solution: Use `ADHOC_TASTE_AUDIT` and keep all state in matching Status/Rationale/LOG files.
+- Rejected Alternatives: Claiming existing batch ID would pollute another agent domain. Reading all current batch prompts cover-to-cover would violate strict parsing and create cross-task contamination.
+- Scalability potential: no runtime code impact.
+- Hardware Impact: 0us runtime. Static-only process.
+- ## Decision 2: Static Audit First
+- Problem: `TASTE.md` defines aesthetic/product identity, but workspace is heavily dirty and active agents modified many files.
+- Solution: Build static mismatch map first, then patch only objective, isolated violations.
+- Rejected Alternatives: Broad code/style rewrite would trample concurrent agent changes and may break compile.
+- Scalability potential: preserves low-tier and ultra-tier requirements by checking `GlobalQualityWeight` and visual-fake doctrine before any runtime change.
+- Hardware Impact: 0us runtime until code changes exist.
+- ## Decision 3: Relevant Mandates
+- Problem: Taste audit crosses docs, UI, rendering, sound, and possible runtime presentation.
+- Solution: Load `TASTE.md`, Zero-GC, performance budget, cinematic fake, noir rendering, global registry, evidence reporting, and zero-GC UI mandates.
+- Rejected Alternatives: Reading all `.agents-skills` files would waste context and dilute task.
+- Scalability potential: low/middle/high/ultra taste review must preserve readability at weak settings and add sensory overload only at high settings.
+- Hardware Impact: 0us runtime. Prevents accidental simulation-heavy fixes.
+- ## Decision 4: Dirty Worktree Guard
+- Problem: `git status` shows many modified/deleted/untracked files from other agents.
+- Solution: Do not revert, reformat, or normalize unrelated files. Before touching any dirty file, inspect local diff and require objective TASTE violation.
+- Rejected Alternatives: Full cleanup or broad formatting would destroy parallel work.
+- Scalability potential: keeps integration risk bounded.
+- Hardware Impact: 0us runtime.
+- ## Decision 5: Remove Derivative Public/Debug Text, Keep Serialized Type Names
+- Problem: First-party UI/gameplay source contained direct Subnautica comparison text and visible debug title `SUBNAUTICA SYSTEMS DEBUG`.
+- Solution: Replace comments, runtime-created object names, debug log tags, and visible overlay title with HECTON pressure/machinery/visibility language.
+- Rejected Alternatives: Renaming `SubnauticaSystemsDebugUI` class/file or raw-editing scene YAML would risk serialized MonoBehaviour breakage. Keeping visible competitor text violates `TASTE.md` rejection list.
+- Scalability potential: Low/middle/high/ultra unchanged; this is identity cleanup only.
+- Hardware Impact: 0us runtime expected. String literal lengths changed only in cold/debug UI paths.
+- ## Decision 6: Promote TASTE.md Into Active Root Policy
+- Problem: `TASTE.md` exists in repository root and AGENTS requires it for gameplay/design decisions, but active docs still claimed only three root md files and did not list TASTE in authority order.
+- Solution: Update `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, and `Docs/ROOT_DOCS_REFERENCE.md` to recognize `TASTE.md` as root taste authority with evidence boundary.
+- Rejected Alternatives: Moving `TASTE.md` into Docs would violate user's stated location and AGENTS read requirement. Leaving contradiction causes future agents to treat file as root bloat.
+- Scalability potential: no runtime effect. It protects weak-tier readability and high-tier sensory-overkill rules by making taste authority discoverable.
+- Hardware Impact: 0us runtime. Documentation-only correction.
+- ## Decision 7: Clean Remaining Comment-Only Competitor Equivalents
+- Problem: Second source pass found `Subnautica-style`, `EXCEEDS SUBNAUTICA`, `Tiger Plant`, and `Brain Coral` residue in comments, UI progress notes, and debug-facing text.
+- Solution: Replace those with HECTON-8 pressure, route, instrument, and evidence language. Keep behavior and public API stable.
+- Rejected Alternatives: Treating competitor comparison as harmless internal shorthand violates `TASTE.md` and leaks design identity into future work. Renaming serialized classes/files in this pass risks broken Unity references.
+- Scalability potential: Low/middle/high/ultra behavior unchanged. wording now points future work toward route evidence and pressure feedback instead of competitor mimicry.
+- Hardware Impact: 0us runtime expected. Comment/docs/string cleanup only.
+- ## Decision 8: Defang Neon Aquarium Deep Cave Defaults With Palette Constants
+Source lines scanned 380; retained 45; overflow-important omitted 239.
+
+FILE AgentLogs\Rationale_ARCHIVE_13.md bytes=1542 done=0 blockers=0 pendingHits=0 selected=12
+- # Rationale ARCHIVE_13
+- Status: IN PROGRESS
+- Problem: Batch 13 task/log folders contain active evidence files and ongoing agent writes, but user requested Batch 13 archive without wiping current work.
+- Solution: Use copy-only archival into `Docs/Archive/Batch013`, preserving active folders and excluding `Docs/Tasks/CURRENT_BATCH.md`.
+- Rejected Alternatives: Moving active files would break current agents. Copying `CURRENT_BATCH.md` would violate explicit request. Overwriting existing archive would destroy proof boundary if one exists.
+- Scalability potential: Low/Middle tiers benefit from smaller summaries for search/context. High/Ultra retain raw copied evidence for forensic ingestion.
+- Hardware Impact: Runtime/game impact 0 us on i3/MX350. This is disk IO and text processing only.
+- Problem: User requested summaries as concentrated signal, cleaned of duplicates, extra syntax, articles, and garbage.
+- Solution: Generate extractive summaries from copied raw files, keep evidence-bearing lines, normalize duplicate lines, remove decorative XML/Markdown syntax where safe, drop high-frequency boilerplate, and report source/retained counts.
+- Rejected Alternatives: Full concatenation is too large. Aggressive rewrite risks losing blockers and proof artifacts. Deleting raw logs would erase evidence.
+- Scalability potential: Low keeps summary readable. Middle/High/Ultra keep raw source for exact proof when needed.
+- Hardware Impact: Runtime/game impact 0 us. Summary generation is one-time filesystem CPU/disk cost.
+Source lines scanned 16; retained 12; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_AUDIT_NATIVE_STATE.md bytes=92176 done=0 blockers=39 pendingHits=61 selected=45
+- # AUDIT_NATIVE_STATE Rationale
+- Problem: Need honest current state of unmanaged NativeArrays, MonoBehaviour ownership, and related GlobalDataVault/SignalBus doctrine without editing runtime code.
+- Solution: Static evidence audit only. Use mandates for acceptance criteria, scan source and active batch logs/statuses, label all findings as STATIC_SOURCE unless Unity/profiler artifacts exist.
+- Rejected Alternatives: Running broad refactor or compile-first loop would contaminate audit and risk collision with 20+ active agents. Chat-only summary would violate reporting protocol.
+- Scalability potential: Low/MX350 requires DataVault-owned fixed buffers, no hidden persistent aliases, and no hot registry polling. Middle/High/Ultra can add richer telemetry and visual sync consumers only after gameplay truth routes are fixed.
+- Hardware Impact: Audit itself saves 0 us at runtime. If remaining ownership violations are removed, expected gain is reduced native leak risk, lower stall risk from hidden Complete/Dispose patterns, and cleaner i3/MX350 memory-pressure behavior. No measured...
+- ## 2026-05-27 Decision - Current Native Ownership Snapshot
+- Problem: User requested current success/tempo for unmanaged NativeArray/MonoBehaviour cleanup. Several ledgers exist, including `VAULT_NATIVE_ALIAS_LEDGER_X_000.json` with worse 2138/581 counters, but prior UNKNOWN rationale marks X_000 stale/non-comparable...
+- Solution: Use latest comparable full all-scripts ledger with zero parse failures: `VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT32_ALLSCRIPTS.json` at 2026-05-27 13:27:37. Use `UNKNOWN_CURRENT_20260526_0052`, `1315_PASS22`, and `1315_PASS25` only as timeline ...
+- Rejected Alternatives: Using raw `rg NativeArray` would mix locals, job parameters, tests, and ref-struct views. Using X_000 would report false regression already documented as stale. Running fresh scanner/build was rejected because CPU sampled 88-99% and c...
+- Scalability potential: Low/MX350 benefits only after residual MonoBehaviour/native owner fields are eliminated or moved to owner-scoped Vault routes. Middle/High/Ultra can spend saved stall/leak risk on richer telemetry and visual sync only after ownership ...
+- Hardware Impact: Measured runtime gain remains 0 us. Static risk reduction since 2026-05-26 baseline is 951 fewer forbidden persistent candidates and 311 fewer MonoBehaviour candidates. Current remaining MonoBehaviour candidates are concentrated in four fil...
+- ## 2026-05-27 Decision - Other Agent Polish Audit And Lock Leak Fix
+- Problem: User asked whether other agents' last-24h deep-polish changes are correct and improve project. Logs show broad static cleanup across DataVault/native ownership, input, compute, world, physics, audio, terrain, bootstrap, shader warmup, and tooling, ...
+- Solution: Treat agent reports as evidence only when backed by artifacts. Keep improvement verdict split by proof class. Patch proven write-lock invariant in runtime helpers and editor/probe helpers: after successful `TryAcquireWriteLock`, any failed buffer/...
+- Rejected Alternatives: Ignoring lock leak because it was found during audit would leave real contention/freeze risk. Running another build was rejected because external `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` is active; project la...
+- Scalability potential: Low/MX350 benefits from avoiding stuck DataVault write locks and hidden contention in Fluid, Inventory, Hazard, World scatter, ore, and editor diagnostics. Middle/High/Ultra benefit from stable shared native ownership before higher-fi...
+- Hardware Impact: No measured runtime microseconds claimed. Static risk removed: potential permanent or long-lived DataVault write locks after invalid buffer validation in nine helper sites. Verification artifacts: `rg` reports `NO_CHAINED_TRYACQUIREWRITELOC...
+- ## 2026-05-27 Decision - Generated Unity Package Build Graph Shim
+- Problem: Full solution CLI verification is blocked by generated Unity package csproj graph, not by surfaced HECTON-8 gameplay compile error. Evidence: `BUILD_UNKNOWN_EXEC_CARRIER_RECHECK_20260527.log` reports `MSB4006` circular `ResolveProjectReferences` in...
+- Solution: Patch tracked `Directory.Build.targets` rather than only ignored generated csproj artifacts. For Unity package CLI shim projects, convert Unity RP/ShaderGraph package `ProjectReference` edges to explicit `Library/ScriptAssemblies` references befor...
+- Rejected Alternatives: Editing generated `.csproj` files directly would be overwritten by generator and is ignored by git. Excluding all Unity package projects from `Hecton8.slnx` would be broader and could hide references needed by vendor/editor assemblies...
+- Scalability potential: Low/MX350 gains no runtime microseconds directly; value is restoring deterministic compile proof lane so static/native ownership fixes stop being blocked by package graph noise. Middle/High/Ultra can only safely spend budget on richer...
+- Hardware Impact: Runtime gain 0 us. Build-infrastructure risk reduced: four Unity package ProjectReference edges now have existing DLL fallback proof (`Unity.RenderPipelines.Universal.Editor -> Core/Runtime/ShaderGraph`, `Unity.ShaderGraph.Editor -> Core`)....
+- ## 2026-05-27 Decision - Latest Native Ledger Refresh During Parallel Work
+- Problem: While this audit was running, other agents continued editing and generated newer native ownership ledger. Reporting only 13:27 `DEEP_REAUDIT32` snapshot would now be stale.
+- Solution: Use `VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT34_ALLSCRIPTS.json` at 2026-05-27 16:05:53 for latest static counter update. It scans `2441` files with `0` parse failures. Since `DEEP_REAUDIT32`, forbidden persistent candidates moved `819 -> 813` ...
+- Rejected Alternatives: Calling cleanup done because persistent candidates dropped by six would be false; MonoBehaviour tail did not move and runtime proof is still absent.
+- Scalability potential: Low/MX350 still needs remaining owner fields removed or isolated; latest delta is incremental, not proof of safe runtime memory behavior. Middle/High/Ultra remain blocked from trustworthy visual budget claims until compile/import/prof...
+- Hardware Impact: Runtime gain 0 us measured. Static risk delta since 13:27 is six fewer forbidden persistent native candidates, zero fewer MonoBehaviour native candidates.
+- ## 2026-05-27 Decision - Terrain/World Claim Recheck And Sargassum Owner Route
+- Problem: Fresh Terrain/World status contains both improvement claims and explicit `[BLOCKED BY PARALLEL OVERWRITE]` note. Current source grep confirms blocker: `VegetationChunkResidencyDirector` still has three `.Run()` calls and `VegetationFlowFieldIntegra...
+- Solution: Do not fight actively overwritten vegetation async route from this audit pass. Fix independent owner-route violation by reading `SargassumMicroFaunaBoids.ActiveRuntimeInstance`, which now points to owner-local active runtime instance instead of ho...
+- Rejected Alternatives: Accepting "scheduled route" claims without current source grep was rejected. Reapplying vegetation async rewrite was rejected because owning Terrain/World log already documents parallel overwrite strikes; repeating that loop would lik...
+- Scalability potential: Low/MX350 still suffers from remaining `.Run()` hot-path debt in vegetation. Sargassum owner-route fix removes one stale-owner/global-read risk from ecosystem updates; High/Ultra benefit only after blocked async route is stabilized.
+- Hardware Impact: Runtime microseconds measured: 0. Static risk removed: one active World consumer no longer resolves Sargassum through `GlobalRegistry`; current proof `rg GlobalRegistry.SargassumMicroFauna EcosystemDirector.cs` returns no hits. Static remai...
+- ## 2026-05-27 Decision - TBDR MonoBehaviour Native Field Isolation And Audio Route Cache
+- Problem: Latest native ledger still reports 47 forbidden MonoBehaviour native candidates. `TBDRPipelineSurgeonRuntime` slice is bounded, independent target: 11 direct `NativeArray ` fields on `MonoBehaviour`, all used inside same file. Separately, `HectonMu...
+- Solution: Move TBDR buffers into private `RuntimeBufferSet` managed owner and expose only `NativeArray .ReadOnly` debug views from MonoBehaviour. Keep production storage in GlobalDataVault; register/unregister fallback persistent arrays with `NativeMemorySe...
+- Rejected Alternatives: pure property rename was rejected because `NativeArray ` getters would still expose mutable aliases. broad sweep of every `Instance => GlobalRegistry` accessor was rejected because each owner lifecycle must be proven separately. Runni...
+- Scalability potential: Low/MX350 gains lower native ownership ambiguity in TBDR fallback/debug mode and fewer registry reads in music/soundscape context resolution. Middle/High/Ultra keep same quality-weight behavior and DataVault production route; saved ri...
+- Hardware Impact: Runtime microseconds measured: 0. Confirmed native ledger impact: `VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT35_ALLSCRIPTS.json` reports forbidden MonoBehaviour candidates `47 -> 36`; `TBDRPipelineSurgeonRuntime` is no longer in MonoBehavi...
+- ## 2026-05-27 Decision - Remaining MonoBehaviour Native Owner Isolation
+- Problem: current official ledger tail is concentrated in three MonoBehaviour owners: `SaveManager` 13, `ContextualPhysicalIkRig` 13, and `ContextualPhysicalIkRuntime` 10. These are large lifecycle-sensitive systems, so full DataVault migration under active ...
+- Solution: Move native collection fields into private managed owner classes: `SaveManagerNativeBufferSet` plus `StaticNativeBuffers`, `RigNativeBufferSet`, and `RuntimeNativeBufferSet`. Keep existing allocation points, `NativeMemorySentinel` registration nam...
+Source lines scanned 377; retained 45; overflow-important omitted 238.
+
+FILE AgentLogs\Rationale_COMPILE_MEDIC.md bytes=6888 done=0 blockers=7 pendingHits=0 selected=31
+- # COMPILE_MEDIC Rationale
+- ## 2026-05-27 Initial Route
+- Problem: User requested repair of latest dotnet compile errors, warnings, and related contract problems. No compile-medic XML assignment exists in current batch prompt.
+- Solution: Use operational ID `COMPILE_MEDIC`; treat compile logs as primary evidence; confine edits to proven defect clusters after reading affected code and contracts.
+- Rejected Alternatives: Running immediate full `dotnet build` was rejected because AGENTS forbids build spam and requires using recent logs first. Suppressing warnings was rejected because LTS mandate treats warnings as debt unless architect-approved.
+- Scalability potential: Low tier receives lower editor/build churn and no hot-path allocation regressions; middle/high/ultra retain architecture correctness without broad rewrites.
+- Hardware Impact: Avoiding unnecessary full rebuilds preserves host CPU for concurrent agents. Runtime impact unknown until affected code is identified.
+- ## 2026-05-27 First-Party Compile Cluster
+- Problem: Fresh `BUILD_COMPILE_MEDIC_RECHECK_20260527.log` showed real Hecton errors mixed with vendor/generated graph failures: Unity namespace shadowing in `BootstrapStatus`, duplicate private helpers across partial classes, missing Odin/ToolKinematics ref...
+- Solution: Fully qualify UnityEngine `Time`/`Physics`; keep one owner for `OffsetOf`, `TriangleWaveSigned`, and permanent-echo invalidation; route Hecton8.Core CLI compile to current memory source for `BufferID/IDataVault/GlobalDataVault`; add actual existin...
+- Rejected Alternatives: Dummy `BufferID` extension was impossible and would corrupt data sovereignty. Attribute shim classes were rejected because real Sirenix attributes exist under `Assets/Plugins/Sirenix/Assemblies`. Editing third-party vendor source was ...
+- Scalability potential: Low tier gets same current vault IDs as high tier instead of stale binary layout; middle/high/ultra keep visual/system features that consume new BufferIDs without fallback amputations.
+- Hardware Impact: Runtime microseconds saved: 0 claimed. Compile-path gain is avoiding stale-reference cascades; runtime impact is neutral because source contracts match intended Unity assembly surface.
+- ## 2026-05-27 Core Residual Contract Cluster
+- Problem: `BUILD_COMPILE_MEDIC_CORE_20260527_2.log` exposed remaining source-level contract drift: private DTO padding writes, stale `PoolSlotData.AupCell`, C# 14 `field` keyword conflict, ref-safety spans, static methods touching instance vault state, smoke...
+- Solution: Initialized DTOs with `default` and stopped writing private padding; routed fauna pool position through existing explicit-layout `GridX/Y/Z`; renamed C# 14 keyword local; parsed survival database spans immediately instead of returning spans across...
+- Rejected Alternatives: Adding overlapping `AupCell` field to `PoolSlotData` was rejected because it would corrupt explicit 72-byte ARM64 layout. Publicizing padding was rejected because padding is not contract. Scene searches for ore spawner were rejected b...
+- Scalability potential: Low tier keeps cheap integer-grid AUP reads and avoids managed fallback allocations in hot paths; middle/high/ultra preserve richer vegetation/fauna/terrain telemetry because compile fixes do not amputate systems.
+- Hardware Impact: Runtime microseconds saved: 0 claimed. Risk reduction is compile-path and data-layout correctness; no new hot-path work was added.
+- ## 2026-05-27 Core Green Verification
+- Problem: residual Core build narrowed to compatibility-slice visibility after main contract fixes; partial `FaunaBrain.Compatibility.cs` is compiled in CLI slice where full runtime field set is not visible in nested contexts.
+- Solution: Used internal static compatibility bridge cache with subsystem reset and GlobalRegistry-backed resolution. `Hecton8.Core.csproj` reached 0 errors in `BUILD_COMPILE_MEDIC_CORE_20260527_7.log`.
+- Rejected Alternatives: Reintroducing direct scene search was rejected because it violates registry-route doctrine. Making full fauna runtime field public was rejected because it expands API surface for compile-slice artifact.
+- Scalability potential: All tiers keep same vegetation threat source; cache is cold and reset-bound, no frame polling added.
+- Hardware Impact: Runtime microseconds saved: 0 claimed. Compile delta: Core errors reduced from 197 to 0 across focused passes.
+- ## 2026-05-27 Vendor Project Graph Repair
+- Problem: Full solution build exposed 220 errors after Core was green. dominant failures were generated CLI project graph drift: Unity version symbols stopped at `UNITY_6000_*`; MapMagic asmref folders were compiled by `Assembly-CSharp-Editor` or omitted fro...
+- Solution: Centralized CLI Unity version defines in `Directory.Build.*`; mapped MapMagic asmref folders into `MapMagic`, `MapMagic.Editor`, and `Den.Tools.Editor`; removed MapMagic source/reference bleed from `Assembly-CSharp*`; added explicit references for...
+- Rejected Alternatives: Editing MapMagic graph assets or generator logic was rejected because targeted errors were assembly topology, not graph semantics. Copying DLLs into `Assets/Plugins` was rejected because it creates false ownership. Keeping `Burst.Comp...
+- Scalability potential: Low/middle/high/ultra runtime behavior is unchanged; compile graph now mirrors Unity ownership so visual systems remain available instead of being amputated for CLI.
+- Hardware Impact: Runtime microseconds saved: 0 claimed. Build-error reduction verified locally on targeted projects: MapMagic runtime/editor, Den.Tools runtime/editor, Astar, MeshBakerCore, BakeryEditor, ShaderGraph, URP runtime, Assembly-CSharp, Amplify ed...
+Source lines scanned 41; retained 31; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_CSharpComputeDispatchAuditor.md bytes=3233 done=0 blockers=0 pendingHits=0 selected=29
+- # Rationale - CSharpComputeDispatchAuditor
+- ## Decision 1 - Audit Surface
+- Problem: Compute dispatch sizing can drift from shader `numthreads` when C# uses fixed divisors or constants.
+- Solution: Audit direct `.Dispatch(` calls and same-file `GetKernelThreadGroupSizes` presence with static parsing. Used `GPU_Compute_Warp_Sizing_Mobile` and `GPU_Compute_Kernels_Kernels_Optimization_MX350`.
+- Rejected Alternatives: Unity import/build/profiler were rejected because mission forbids dotnet build and requests static audit. Basic file reading was rejected because output can truncate and miss ignored vendor files.
+- Scalability potential: Low uses queried 32/64-sized groups and capped ranges; middle uses cached queried groups; high/ultra may use wider variants only after GPU capture.
+- Hardware Impact: No runtime change. Potential MX350 gain is avoiding oversized dispatch occupancy loss; measured gain is 0 us because no source edit or GPU capture was performed.
+- ## Decision 2 - `--no-ignore`
+- Problem: `Assets/Editor/x64/Bakery` dispatches are hidden by default ignore behavior.
+- Solution: Use `rg --no-ignore` for final counts and vendor coverage.
+- Rejected Alternatives: Default `rg` was rejected after Bakery dispatches were visible via direct file scan but absent from default ripgrep output.
+- Scalability potential: Audit completeness only. No gameplay tier impact.
+- ## Decision 3 - Concurrent Change Handling
+- Problem: `Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs` changed during audit; earlier scan saw hardcoded `(count + 63) >> 6`, later scan saw cached `GetKernelThreadGroupSizes` use.
+- Solution: Re-run first-party scan and report current file state.
+- Rejected Alternatives: Reporting stale data was rejected.
+- Scalability potential: Current code is better for low/middle/high/ultra because dispatch count derives from cached thread group size.
+- Hardware Impact: Audit-only 0 us measured. Potential correctness gain belongs to concurrent edit, not this agent.
+- ## Decision 4 - Scope Boundary
+- Problem: `CommandBuffer.DispatchCompute` exists in render-feature files, but mission asks for `ComputeShader.Dispatch` calls.
+- Solution: Final report covers direct `.Dispatch(` calls and notes `DispatchCompute` is out of scope for this pass.
+- Rejected Alternatives: Mixing APIs would inflate report and violate requested scope.
+- Scalability potential: Separate pass should audit command-buffer compute dispatches because they have same sizing law.
+- ## Decision 5 - Hot Upload Detection
+- Problem: Static text cannot prove call frequency or callgraph ownership for `SetData`/`SetBuffer`.
+- Solution: Used nearest-method static scan for Update/LateUpdate/Tick/Render/Dispatch-like names and reported only visible evidence.
+- Rejected Alternatives: Full Roslyn analysis was rejected as unnecessary for this static pass and because no code/package changes were allowed.
+- Scalability potential: Low-tier risk is `SetData` in per-frame paths causing CPU/GPU stalls; high/ultra risk is wasted PCIe bandwidth limiting visual overkill.
+- Hardware Impact: 0 us measured. First-party hot-like `SetData` was not detected; vendor Crest has `SetData` in `ExecuteQueries`.
+Source lines scanned 41; retained 29; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_DOCS_ACTUALIZATION.md bytes=25566 done=0 blockers=0 pendingHits=1 selected=45
+- # DOCS_ACTUALIZATION Rationale
+- Problem: Reports/logs/status files are large and noisy; stable docs needed evidence boundary without turning process folders into project brain.
+- Solution: Distill durable facts into `Docs/PROJECT_BASELINE.md` and patch stable entry documents with non-claim boundaries. Do not archive or delete live report artifacts while current evidence still cites them.
+- Rejected Alternatives: Bulk moving reports would break active evidence paths. Keeping maintained process-folder index was rejected by user correction. Running compile is explicitly out of scope per user.
+- Scalability potential: Low/MX350 work benefits indirectly by keeping ownership/report evidence discoverable so future fixes target real hot-path and native-memory debts instead of stale claims. Middle/High/Ultra benefit only after real runtime proof; no run...
+- Hardware Impact: Documentation pass saves 0 us/frame. Expected engineering impact is lower search overhead and lower risk of agents citing stale report snapshots.
+- Problem: User rejected transient folder indexing as noise because `Docs/Reports`, `Docs/Tasks`, and `Docs/AgentLogs` should eventually archive/deprecate rather than become maintained surfaces.
+- Solution: Removed active transient indexes and replaced current-note file with `Docs/PROJECT_BASELINE.md`, baseline focused on authority, proof boundary, native-memory state, and stable system facts.
+- Rejected Alternatives: Keeping `Docs/Tasks/README.md`, `Docs/AgentLogs/README.md`, or `Docs/ACTIVE_WORKSPACE_INDEX.md` would preserve process-folder clutter. Bulk-moving live agent artifacts now would break active citations.
+- Scalability potential: Distilled facts reduce future search cost and reduce stale-proof propagation. This has no runtime scalability effect.
+- Hardware Impact: Runtime gain remains 0 us/frame. Documentation gain is operational only.
+- Problem: Active docs still exposed local token telemetry, old FAQ prose, glossary prose, binary marketing archive, and long report/concision artifact chains as if they were base navigation.
+- Solution: Moved root noise and token audit report/json to `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/`, added manifest, and replaced active references with `Docs/PROJECT_BASELINE.md` plus category-level report boundaries.
+- Rejected Alternatives: Keeping token telemetry, `TECHNICAL_FAQ.md`, `H8_GLOSSARY.md`, or `Marketing.rar` in active docs would keep stale/local/process material in main read path. Enumerating every old scanner artifact in README/ledger was also rejected as b...
+- Scalability potential: No runtime scalability effect. Engineering scalability improves only by reducing stale navigation and forcing durable facts into contracts.
+- Hardware Impact: Runtime gain 0 us/frame. Search/read overhead reduced for humans and agents; no frame-time claim.
+- Problem: `Docs/CURRENT_ENGINEERING_DISTILLATE.md` put current-work framing into `Docs` root, where user wants base documentation only.
+- Solution: Replaced it with `Docs/PROJECT_BASELINE.md` and removed active references to current batch/agent framing.
+- Rejected Alternatives: Keeping current-note file in root or renaming without rewriting content.
+- Scalability potential: No runtime effect. Documentation base is less volatile.
+- Hardware Impact: Runtime gain 0 us/frame.
+- Problem: `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, and `Docs/Scatter_Runtime` were legacy planning bundles with stale dated report-chain read order, not base documentation.
+- Solution: Moved three folders to `Docs/DEPRECATED/Legacy_Domain_Bundles_2026-05-26/` with manifest. code-adjacent flora README that pointed to old flora bundle was relinked to `Docs/PROJECT_BASELINE.md` and `Docs/ARCHITECTURE/FLOODED_TERRESTRIAL_GEOGRAPHY.md`.
+- Rejected Alternatives: Rewriting every stale May report pointer in place would preserve dead planning folders as active surface. Adding redirect stubs would keep noise in read path.
+- Scalability potential: No runtime effect. Documentation navigation loses obsolete branch points.
+- Problem: `Docs/README.md` still embedded historical X_012/APEX pass logs, which made root index read like change diary instead of base navigation.
+- Solution: Removed historical pass sections from `Docs/README.md`; history remains in actuality ledger and archives.
+- Rejected Alternatives: Keeping detailed pass history in root index or creating another summary file.
+- Scalability potential: No runtime effect. Root documentation is shorter and less volatile.
+- Problem: Root/base docs still carried current proof slices and native-memory counters, making base layer read like live status note.
+- Solution: Removed volatile proof/native/build data from root/index/governance docs. Moved concise native-memory and compile snapshots into `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Rejected Alternatives: Keeping `BUILD_UNKNOWN_*`, native ledger counters, and guard-block notes in root docs. That repeats report state and violates root-as-base boundary.
+- Scalability potential: No runtime effect. Durable doctrine and volatile proof now have separate owners.
+- Problem: runtime master plan, global architecture map, quality gates, and systems contracts had become dated correction diaries.
+- Solution: Rewrote them as concise contracts: runtime execution order, global authority map, quality gates, and systems contracts. Removed old DOC_GLOBAL chains and stale build-status prose.
+- Rejected Alternatives: Leaving historical R-chain text in active base docs or creating another summary file that readers must reconcile.
+- Scalability potential: No runtime effect. Documentation read path now favors owner routes, native-memory rules, proof gates, and continuous quality scaling.
+- Problem: active generated/reference docs still carried repeated DOC_GLOBAL R51/Rxx banner residue and one generated atlas treated `CURRENT_BATCH` as source authority.
+- Solution: Replaced repeated banners with short authority boundaries in atlas/handbook/procedural/tech-art docs; removed `CURRENT_BATCH` from dependency graph authority inputs.
+- Rejected Alternatives: Leaving stale history in every document header. Full regeneration was rejected because user requested documentation actualization, not compile/tool churn.
+- Scalability potential: No runtime effect. Reduces probability of future work citing prompt/status residue as doctrine.
+- Problem: root still contained oversized generated/reference bodies and domain doctrine that made `Docs/` root read like current-state dump instead of base documentation.
+- Solution: Archived full snapshots to `Docs/DEPRECATED/Root_Generated_Snapshots_2026-05-26/`. Replaced `ARCHITECT_HANDBOOK.md` and `DEPENDENCY_GRAPH.md` with short tool-entry contracts. Compressed `PROJECT_ATLAS.md` to required validator tokens plus 85-domai...
+- Rejected Alternatives: Deleting tool-required paths would break local validators. Keeping full generated handbook/graph bodies in root would preserve exact clutter user rejected.
+- Scalability potential: Runtime gain remains 0. Documentation scalability improves because root now carries stable owner routes and tool contracts, while generated detail has single deprecated provenance path.
+Source lines scanned 157; retained 45; overflow-important omitted 71.
+
+FILE AgentLogs\Rationale_MARKET_INTEL.md bytes=19885 done=0 blockers=0 pendingHits=1 selected=45
+- # MARKET_INTEL Rationale
+- Problem: User asked for competitive/marketing intelligence, but no XML batch prompt with real agent ID exists.
+- Solution: Use synthetic ID `MARKET_INTEL`; record missing XML as constraint; keep scope docs/research only.
+- Rejected Alternatives: Blocking for ID would waste current research pass; inventing hidden batch task would be false reporting.
+- Scalability potential: Not runtime code. Output will map Subnautica 2 gaps into HECTON-8 visual/marketing targets across weak, middle, high, ultra hardware.
+- Hardware Impact: 0 us frame cost; docs-only. Any resulting product recommendations must respect MX350/i3 limits and convert expensive simulation into visual fakes.
+- Problem: Competitive review needs live 2026 facts; Subnautica 2 status can change.
+- Solution: Use web verification for release state, feature claims, visuals, trailers/screens, and player-facing positioning.
+- Rejected Alternatives: Relying on memory or user impression alone would risk false release status.
+- Scalability potential: useful output is ceiling list: what must be exceeded visually, structurally, and in market promise without adding fake runtime burden.
+- Hardware Impact: 0 us frame cost; docs-only.
+- Problem: Existing SN2 marketing monitor was V6 from 2026-05-21; user asked for current read after release and public play.
+- Solution: Refresh same-day public facts through Steam review API, appdetails API, Steam store, SteamDB, and official Steam screenshots; propagate result as V7 in existing control files instead of creating new standalone memo.
+- Rejected Alternatives: Using user impression alone would be subjective; creating another competitor document would violate marketing anti-sprawl rule.
+- Scalability potential: Low tier must sell static/baked pressure, silhouettes, corrosion, readable gauges, and cheap fog/dither fakes. Middle tier adds stronger machinery motion and route-state feedback. High tier adds denser particles, light shafts, wet sur...
+- Hardware Impact: 0 us runtime for this docs-only pass. Future execution should spend saved simulation cost on visual belief; physical ocean/proton-style simulation remains rejected unless profiler proof says it buys more immersion per 0.1 ms than fake.
+- Problem: SN2's official screenshots are visually competent but soft/clean; directly "out-prettying" bright alien ocean would push HECTON toward clone risk.
+- Solution: Define competitive ceiling around HECTON-native assets: industrial pressure-vessel logic, dirty machinery, corrosion, black water, base failure, route risk, and visible player decisions.
+- Rejected Alternatives: Public attack copy, "Subnautica killer" language, co-op bait, and unsupported performance superiority are forbidden and strategically weak.
+- Scalability potential: same visual contract scales continuously with `GlobalQualityWeight`: silhouettes and baked grime at minimum, layered fog/lighting/particles/material response at high and ultra.
+- Hardware Impact: 0 us runtime now. Target hardware impact for later capture is budget-neutral: trade expensive simulation for authored textures, 1D ramps, triangle/noise waves, impostor particles, and fixed-cadence telemetry where needed.
+- Problem: After V7 insertion, active first-read execution docs still named V6 as current and could mislead next capture agent.
+- Solution: Update active daily loop, prep entrypoint, shotlist priority note, and backlog current cut to V7/2026-05-26 while leaving historical V4/V5/V6 evidence rows intact.
+- Rejected Alternatives: Rewriting full marketing backlog would create churn; leaving V6 active would violate same-day freshness routing.
+- Scalability potential: Capture priorities now scale from low-tier static readable pressure shots to ultra-tier layered failure scenes without changing route proof requirement.
+- Hardware Impact: 0 us runtime. This is documentation state hygiene; no Unity import, build, profiler, or runtime action.
+- Problem: V7 currentness was recorded, but creative/trailer docs still needed executable counter-position rules for first assets.
+- Solution: Add V7 creative and trailer gates to existing docs: no bright reef fight, no co-op warmth, no clean base showroom, no mood-only darkness; use pressure hatch, floodlight route, heavy machine, and instrument-led anomaly as first proof lanes.
+- Rejected Alternatives: standalone competitive battle plan would duplicate control tower and get stale; public comparison copy would violate positioning rules.
+- Scalability potential: Low tier can pass with silhouettes, labels, dirt, and baked warning states. Middle/high/ultra add denser fakes and richer failure staging while preserving same small-size read.
+- Hardware Impact: 0 us runtime now. Future capture should prefer cheap visual fakes before simulation: authored wear, silt planes, light cones, warning-state materials, 1D noise/ramp animation, and impostor debris.
+- Problem: Owner asked for surveys and PR-surface research across itch.io, DTF, Habr, and wikis; these routes have different rules and failure modes.
+- Solution: Research official/current platform sources and add route-separated scouting layer into existing community, feedback, KPI, risk, backlog, and source-ledger docs.
+- Rejected Alternatives: Creating one generic PR plan would hide platform-specific gates; launching surveys or accounts now would violate proof and consent boundaries.
+- Scalability potential: Low/no-budget route starts with no-link surveys and critique. Middle tier uses page/devlog/article readiness after real assets. High/ultra tier uses tracked public CTA only after Steam/page/demo gates and measured proof exist.
+- Hardware Impact: 0 us runtime. Work is documentation and route control only; no Unity import, build, profiler, or public account action.
+- Problem: Continuing PR research can become undisciplined list of places to spam.
+- Solution: Split surfaces into borrowed critique/listening routes, semi-owned profile/page routes, and owned announcement/media routes; add triggers, proof requirements, and kill conditions to existing community, KPI, outreach calendar, risk, backlog, and so...
+- Rejected Alternatives: Posting everywhere after first asset, creating empty Game Jolt/IndieDB/ModDB profiles, or treating Steam News as generic social feed would produce stale shells and trust damage.
+- Scalability potential: Low/no-budget uses blind surveys and one no-link critique route. Middle tier adds owned clips and page feedback after real assets. High/ultra tier expands to Steam events, maintained profiles, and factual databases only when proof den...
+- Hardware Impact: 0 us runtime. No Unity import, build, profiler, public account, page, post, survey, outreach, or CTA action occurred.
+- Problem: V2 PR surface expansion still missed separate Steam-native, creator/stream, social, owned-audience, secondary storefront, crowdfunding, niche press, and high-risk forum failure modes.
+- Solution: Add V3 route classes and preflight frames: Steam Curator Connect, Steam Playtest, Steam Demo/Next Fest, Epic, GOG, Kickstarter/BackerKit, Twitch/Kick/YouTube creators, Discord, X/Bluesky/Instagram/LinkedIn/Mastodon, Medium/Hashnode/DEV/Substack, A...
+- Rejected Alternatives: One generic "social/creator/Steam" bucket would hide access, disclosure, consent, support, and event-gate differences. Launching accounts, server, pages, keys, crowdfunding, or public posts from research would be false readiness. Trea...
+- Scalability potential: Low/no-budget uses source research, private cold reads, and no-link critique only. Middle tier can use owned social drafts, technical articles, and manual creator preflights after real assets. High tier can run Steam-native Playtest/D...
+Source lines scanned 91; retained 45; overflow-important omitted 31.
+
+FILE AgentLogs\Rationale_MODDING_SDK_AUDIT.md bytes=103487 done=0 blockers=16 pendingHits=12 selected=45
+- # Rationale_MODDING_SDK_AUDIT
+- Evidence class: STATIC_SOURCE / STATIC_DOC
+- ## Decision 1 - SDK builder manifest parity
+- Problem: `ModBuilderWindow.ModManifestData` emitted 7-field `mod.json`, while `ModLoader.ModManifest` requires `RequiredAPIVersion > 0` and consumes `ModPriority`. Packages produced by SDK builder were structurally invalid for loader unless manually repaired.
+- Solution: Make SDK builder emit full 9-field manifest and validate `RequiredAPIVersion` against current loader API value. Add static validator check that extracts builder manifest fields and compares them to loader manifest fields.
+- Rejected Alternatives: loader fallback that accepts missing `RequiredAPIVersion` was rejected because it weakens fail-closed package contract. doc-only warning was rejected because it preserves broken SDK output path.
+- Scalability potential: Low tier sees no runtime cost because this is editor/package-time validation. Middle tier and high tier avoid wasted boot retries and support ambiguity. Ultra tier can layer richer SDK validation on same manifest contract without chan...
+- Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. Practical gain is cold-path: invalid packages fail before runtime loading instead of spending loader/debug time.
+- ## Decision 2 - Static layout gate must accept source constants
+- Problem: `Validate_Mod_API_Static.ps1` failed before SDK manifest checks because `ModAupResponse` uses `Size = ModSpatialContractLayout.AupResponseStrideBytes`, while validator only accepted numeric literal sizes. payload contract was still explicit and 64 ...
+- Solution: Teach validator to resolve either numeric literal or same-source `const int` token for `ModAupResponse` layout size. source layout remains unchanged.
+- Rejected Alternatives: Replacing source constant with literal was rejected because it would duplicate layout facts and make future payload audit harder. Ignoring validator failure was rejected because static gates are only current proof path for this API su...
+- Scalability potential: Low/Middle/High/Ultra tiers all keep same 64-byte unmanaged response contract. change only restores static proof reliability.
+- Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. It removes false build-gate failure with no runtime code cost.
+- ## Decision 3 - Signal inventory source moved out of GlobalSignals shell
+- Problem: `Validate_Mod_API_Static.ps1` still read `Assets/_Project/Scripts/Core/GlobalSignals.cs`, but that file is now compatibility shell. real signal payloads live in `Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads*.cs`. Static source count be...
+- Solution: Move mod API static inventory to `GlobalSignalPayloads*.cs`, use regex that accepts `readonly` and `partial` modifiers and rejects `ISignalSnapshotTransformer`, then update schema/audit/playbook counts to 173 total, 2 projected, 171 denied.
+- Rejected Alternatives: Reading entire `Core` tree was rejected because it would pull in mock/test/domain contract signals not covered by existing mod projection audit. Keeping old `GlobalSignals.cs` path was rejected because it proves empty shell.
+- Scalability potential: Low tier keeps same deny-by-default mod boundary. Middle/High/Ultra can add signals only through explicit schema and projection work; new public C# structs do not become mod API by accident.
+- Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. Static gate reliability improves; no runtime code path changed.
+- ## Decision 4 - Compile gate deferred under CPU protocol
+- Problem: editor C# change should normally receive compile proof, but project rule forbids launching dotnet build when CPU is above 50 percent or `csc.exe` is active. Sampled CPU was 77.7 percent. No `dotnet` or `csc` process was found, but CPU exceeded hard...
+- Solution: Run mod API static validator and diff hygiene checks now; record Unity/dotnet compile as deferred by protocol instead of violating build rule.
+- Rejected Alternatives: Starting build under 77.7 percent CPU was rejected because it violates explicit multi-agent resource rule. Marking compile as passed without running it was rejected because that is fake evidence.
+- Scalability potential: Keeps other agents' compile/editor work from being starved. Low/Middle/High/Ultra runtime behavior is unchanged.
+- Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. Avoided adding build contention during high CPU window.
+- ## Decision 5 - FutureCommand constants are not public opcode authority
+- Problem: `FutureCommandOpcodes` contained `SurvivalOverride`, `HapticPulse`, and `SubtitleCue` constants, `allowed_opcodes.csv` listed them, and `GenerateEmergencyOpcodeMap()` inserted them into opcode records. reservation doc says those kernels are not pub...
+- Solution: Keep hash constants and tuning CSV rows as dormant reservation data, but remove reserved kernels from runtime opcode-record insertion and from `allowed_opcodes.csv`. Add `IsRuntimeAllowedFutureCommandOpcode()` to make editor CSV ingest fail closed...
+- Rejected Alternatives: Deleting constants was rejected because SDK/workbench reservations still need stable names and hashes. Leaving default runtime map active was rejected because it lets unowned gameplay/presentation kernels appear public without owner p...
+- Scalability potential: Low tier avoids spending any runtime work on unowned kernels. Middle/High/Ultra can later enable kernels explicitly with owner telemetry, quality-scaled budgets, and runtime proof without changing packet layout.
+- Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame in normal play because change removes authority, not hot loop. Worst-case spam now fails before reserved kernel routing, avoiding useless queue and signal work.
+- ## Decision 6 - Public HectonAPI must not expose ScriptableObject handles
+- Problem: Public `HectonAPI` methods accepted or returned `ItemData`, `RecipeData`, and `BuildableData`, all of which are `ScriptableObject` types. That contradicted `directUnityObjectReferencesForMods=false` and resource/content audit rule that no Scriptabl...
+- Solution: Convert five offending methods to internal forbidden guards that throw `IllegalContractException`: `RegisterCustomItem`, `TryFindItem`, `RegisterRecipe`, `RegisterBuildable`, and `TryFindBuildable`. Update schema/docs to public API methods `30`, i...
+- Rejected Alternatives: Keeping methods public with stronger comments was rejected because signatures are contract. Returning copied DTOs was rejected for this pass because no source-backed DTO contract exists yet; inventing one would create larger cross-dom...
+- Scalability potential: Low tier avoids asset-handle lifetime bugs and object graph retention from mods. Middle/High/Ultra can still support rich content later through hash/CRC/binary manifests and quality-scaled owner ingestion, not public Unity object refe...
+- Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame in current envelope-only mode. Risk reduction is memory/lifetime safety: mods cannot retain authored Unity assets through this facade.
+- ## Decision 7 - Direct owner mutation facades require quarantine
+- Problem: `HectonAPI.Crafting.RegisterRecycleYield`, `HectonAPI.Recycling.ProcessRecycle`, and `HectonAPI.Ecosystem.RegisterBiomeMutation` exposed direct owner mutation/overlay routes. They bypassed one-owner command doctrine: no mod owner record, no unload ...
+- Solution: Convert three methods to internal forbidden guards that throw `IllegalContractException`. Keep future exposure behind content manifests or `FutureCommandEnvelope` owner routes only after owner telemetry and revocation proof exist.
+- Rejected Alternatives: Keeping methods public as convenience wrappers was rejected because direct inventory mutation and ecosystem overlays are gameplay authority, not presentation. Adding comments was rejected because public signature itself is API promise.
+- Scalability potential: Low tier avoids extra registry mutation and impossible-to-revoke overlays. Middle/High/Ultra can reintroduce richer recycle/ecosystem features through quality-scaled owner kernels with explicit budgets, telemetry, and unload rollback.
+- Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame in envelope-only mode. Risk reduction is authority correctness and avoiding orphaned mod state.
+- ## Decision 8 - Non-command facade calls need active mod scope
+Source lines scanned 700; retained 45; overflow-important omitted 305.
+
+FILE AgentLogs\Rationale_PROGRESS_AUDIT.md bytes=786 done=0 blockers=0 pendingHits=0 selected=6
+- # PROGRESS_AUDIT Rationale
+- Problem: User asked for two-month project progress and maturity classification across old archives, old Codex sessions, and current Codex/session data.
+- Solution: Evidence-tiered audit using stable AGENTS/domain mandates, current source tree, current Docs, archive reports, and Codex session logs. Classify by proof level, not agent claims.
+- Rejected Alternatives: Treating dated reports or session summaries as runtime truth. Static text proves presence only.
+- Scalability potential: Low/Middle/High/Ultra runtime impact is zero; this is audit. output prioritizes systems that protect weak hardware first and can buy visual overkill later.
+- Hardware Impact: 0 us/frame direct. Indirect gain comes from identifying systems likely to block MX350/i3 proof.
+Source lines scanned 7; retained 6; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_TERRAIN_AUDIT.md bytes=99549 done=0 blockers=5 pendingHits=12 selected=45
+- # TERRAIN_AUDIT Rationale
+- Status: COMPLETE
+- Problem: No XML batch prompt or explicit agent ID was provided, but user requested terrain implementation analysis.
+- Solution: Use `TERRAIN_AUDIT` as local audit ID, treat chat request as one task, and keep scope read-only unless defect fix is explicitly requested.
+- Rejected Alternatives: Claiming batch ID 1315 was rejected because CURRENT_BATCH assigns that ID to voxel memory exorcism task, not this chat audit.
+- Scalability potential: Audit must distinguish low/mid/high/ultra terrain paths and continuous `GlobalQualityWeight` gaps without inventing implementation proof.
+- Hardware Impact: No code change. Static audit only; measured i3/MX350 gain is absent.
+- Problem: Terrain domain spans MapMagic heightfield, voxel SDF, streaming, rendering, and scene wiring.
+- Solution: Read 7 task-relevant mandates: VOX_MapMagic_Voxel_Seam_Alignment_Integration, VOX_Voxel_SDF_Geometry_MarchingCubes_Pipeline, VOX_Voxel_World_Logic_Carving_Persistence, STRM_World_Streaming_Residency_Chunk_Management, REND_Terrain_VirtualTexturing,...
+- Rejected Alternatives: Reading all mandates was rejected as context noise; reading only AGENTS.md was insufficient for terrain.
+- Scalability potential: Low = cached height/LOD/fakes; Middle = limited blend/raycast; High/Ultra = more seam/detail/visual fidelity after proof.
+- Hardware Impact: No runtime change; audit will flag unmeasured or non-scaled terrain costs.
+- Problem: User asked how land appears, and terrain ownership crosses third-party MapMagic, Unity TerrainData, Hecton voxel SDF, vegetation cache, and geology seam writeback.
+- Solution: Separate route into four owners: MapMagic creates/applies TerrainTile/TerrainData; MapMagicRuntimeBridge registers terrain provider and forwards tile signals; HectonMapMagicVegetationBridge caches R16 height/alpha data for hot consumers; Hecton vo...
+- Rejected Alternatives: single "MapMagic makes terrain" answer was rejected because seam applier and voxel cave volumes can alter or augment final visible ground.
+- Scalability potential: Low uses cached R16 height sampling, low terrain ranges, visual-only seam dither, and bounded holes. Middle uses limited terrain seam patches. High adds higher terrain quality and voxel detail. Ultra can spend budget on bigger seam/de...
+- Hardware Impact: No code change. Static risk flags include Unity heightmap writeback, reflection boxing, binary scene opacity, and runtime cache refresh allocations.
+- Problem: Production scene evidence is binary/serialized and cannot be trusted like clean YAML.
+- Solution: Use string evidence and build settings for presence, then avoid overclaiming exact component hierarchy from binary data.
+- Rejected Alternatives: Treating sandbox YAML as production proof was rejected because 03_HECTON_SANDBOX_BIOMES is not active build route.
+- Scalability potential: Scene wiring must be made auditable or validated by editor utility if terrain bootstrap becomes part of CI.
+- Hardware Impact: No runtime change. Operational risk is integration/debug time, not frame time.
+- Problem: Second pass showed terrain has more than one consumer-facing truth route: ITerrainProvider, ITerrainHeightSampleReadModel, concrete HectonMapMagicVegetationBridge statics, and DataVault TerrainSeamHeightmap.
+- Solution: Treat this as primary integration defect. Terrain needs one authoritative chunk read model with explicit revisions and source flags, plus separate cold scene/runtime owner registration.
+- Rejected Alternatives: Blaming MapMagic alone was rejected because several broken contracts are first-party routes above MapMagic.
+- Scalability potential: Low/Mid/High/Ultra can scale sample cadence, cache resolution, seam detail, and visual masks, but must not change which route owns height truth.
+- Hardware Impact: No runtime change. Risk reduction target is fewer divergent terrain samples and fewer main-thread fallbacks on low-end i3/MX350.
+- Problem: Consumers such as nav, fluid, fauna IK, encounter, sonar/audio, vegetation holes, and geology seams consume different terrain derivatives with weak provenance.
+- Solution: Audit each consumer against source lines and classify breakage: route violation, cache/revision ambiguity, Unity bridge cost, or missing black-box proof.
+- Rejected Alternatives: narrow generation-only audit was rejected because user asked whether terrain is normal for whole project.
+- Scalability potential: Low uses cached R16 native height and visual-only seam masks. Middle uses bounded seam writeback. High/Ultra can use detail normals, larger masks, and richer scatter only if cache revision and owner route remain deterministic.
+- Hardware Impact: No runtime change. Report flags costs that can exceed 0.1 ms if they move from cold/slow tick to streaming churn.
+- Problem: MapMagic graph evidence differs from code availability: several strong custom generators exist in code, but sandbox graph only serializes three Hecton nodes and two of those appear disabled.
+- Solution: Treat MapMagic as authoring/bake source until production scene and graph export prove live runtime generation. Keep useful nodes, but move heavy erosion/anomaly/shelf generation out of hot gameplay.
+- Rejected Alternatives: Assuming all custom MapMagic nodes participate in production was rejected because exact graph search found only BiomeMatrix, HydraulicErosion, and TerrainSplatmap in sandbox asset.
+- Scalability potential: Low keeps baked height/splat payloads and cheap visual masks. Middle can stream precomputed chunk payloads. High/Ultra can run richer bake variants or async background jobs, but not synchronous MapMagic barriers on main route.
+- Hardware Impact: No runtime change. If heavy MapMagic erosion were accidentally enabled live, static risk is large: one million droplets plus TempJob queues and forced completion are incompatible with i3/MX350 frame budgets.
+- Problem: `GlobalWorldSampler` exposed continuous terrain quality contracts but returned full quality for cadence, expensive sampling, and overkill sampling.
+- Solution: Replaced stubs with finite/saturating continuous curves: low quality uses sparse cadence and nearest/coarse sampling; expensive sampling ramps after 0.30; overkill sampling ramps after 0.75. Mock raymarch now reads `Data.GlobalQualityWeight` inste...
+- Rejected Alternatives: Binary low/high branch rejected by GlobalQualityWeight doctrine. Full live rewrite rejected because this local defect is isolated and safe to fix without changing terrain authority.
+- Scalability potential: Low = one-frame-in-twelve sampling helpers, nearest height/SDF/mask, no overkill noise. Middle = blended expensive branches. High = near-full bilinear/trilinear/normals. Ultra = additional detail noise only near top quality.
+- Hardware Impact: Expected low-end i3/MX350 gain is fewer terrain sample ALU/memory reads in GlobalWorldSampler hot jobs. Exact microseconds not claimed without Unity profiler capture.
+- Problem: Terrain hole synchronizer used `TerrainData.SetHolesDelayLOD` but did not sync holes texture after delayed update.
+- Solution: Added `TerrainData.SyncTexture(TerrainData.HolesTextureName)` immediately after delayed holes write and added editor contract test. Unity docs require this delayed holes sync to update LOD and vegetation information.
+- Rejected Alternatives: Switching to non-delayed `SetHoles` rejected because it would move more Unity terrain work into runtime path. GPU-only holes rejected because current code owns managed bool[,] adapter to Unity Terrain.
+Source lines scanned 525; retained 45; overflow-important omitted 384.
+
+FILE AgentLogs\Rationale_TOKEN_USAGE_AUDIT.md bytes=12177 done=0 blockers=1 pendingHits=0 selected=45
+- ## Decision 9 - 2026-05-26 model-price forensics
+- Problem: User requested more exact model pricing, but local Codex JSONL does not expose invoice SKU, subscription handling, or priority tier, and several exact model labels lack public rate rows.
+- Solution: Attribute tokens to exact structural model labels, price labels with official standard rates, and isolate known-but-unpriced labels into explicit bounds.
+- Rejected Alternatives: Treating every session as gpt-5.5 or every session as gpt-5.3-codex was rejected because it hides evidence boundary.
+- Scalability potential: Low/Middle/High/Ultra runtime tiers unaffected; this is local telemetry accounting.
+- Hardware Impact: 0 us runtime gain.
+- ## Decision 10 - 2026-05-26 documentation shape
+- Problem: Token docs risk becoming scattered across dated reports, ledger, and chat-only claims.
+- Solution: Keep `Docs/TOKEN_USAGE_LEDGER.md` as stable summary and current dated `Docs/Reports/TOKEN_USAGE_AUDIT_ .md/.json` pair as full forensic artifact.
+- Rejected Alternatives: Creating another standalone model-only report was rejected as documentation sprawl.
+- Scalability potential: Future audits have one stable entry point and one dated evidence artifact.
+- ## Decision 11 - 2026-05-26 dated artifact correctness
+- Problem: token audit script had fixed 2026-05-25 report name even after user requested current recount.
+- Solution: Generate dated token reports from current Samara date and keep stable ledger as pointer.
+- Rejected Alternatives: Overwriting old dated artifact was rejected because it makes historical reports lie.
+- Scalability potential: Low/Middle/High/Ultra runtime tiers unaffected; this is evidence hygiene.
+- ## Decision 12 - 2026-05-26 docs gate closure
+- Problem: fresh Markdown outputs were valid content but failed repository UTF-8-SIG policy.
+- Solution: Write generated Markdown token surfaces with UTF-8-SIG and convert two current outputs.
+- Rejected Alternatives: Ignoring `VerifyDocStructure.py` was rejected because root docs require green structure evidence.
+- Scalability potential: Runtime tiers unaffected; future agents get deterministic documentation surfaces.
+- ## Decision 13 - 2026-05-26 stable docs refresh
+- Problem: Current totals existed in reports, but stable entry points still cited 2026-05-23/2026-05-25 token boundaries.
+- Solution: Update current root, reports, architecture, global map, and root reference docs with exact current counters.
+- Rejected Alternatives: Editing archived dated reports was rejected because archives are historical evidence snapshots.
+- Scalability potential: Prevents future cleanup agents from using stale scale assumptions.
+- ## Decision 14 - 2026-05-26 archive superseded token report
+- Problem: 2026-05-25 token audit remained in active `Docs/Reports` after 2026-05-26 recount.
+- Solution: Move old dated pair into `Docs/_Archive/TokenUsage_2026-05-25/` and rerun documentation gates.
+- Rejected Alternatives: Keeping stale dated totals in active evidence storage was rejected. Rewriting old totals was rejected because that would falsify historical snapshot.
+- Scalability potential: Future agents read one current token report and one stable ledger.
+- ## Decision 15 - 2026-05-26 deep token-stat expansion
+- Problem: User requested heavier token economics: day/week/chat stats, token density per code character/line, and cost ratios tied to current model prices.
+- Solution: Extend generator to count code/doc characters and bytes, add per-period cost curves, add CWD/source/CLI/plan usage buckets, and keep API-equivalent price bounds separate from invoice proof.
+- Rejected Alternatives: Manual spreadsheet math and one-off Markdown tables were rejected because they rot on next JSONL change.
+- ## Decision 16 - 2026-05-26 evidence boundary
+- Problem: Current official pricing docs include standard, batch/flex, priority, specialized Codex, prompt caching, and reasoning-token billing rules, but local telemetry still lacks invoice SKU.
+- Solution: Cite official pricing-source URLs in report and label all dollar values as API-equivalent estimates; reasoning tokens remain output subcounter, cached input is priced separately and not double-counted.
+- Rejected Alternatives: Calling result "actual spend" was rejected because local JSONL lacks invoice IDs, enterprise discounts, and subscription billing route.
+- Scalability potential: Future audits can swap rate rows without changing telemetry accounting.
+- ## Decision 17 - 2026-05-26 active-density scan boundary
+- Problem: Character density scan over archived/deprecated documentation and generated JSON reports exceeded audit wall-time budget without improving current code-density truth.
+- Solution: Prune `Archive`, `_Archive`, and `DEPRECATED` directories from active density scans and keep Markdown/TXT/JSON outside `all_repo_source_broad`; active docs still have their own `docs_markdown_text` scope.
+- Rejected Alternatives: Counting historical archives as current code density was rejected because it makes token-per-code metrics meaningless.
+- Scalability potential: Future audits retain current active-code economics without dragging stale evidence bundles into code ratios.
+Source lines scanned 142; retained 45; overflow-important omitted 41.
+
+FILE AgentLogs\Rationale_UNKNOWN.md bytes=153324 done=0 blockers=45 pendingHits=36 selected=45
+- # Rationale UNKNOWN - 13XX NativeArray / Native Ownership Audit
+- Scope: documentation/reporting audit, no runtime source edits.
+- ## Decision 01 - Treat NativeArray As Ownership Problem, Not Keyword Problem
+- Problem: User asked whether `NativeArray` work was actually fixed. raw text count of `NativeArray` is misleading because job structs, method-local vault views, editor validators, and core memory authority legitimately use `NativeArray`.
+- Solution: Classify each finding by ownership shape: persistent runtime alias, method-local vault view, job parameter, core authority allocation, raw pointer export, black-box dump route, or residual managed crash IO.
+- Rejected Alternatives: Banning every `NativeArray` token would falsely reject Burst/job code and DataVault read/write views. Trusting agent `STATIC_PASS` labels would miss current source conflicts and residual debt.
+- Scalability potential: Low devices benefit from DataVault-owned, bounded, cache-local buffers; high/ultra devices can still spend saved CPU on visual overkill without changing gameplay truth ownership.
+- Hardware Impact: No runtime code changed. audit prevents false cleanup claims that would keep stale native aliases alive on i3/MX350-class hardware.
+- ## Decision 02 - Promote Chat Audit Into Stable Reports
+- Problem: previous answer existed in chat and `LOG_UNKNOWN.md`, but user explicitly requested docs/reports. Integrator-facing evidence must live under `Docs/Reports`.
+- Solution: Add markdown report for human review and JSON summary for exact counters, verdicts, and residual classes.
+- Rejected Alternatives: Only appending `LOG_UNKNOWN.md` is insufficient because reports are project evidence surface. Editing architectural policy docs was rejected because this is evidence, not new policy.
+- Scalability potential: Stable reports let future agents burn down real residuals instead of re-auditing same surface.
+- Hardware Impact: No runtime impact. It reduces integration churn and wrong work on native memory routes.
+- ## Decision 03 - Do Not Run Fresh Heavy Roslyn Scan Under CPU Load
+- Problem: latest full ledger was not perfectly fresh because source files changed after `05/25/2026 21:31:29`. fresh scan would improve precision, but CPU sample was 78.8%.
+- Solution: Mark ledger freshness caveat explicitly and defer heavy scan until CPU/dotnet guard allows it.
+- Rejected Alternatives: Running heavy scanner under current load violates project build/load guard. Pretending ledger is fully fresh would be false.
+- Scalability potential: Keeps concurrent agent work from fighting over CPU while preserving clear rerun task.
+- Hardware Impact: Avoids adding transient load while other agents are active. No runtime change.
+- ## Decision 04 - Update Stale 13XX Facts Instead Of Preserving Earlier Snapshot
+- Problem: New reports landed after first audit. Keeping old 1305 claim would be false because `TerrainChunkPagerRuntime` raw pointer fields were removed by patch pass 10. Keeping old 1313 claim would also be false because active monolith blob now static-vali...
+- Solution: Reparse newer artifacts and update both markdown and JSON audit reports. This decision was superseded by later `2026-05-25 23:16:10` full ledger: `VAULT_NATIVE_ALIAS_LEDGER_X_000.json` with `2420` scanned files, `1784` persistent candidates, `364`...
+- Rejected Alternatives: Reporting only old snapshot would be stale. At that checkpoint, claiming 1305 fixed would have been wrong because `WorldChunkResidencyManager` still owned direct native containers and `TerrainChunkPagerRuntime` still had runtime-long ...
+- Scalability potential: Correct residual ownership prevents agents from burning time on already-removed pointer fields and redirects work toward remaining residency owner route.
+- Hardware Impact: No runtime code changed. report reduces integration risk on low-end devices by pointing to actual remaining native ownership pressure.
+- ## Decision 05 - Keep Scripts Map Split Across Markdown, JSON, And TSV
+- Problem: user requested full `Scripts` map. folder contains 326 directories, 5579 files, and 2420 C# files; dumping every file into chat or one giant prose section would be unreadable.
+- Solution: Write `Docs/Reports/SCRIPTS_FOLDER_MAP_UNKNOWN.md` for human directory map, `Docs/Reports/SCRIPTS_FOLDER_MAP_UNKNOWN.json` for structured consumers, and `Docs/Reports/SCRIPTS_FILE_INDEX_UNKNOWN.tsv` for every-file grep/spreadsheet use.
+- Rejected Alternatives: Chat-only output loses evidence trail. Markdown-only every-file listing would bury architectural map under thousands of rows.
+- Scalability potential: Future agents can identify domain size, asmdef boundaries, recent edits, and large files before touching architecture.
+- Hardware Impact: No runtime code changed. map reduces accidental cross-domain edits under concurrent agent load.
+- ## Decision 06 - Measure Burndown With Comparable Full Ledgers Only
+- Problem: user asked how fast agents are removing forbidden persistent and forbidden MonoBehaviour native aliases. Some artifacts are scoped and can show zero because they scan one file or one domain, so comparing them against full-project ledgers would prod...
+- Solution: Use only full-project ledgers with comparable scanned-file counts and zero parse failures. latest valid full ledger is `VAULT_NATIVE_ALIAS_LEDGER_X_000.json` at `2026-05-25 23:16:10`, with `2420` scanned files, `1784` forbidden persistent candidat...
+- Rejected Alternatives: Treating every `NativeArray` token as debt would destroy valid Burst/job paths. Treating scoped zero reports as global proof would hide remaining owners like `HectonVoxelEngine.cs`, `VegetationMemoryPool.cs`, and `PlayerInventory.cs`.
+- Scalability potential: Correct classification keeps low-end devices protected from persistent alias and MonoBehaviour lifetime bugs while preserving high-end Burst throughput from legitimate transient native views.
+- Hardware Impact: No runtime code changed. report prevents wrong cleanup work that would either leave stale aliases alive or remove valid data-local job memory.
+- ## Decision 07 - Reject Stale X_000 Ledger And Run Fresh Current Ledger
+- Problem: `Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_X_000.json` was updated at `2026-05-26 00:47:20` and reported `2138` persistent / `581` MonoBehaviour candidates, but representative source checks contradicted it. It reported old pointer/native fields in `Te...
+- Solution: Under CPU/dotnet guard (`CPU=16.5%`, no compiler/dotnet process shown), run prebuilt `Tools/VaultNativeAliasRoslynAudit/bin/Debug/net10.0/VaultNativeAliasRoslynAudit.exe` without rebuilding. New artifact: `Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_UN...
+- Rejected Alternatives: Accepting stale `X_000` result would falsely report massive regression. Ignoring it without rerun would leave report unprovable. Running rebuild was unnecessary and outside requested check.
+- Scalability potential: Current proof keeps cleanup pressure on real residual owners while avoiding rollback panic over invalid artifact.
+- Hardware Impact: No runtime code changed. Offline audit cost only; no build or player execution.
+- ## Decision 08 - Fix Build From Compiler Evidence, Not From Search Guesswork
+Source lines scanned 1711; retained 45; overflow-important omitted 774.
+
+FILE AgentLogs\Rationale_VocalRuntimeContractsMemoryAuditor.md bytes=904 done=0 blockers=0 pendingHits=0 selected=5
+- Problem: Audit must judge audio synthesis runtime against hot-path zero-GC, DataVault, and ARM64 DTO laws without editing source.
+- Solution: Read governing mandates, then line-number scan two assigned files for managed allocation sites, native aliases, DataVault lock scope, fail-closed handling, numeric guards, and DTO layout.
+- Rejected Alternatives: Unity profiler/build was rejected because task is static read-only audit and user forbade edits; broad repo scan was rejected because task scope named exactly two files.
+- Scalability potential: Low/Middle/High/Ultra impact is classification-only here. Findings identify sites that would block toaster audio stability or ultra-tier DSP expansion if left unresolved.
+- Hardware Impact: Static audit only; no measured i3/MX350 runtime gain claimed. Expected prevention value is avoiding audio-thread stalls/GC and ARM64 misalignment before runtime proof.
+Source lines scanned 5; retained 5; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_X_000.md bytes=2153 done=0 blockers=1 pendingHits=0 selected=10
+- # Rationale_X_000
+- Status: BUILD CLEAN / SARGASSUM GLOBAL DRAG DIRECT NATIVEARRAY CUT VERIFIED / PROJECT-WIDE PURGE INCOMPLETE
+- ## Decision 091 - Sargassum Global Drag Final Direct NativeArray Cut
+- Problem: `SargassumGlobalDragManager` still retained three direct MonoBehaviour `NativeArray` fields: density build sources, scavenger BRG matrices, and BRG metadata. These were last direct `NativeArray` findings in that component and could pin stale unmana...
+- Solution: Added WorldSargassum-owned BufferIDs 74403..74405 and replaced those fields with `VaultGenerationHandle `. Density source staging acquires writer lock, schedules `BuildDensityContributionJob` with resolved NativeArray view, and releases lock only ...
+- Rejected Alternatives: Keeping retained arrays for BRG convenience was rejected because renderer staging still survives phase boundaries. Managed arrays were rejected for density job and `GraphicsBufferUploadUtility.UploadNativeArray` route. Passing handles...
+- Scalability potential: Low/Middle/High/Ultra keep same continuous quality/capacity behavior. Low can fail closed if vault views cannot be locked. High/Ultra can spend renderer budget on denser scavenger presentation without changing DTO layout or authority.
+- Hardware Impact: Removes 3 retained native aliases from world MonoBehaviour. Static payload remains fixed DataVault storage: density sources `N * 16`, scavenger matrices `N * sizeof(Matrix4x4)`, metadata one Unity `MetadataValue` row. Latest build: 0 warnin...
+- ## Residual Truth
+- Project-wide purge is not complete. latest residual map still lists 465 MonoBehaviour candidates across 25 files. `SargassumGlobalDragManager.cs` is no longer one of those groups.
+Source lines scanned 15; retained 10; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_X_013.md bytes=4138 done=0 blockers=1 pendingHits=0 selected=35
+- # X_013 Rationale
+- ## Decision 001
+- Problem: assignment requires byte-perfect memory layout facts while forbidding C# source mutation.
+- Solution: Use static source extraction plus compiler-backed layout probes only if existing project references allow it without modifying source. Primary evidence remains file path and line number.
+- Rejected Alternatives: Unity Editor mutation scripts were rejected because they create source/assets outside read-only mission. Documentation-only inference was rejected because it cannot prove field offsets.
+- Scalability potential: Low/Middle/High/Ultra are unaffected by this audit; output protects all tiers from stale pointer and alignment errors in future memory work.
+- Hardware Impact: Static audit saves zero runtime microseconds directly. It prevents future low-end i3/MX350 stalls/crashes caused by misaligned DTOs or relocation races.
+- ## Decision 002
+- Problem: Many mandates apply broadly; this task only audits memory core and synchronization.
+- Solution: Load six mandates directly governing runtime struct layout, native memory, DataVault ownership, zero-GC, postmortem telemetry, and global registry/data authority.
+- Rejected Alternatives: Reading unrelated AI/render/physics mandates was rejected as prompt contamination and wasted context.
+- Scalability potential: Narrow mandate set keeps report evidence focused on memory sovereignty and ARM64 safety across device tiers.
+- Hardware Impact: No runtime gain; reduces architecture ambiguity before future allocator/defragmenter edits.
+- ## Decision 003
+- Problem: mission is read-only but AGENTS requires progress and final logs.
+- Solution: Write only task/status/rationale/report/log documentation under `Docs`; do not edit any `.cs` source.
+- Rejected Alternatives: Skipping disk logs would violate batch protocol. Editing source to add probes was rejected.
+- Scalability potential: Documentation creates stable handoff for future agents without changing gameplay truth or runtime paths.
+- ## Decision 004
+- Problem: broad documentation search returned archived batch logs, which AGENTS forbids as fresh context.
+- Solution: Discard all archive output and use only live source, current prompt, current mandates, and active domain file as evidence.
+- Rejected Alternatives: Mining archive logs for prior GlobalDataVault claims was rejected because it could import stale or unrelated agent state.
+- Scalability potential: Current source-only evidence prevents obsolete memory assumptions from entering future Low/Middle/High/Ultra implementations.
+- ## Decision 005
+- Problem: `TryAcquireWriteLock` locks block by `Reserved0`/`Reserved1`, while `TryLockBuffer` also sets `_activeLocks`; two routes are not equivalent.
+- Solution: Record lock semantics separately: writer locks use `ActiveWriterSystemID + Reserved0 + Reserved1`; external job locks use `Reserved0 + Reserved1 + _activeLocks`.
+- Rejected Alternatives: Treating `ActiveBurstLockMask` as universal lock truth was rejected because `TryAcquireWriteLock` never calls `SetActiveLockBit`.
+- Scalability potential: Low devices avoid stale-pointer crashes; high and ultra devices can only increase visual/memory pressure if lock truth is exact.
+- Hardware Impact: No immediate us/frame gain; prevents future hard stalls/crashes from unsafe relocation under job pressure.
+- ## Decision 006
+- Problem: Live compaction checks active locks, but arena growth relocation uses `H8Memory.ReallocateRaw` and can move whole arena from allocation paths.
+- Solution: Report arena growth as separate stale-pointer risk vector, not as part of bounded defrag slice.
+- Rejected Alternatives: Limiting audit to `FrostTickDefrag` was rejected because stale pointers do not care whether relocation came from defrag or growth.
+- Scalability potential: Low tier is most exposed because memory pressure can force growth/relocation; high/ultra tiers may hit it under visual-overkill buffer demand.
+- Hardware Impact: No direct runtime gain; identifies route that can invalidate Burst/job pointers on i3/MX350 under memory pressure.
+Source lines scanned 49; retained 35; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_X_014.md bytes=6232 done=0 blockers=0 pendingHits=3 selected=44
+- # Rationale_X_014
+- Status: COMPLETE / PENDING VERIFICATION
+- ## R0 - Scope Lock
+- Problem: X_014 is read-only netcode/save scout, but project workflow demands status/rationale/report artifacts.
+- Solution: Write only documentation/report artifacts under `Docs/Tasks`, `Docs/AgentLogs`, and `Docs/Reports`. Do not modify `.cs`, `.asmdef`, `.prefab`, `.unity`, `.asset`, package, or project settings files.
+- Rejected Alternatives: Editing C# to add instrumentation is outside prompt. Running broad refactors or source fixes would violate READ-ONLY ARCHAEOLOGY.
+- Scalability potential: Low/Middle/High/Ultra audit output must separate gameplay truth from presentation lanes so future implementations can scale visuals through `GlobalQualityWeight` without changing hash authority.
+- Hardware Impact: Static audit has no runtime cost. Expected runtime savings are report-only until implementation: eliminating cosmetic hash inputs prevents false rollback/reconcile work on i3/MX350.
+- ## R1 - Evidence Policy
+- Problem: Existing docs can be stale, and current Docs index already labels netcode as placeholder-grade pending proof.
+- Solution: Treat current source under `Assets/_Project` as primary evidence. Use docs only as contract context. Every report claim must include file path and line numbers.
+- Rejected Alternatives: Trusting `Docs/ARCHITECTURE/COOP_MERKLE_STATE_DELTA_PROTOCOL.md` as implementation proof. Searching archives as active source.
+- Scalability potential: Low tier needs compact hash/state packets; Ultra tier may carry richer telemetry, but not in gameplay truth hash unless source proves it.
+- Hardware Impact: Prevents future agents from adding broad full-state hashing or managed serialization in hot paths, likely >0.1 ms risk on MX350 if implemented badly.
+- ## R2 - Merkle Boundary Separation
+- Problem: prompt asks for Merkle proof across network rollback and save/persistence, but source contains two different Merkle systems.
+- Solution: Treat `RollbackNetcodeContracts.cs` as runtime network Merkle authority and `SaveStateMerkleTree.cs` / `SaveMasterHashV10.cs` / `SaveBinaryStorage.cs` as persistence hash authority. Report them separately.
+- Rejected Alternatives: Merging save Merkle facts into rollback root proof would create false design. `HectonNetworkManager.cs` does not call save Merkle code.
+- Scalability potential: Low tier can use compact network leaves without touching persistent save identity. Middle/High/Ultra can add richer save telemetry or WAL behavior, but not by changing network hash authority.
+- Hardware Impact: Separation prevents future agents from hashing 4096 save leaves in per-frame network lane. On i3/MX350 that would spend frame budget on persistence proof instead of visible state.
+- ## R3 - Quality-Dependent Hash Risk
+- Problem: Network Merkle root currently depends on `QualityLeafBudget`, and `QualityLeafBudget` depends on `GlobalQualityWeight`.
+- Solution: Mark this as correctness risk in report. `GlobalQualityWeight` may control cadence/capacity, but it must not change authority route or set of gameplay truth leaves used for cross-peer frame hash.
+- Rejected Alternatives: Calling optional quality leaves harmless. They include inventory, durability, quest, and predator chosen-state buffers, which are gameplay state names, not presentation buffers.
+- Scalability potential: Low/Middle/High/Ultra should keep identical authoritative root inputs. Quality can scale branch probe frequency, packet redundancy, telemetry, and presentation smoothing after hash proof.
+- Hardware Impact: Avoids false desync/rollback work across heterogeneous hardware. Measured saved time: 0 us in this read-only pass; expected savings require implementation/profiler proof.
+- ## R4 - AUP Representation Finding
+- Problem: Entity AUP snapshot storage uses `RollbackAup48`, while network leaf descriptor/hash byte length uses canonical `double3` stride.
+- Solution: Report split as deliberate-looking canonical absolute-position hashing with future offset hazard. Current descriptors set `ByteOffset = 0`, so no active nonzero-offset defect was proven.
+- Rejected Alternatives: Declaring it broken outright. hash path converts each `RollbackAup48` to absolute `double3` before mixing, matching AUP determinism intent.
+- Scalability potential: Low tier can hash compact canonical AUPs. Ultra tier can carry additional presentation/local-grid debug state out of authoritative hash.
+- Hardware Impact: Canonical `double3` hashing avoids including padding/grid-local representation noise. Measured saved time: 0 us in this read-only pass.
+- ## R5 - Cosmetic State Proof
+- Problem: prompt requires proof that cosmetic variables do not contaminate frame hashes.
+- Solution: For network rollback, prove visual state/history/telemetry/audio/tuning are not registered as Merkle leaf descriptors. For save Merkle, report opposite nuance: `LeafFlagCosmetic` is delta-prune flag, not root-hash exclusion.
+- Rejected Alternatives: Saying "cosmetic excluded" globally. Save Merkle leaf hashing does not skip `LeafFlagCosmetic`.
+- Scalability potential: Low tier may prune cosmetic delta payload bytes; High/Ultra may retain more cosmetic deltas. Persistent root identity still changes if cosmetic leaves are descriptors.
+- Hardware Impact: Prevents future false claims and prevents mismatched save roots from being misdiagnosed as runtime rollback defects.
+- ## R6 - Rollback Execution Reality
+- Problem: code names headless resimulation command, but audited source does not run dispatcher replay loop inside rollback.
+- Solution: Report exact observed flow: mismatch detection, snapshot restore, remote input correction, `MockTickCommand` emission, audio suppression, resim cost estimate, and visual correction.
+- Rejected Alternatives: Inferring full rollback replay from DTO names. No audited line executes multi-frame simulation replay loop.
+- Scalability potential: Low tier can still use cheap snapshot restore and visual correction. Middle/High/Ultra need explicit replay owner if future agents implement true rollback.
+- Hardware Impact: No runtime change. report prevents future agents from assuming desync repair is already operational.
+Source lines scanned 87; retained 44; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_X_015.md bytes=6177 done=0 blockers=3 pendingHits=0 selected=45
+- # Rationale_X_015
+- ## Phase 0 Intake
+- Problem: X_015 must audit voxel paging/RLE/pooling without mutating C# source.
+- Solution: Use CLI extraction of X_015 XML block, read task-relevant mandates, then perform static source and byte-layout audit only.
+- Rejected Alternatives: Editing or instrumenting C# was rejected by assignment constraint. Relying on architecture docs was rejected because active source lines are required.
+- Scalability potential: Low/Middle/High/Ultra report will separate fixed save-format truth from optional quality-scaled runtime presentation; GlobalQualityWeight must not alter DTO layout or save identity.
+- Hardware Impact: Static audit has no runtime cost. Findings target prevention of sector overflow and native buffer leaks on i3/MX350 class devices.
+- ## Mandates Selected
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- ## Decision 01 - Pager Envelope Boundary
+- Problem: Future agents can confuse `H8BinaryWorldPager` sector payload capacity with voxel delta RLE run capacity.
+- Solution: Split report into outer pager envelope, VXRL pager payload, and native snapshot record formats. hard outer payload cap is 262080 bytes; VXRL has 32-byte header inside that cap.
+- Rejected Alternatives: Treating all RLE as one format was rejected because `H8BinaryWorldPager.TryCompressRle` is byte RLE over arbitrary page payload, while `VoxelDeltaRleRunDTO` is voxel run stream.
+- Scalability potential: Low uses raw fallback and hard page cap; Middle uses sparse RLE under cap; High uses LZ4/raw selection; Ultra can use saved cycles for denser visuals but cannot alter save payload identity.
+- Hardware Impact: Prevents failed page writes on i3/MX350 by enforcing cap before disk queue. Estimated avoided retry path: 400 us per bad page write.
+- ## Decision 02 - Directory Slot Risk
+- Problem: DirectorySlotCount is 252 but ResolveDirectorySlot uses bitmasking with 251.
+- Solution: Report exact collision risk as metadata-route defect: only 128 values are reachable. No code changed due read-only assignment.
+- Rejected Alternatives: Calling it harmless was rejected because directory entries are proof artifact for sector hash to sector offset, even though body offset path uses 8192-sector mask.
+- Scalability potential: Low through Ultra all need same directory truth; GlobalQualityWeight must not alter save lookup route.
+- Hardware Impact: Fixing later would reduce unnecessary lookup ambiguity and recovery work on low-end storage. Read-only audit saves 0 us at runtime.
+- ## Decision 03 - Native Snapshot Dense-Equivalent Limit
+- Problem: Native snapshot code has dense fallback per chunk, but scratch capacity only budgets 256 dense-equivalent records plus 256 uniform records.
+- Solution: Report exact scratch formula: 16 + 256 * 135208 + 256 * 44 = 34624528 bytes, with risk when dense-equivalent records exceed 256.
+- Rejected Alternatives: Reporting only `SaveBinaryStorage.RawPayloadCapacityBytes` was rejected because actual `VoxelDeltaProcessor` borrowed scratch capacity is lower than 64 MiB.
+- Scalability potential: Low should split or defer dense-equivalent records; Middle should compact before save; High/Ultra can spend cycles on better pre-save densification, not on larger DTO truth.
+- Hardware Impact: Avoids failed full snapshot copy attempts. Estimated avoided low-end copy failure path: 2500 us per saturated snapshot attempt.
+- ## Decision 04 - Source Integrity
+- Problem: Assignment prohibits C# edits and asks for structural audit only.
+- Solution: Generated JSON, Markdown, status, rationale, and log files only. Build skipped because no source/project metadata changed.
+- Rejected Alternatives: Adding probes or layout asserts into C# was rejected because it violates non-destructive scout scope.
+- Scalability potential: Report is zero-runtime-cost and can guide later Low/Middle/High/Ultra implementations.
+- Hardware Impact: Runtime impact is 0 us. Documentation prevents future allocation and overflow defects before they hit low-end devices.
+- ## APEX Decision 05 - RLE Layer Separation
+- Problem: previous report could be read as if 3-byte pager byte-RLE stream and 8-byte voxel deformation run DTO were one format.
+- Solution: APEX addendum separates outer page storage, inner VXRL header, and deformation run records. It also records that VXRL raw/LZ4 flags are telemetry counters, not persisted header fields.
+- Rejected Alternatives: Describing "RLE packet" as one structure was rejected because it hides pager's optional byte-RLE layer and VXRL LZ4/raw ambiguity.
+- Scalability potential: Low/Middle/High/Ultra can tune compression effort, but must not change 32-byte header or 8-byte run DTO stride.
+- Hardware Impact: Prevents false sector budgeting on i3/MX350 class devices. Estimated avoided failed write path: 400-900 us per oversized sector attempt.
+- ## APEX Decision 06 - Compaction Race Honesty
+- Problem: compaction flow has write-version guard, but update order allows compaction copy jobs and later carve commits to overlap theoretically.
+- Solution: Report both facts: version gate normally prevents dirty overlay removal after later writes, but `_chunkWriteVersions.TrySet` failure can weaken that gate and create theoretical deformation-loss path.
+- Rejected Alternatives: Declaring path race-free was rejected because `Tick` schedules compaction and `LateFrameTick` commits carve writes without explicit dependency on compaction copy job.
+- Scalability potential: Low devices need fewer overlapping jobs; Middle/High/Ultra can use more aggressive compaction only with explicit job dependencies or version reservation.
+- Hardware Impact: Avoids silent loss under pressure. Fixing later should cost near 0 us in normal frames if implemented as dependency/version protocol rather than blocking completes.
+Source lines scanned 70; retained 45; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_X_016.md bytes=6649 done=0 blockers=0 pendingHits=0 selected=45
+- # Rationale X_016
+- ## Decision 001 - Active Batch Path
+- Problem: User text requested root `current_batch.md`, but no such file exists at `C:\hades\current_batch.md` or `C:\hades\Hecton8\current_batch.md`.
+- Solution: Used `rg --files` and selected active authority file `C:\hades\Hecton8\Docs\Tasks\CURRENT_BATCH.md`, then extracted only ` ` block.
+- Rejected Alternatives: Reading archive batch files would import stale neighboring assignments; guessing from user prose would violate strict parsing.
+- Scalability potential: Low/Middle/High/Ultra unaffected; this is audit routing.
+- Hardware Impact: 0 us runtime gain on i3/MX350; prevents wrong-domain edits.
+- ## Decision 002 - Read-Only Boundary
+- Problem: Assignment demands detailed evidence but forbids C# source mutation.
+- Solution: Audit source files and write only report/status/log artifacts under `Docs`.
+- Rejected Alternatives: Adding alignment tests or instrumentation to C# would improve proof but violates task constraints.
+- Scalability potential: Low gets risk map for fixed pools; Middle/High/Ultra get future capacity and DSP route evidence without current source churn.
+- Hardware Impact: 0 us runtime change; avoids compile risk during parallel batch.
+- ## Decision 003 - Mandate Set
+- Problem: Audio audit spans DSP thread safety, occlusion, DTO layout, zero-GC, native memory, signal routing, and crash telemetry.
+- Solution: Used eight mandates: DSP SPSC, acoustic occlusion, HRTF/spatialization, ARM64 struct layout, zero-GC, native memory/jobs, signal segregation, and postmortem telemetry.
+- Rejected Alternatives: Reading unrelated physics/voxel/AI mandates would dilute audit and risk false dependency assumptions.
+- Scalability potential: Low requires bounded source counts and cheap occlusion fakes; Middle/High/Ultra can consume saved budget for richer reverb/HRTF without changing gameplay truth.
+- Hardware Impact: Static audit only; estimated future savings depend on identified violations, not claimed here.
+- ## Decision 004 - Native Ring Descriptor Alignment Finding
+- Problem: Native bridge validation requires 8-byte alignment for `WriteIndex`, but `WriteIndex` is assigned from `int*` shared-state slot at slot 1.
+- Solution: Recorded this as critical: `sharedStatePtr + 1` is base+4 bytes, so normally 8-aligned `NativeArray ` base makes `WriteIndex` fail 8-byte alignment check.
+- Rejected Alternatives: Treating descriptor validation as harmless because native code may ignore it; source shows descriptor rejection clears registration before native registration.
+- Scalability potential: Low/Middle/High/Ultra all require native audio bridge to register before quality scaling matters.
+- Hardware Impact: 0 us measured by this audit; likely impact is functional registration failure, not small frame-time delta.
+- ## Decision 005 - Portal Path Synchronous Execute Classification
+- Problem: Portal pathfinding uses `AcousticPathJob`, but call site invokes `pathJob.Execute()` inside presentation/hydration flow.
+- Solution: Classified as bounded synchronous cost: 30 nodes, 60 edges, max 30 expansions, quality-gated and cached, but still inline.
+- Rejected Alternatives: Marking it as Burst-scheduled job work; call site is direct `Execute()`.
+- Scalability potential: Low can disable via `GlobalQualityWeight` gate; Middle/High/Ultra can afford richer portal paths if moved out of immediate play path later.
+- Hardware Impact: 0 us saved by audit; future savings depend on real profiler data for 30-node/60-edge inline pass.
+- ## Decision 006 - Virtual Voice Budget Truth
+- Problem: system has both virtual voice capacity and physical AudioSource hydration capacity.
+- Solution: Reported them separately: 1000 virtual requests, 64 max physical voices, 12 low-tier physical voices, 32 default world AudioSources, 8 default 2D sources.
+- Rejected Alternatives: Reporting only AudioSource pool size would hide DataVault virtual sorting stage; reporting only 1000 voices would hide Unity source hydration limits.
+- Scalability potential: Low maps to 12 hydrated physical voices; Middle scales through continuous `GlobalQualityWeight`; High/Ultra reach 64 physical selections while retaining 1000-request sorting capacity.
+- Hardware Impact: 0 us measured by audit; prevents future agents from overhydrating AudioSources on i3/MX350.
+- ## Decision 007 - DSP Path Classification
+- Problem: Mandate expects unmanaged DSP proof, but actual player-critical path uses managed producer thread plus SPSC ring/native bridge, while world voices use pooled Unity `AudioSource`.
+- Solution: Reported both facts without flattening them: HullStress kernel is raw-pointer Burst; PlayerCritical renderer is producer-thread/SPSC; SpatialAudioManager is AudioSource presentation for virtual selections.
+- Rejected Alternatives: Calling whole system `IAudioOutputJob` based on intent; no `IAudioOutputJob` implementation was found in audited first-party files.
+- Scalability potential: Low gets reduced granular voice count and SDF taps; Middle/High/Ultra can buy richer reverb/binaural/granular content if bridge correctness is fixed.
+- Hardware Impact: 0 us measured by audit; no code changed.
+- ## Decision 008 - Padding Hygiene
+- Problem: Several explicit-layout DTOs are size-aligned but leave unnamed bytes between last declared field and explicit struct size.
+Source lines scanned 73; retained 45; overflow-important omitted 10.
+
+FILE AgentLogs\Rationale_X_017.md bytes=3681 done=0 blockers=0 pendingHits=0 selected=26
+- # X_017 Rationale
+- Problem: Audit scope requires exact timing, EWMA, and quality CBuffer truth without touching C# source.
+- Solution: Static source extraction with line-number evidence, mandate cross-check, and structured JSON/Markdown reports only.
+- Rejected Alternatives: Editing instrumentation into C# would violate READ-ONLY ARCHAEOLOGY. Running speculative runtime probes would exceed requested Phase 0 source audit.
+- Scalability potential: Low/MX350 requires cadence and quality math to support smooth degradation; middle/high/ultra require continuous GlobalQualityWeight rather than binary jumps.
+- Hardware Impact: Static audit has no runtime impact. Expected downstream benefit is avoiding unbounded dispatch and GPU upload churn on i3/MX350.
+- Problem: Byte-perfect layout claims can be wrong if based on intuition.
+- Solution: Extract struct definitions, use declared StructLayout/field ordering where present, and separate static source confidence from runtime UnsafeUtility.SizeOf proof.
+- Rejected Alternatives: Claiming compiler sizes without compile/runtime layout probe is false precision.
+- Scalability potential: Stable 16-byte lanes protect low-tier GPU uploads and permit richer high-tier visual payloads without changing DTO identity.
+- Hardware Impact: Prevents shader CBuffer misalignment stalls/faults; measured gain absent until runtime validation.
+- Problem: prompt requests memory EWMA, but inspected source exposes FPS EWMA, SHI EWMA, rolling jitter sigma, instantaneous VRAM pressure, and static hardware memory constraints.
+- Solution: Report absence as finding instead of inventing memory EWMA path. Evidence points to HomeostasisBrain.ScalabilityDictator.cs:540-556 and 1474-1523.
+- Rejected Alternatives: Treating VRAM pressure sampling as EWMA would be false. Treating hardware constraint pressure as runtime memory EWMA would be false.
+- Scalability potential: Low tier benefits from explicit constraint ceiling; middle/high/ultra keep continuous quality scaling without changing DTO schema.
+- Hardware Impact: No direct runtime change. Downstream fix, if needed, should cost under 0.1 ms and avoid allocations by using existing NativeArray metrics.
+- Problem: GlobalQualityWeight GPU route is split between shader global floats and downstream DTO/CBuffers.
+- Solution: Separate direct scalar publication via Shader.SetGlobalFloat from derived CBuffer payloads such as EnvironmentLightingDTO and MathLodConfigDTO.
+- Rejected Alternatives: Claiming GlobalQualityWeight is itself always CBuffer-backed would mislead render agents and violate descriptor-binding reality checks.
+- Scalability potential: Low tier can skip tiny shader updates through epsilon gating; ultra tier can consume richer CBuffer DTOs without changing authoritative scalar.
+- Hardware Impact: Avoids unnecessary CBuffer churn on i3/MX350; exact microsecond savings require profiler capture and were not measured in this read-only pass.
+- Problem: Tick drift risks differ by cadence lane and cannot be collapsed into one scheduler story.
+- Solution: Document each lane independently: fixed drops backlog after 3 substeps, fast/slow/cold clamp leftovers, frost emits one tick, GameTickManager slow resets accumulator.
+- Rejected Alternatives: Calling all accumulators drift-safe would hide deliberate backlog loss and cadence drift under stalls.
+- Scalability potential: Low tier uses bounded work to survive stalls; middle/high/ultra can spend saved frame time on visual systems through continuous quality budgets.
+- Hardware Impact: Static audit only. high-risk runtime wall is forced PostSimulation job completion; mitigation would need profiler-backed job window ownership, not speculation.
+Source lines scanned 31; retained 26; overflow-important omitted 0.
+
+FILE AgentLogs\Rationale_X_018.md bytes=4580 done=0 blockers=0 pendingHits=0 selected=43
+- # X_018 Rationale
+- ## Decision 01
+- Problem: X_018 prompt targets `SignalBusRegistry.cs`, but source scan found `SignalBusRegistry` declared inside `Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs`.
+- Solution: Treat `SignalBusRuntime.cs` lines containing `SignalBusRegistry` as authoritative registry implementation while still auditing `SpscSignalRingBuffer.cs`.
+- Rejected Alternatives: Assume missing standalone file; fabricate findings from docs; edit code to split registry into its own file.
+- Scalability potential: Low/Middle/High/Ultra unaffected; this is source archaeology only.
+- Hardware Impact: 0 us runtime change on i3/MX350; audit prevents future synchronization mistakes.
+- ## Decision 02
+- Problem: task demands byte-perfect layout facts, but generic `NativeArray ` handle size and managed static delegate/object layout cannot be proven from C# source alone.
+- Solution: Report proven explicit/source-level layouts separately from compiler/runtime-dependent layouts and label unverifiable fields as requiring `UnsafeUtility.SizeOf ()` or runtime offset proof.
+- Rejected Alternatives: Claim exact `SpscSignalRingBuffer ` total size from source despite generic/native-container implementation details.
+- Scalability potential: Low/Middle/High/Ultra unaffected; future agents get correct proof boundary.
+- Hardware Impact: 0 us runtime change; avoids false ARM64 cache-line claims.
+- ## Decision 03
+- Problem: Read-only task conflicts with generic protocol requiring compile verification after task loops.
+- Solution: Do not launch `dotnet build` because no C# source changes are made and project rule forbids unnecessary rebuilds when system load/build contention may exist.
+- Rejected Alternatives: Run rebuild only to create proof artifact; this would consume CPU and may violate no-unnecessary-build rule.
+- Scalability potential: Low/Middle/High/Ultra unaffected.
+- Hardware Impact: Saves local build CPU time; runtime impact 0 us.
+- ## Decision 04
+- Problem: Active `SignalBus ` was expected to be SPSC by task wording, but source shows `NativeQueue ` plus `ParallelWriter` support.
+- Solution: Report `SpscSignalRingBuffer ` as standalone fallback primitive and `SignalBus ` as active NativeQueue-backed lane.
+- Rejected Alternatives: Force SPSC mental model onto `SignalBus ` despite `_queue` at `SignalBusRuntime.cs:305`.
+- Scalability potential: Low uses bounded frame limits and shedding; Middle/High/Ultra may increase frame limits through continuous quality but still must not assume SPSC cursor ownership.
+- Hardware Impact: 0 us runtime change; avoids future MPSC/SPSC misuse that would cost stalls or lost events on i3/MX350.
+- ## Decision 05
+- Problem: `PaddedSignalIndex` is 64 bytes, but parent alignment is not guaranteed by source.
+- Solution: Mark nested struct size as proven and parent cache-line isolation as unproven until Unity runtime/IL2CPP offset proof exists.
+- Rejected Alternatives: Claim false-sharing prevention from nested size alone.
+- Scalability potential: Low/Middle/High/Ultra unchanged; future cache-line-critical code must request measured offset proof before relying on it.
+- Hardware Impact: 0 us runtime change; prevents cache-line contention being hidden by false audit language.
+- ## Decision 06
+- Problem: Registry flush drains queues but owns no producer job fence.
+- Solution: Report that external dispatcher phase must complete/fence producer jobs before `SignalBusRegistry.FlushPreSimulation()`.
+- Rejected Alternatives: Imply `SignalBusRegistry` itself guarantees writer quiescence.
+- Scalability potential: Low/Middle/High/Ultra require same ownership rule; quality may change capacity, not synchronization authority.
+- Hardware Impact: 0 us runtime change; missing fence risk would be unbounded correctness loss, not small microsecond cost.
+- ## Decision 07
+- Problem: APEX review demanded byte-perfect SPSC map and proof of cache-line false-sharing prevention.
+- Solution: Report current 64-bit Unity Editor metadata-derived offsets exactly, while refusing to claim parent cache-line base alignment that source and metadata do not prove.
+- Rejected Alternatives: Treat 64-byte cursor spacing as equivalent to guaranteed 64-byte cache-line ownership; treat `SignalBus .Push` as SPSC despite its `NativeQueue ` source path.
+- Scalability potential: Low/Middle/High/Ultra unchanged; future hot-path code must not spend saved cycles on synchronization assumption layout does not prove.
+- Hardware Impact: 0 us runtime change on i3/MX350; audit prevents false-sharing fixes from being built on false proof.
+Source lines scanned 50; retained 43; overflow-important omitted 0.
+

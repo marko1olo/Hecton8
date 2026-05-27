@@ -566,6 +566,34 @@ namespace Hecton8.Physics.Vehicles
             _gyroLastVisualUploadFrame = 0u;
         }
 
+        private void ReleaseGyroVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedVaultHandle(vault, ref _gyroHandle);
+            ReleaseOwnedVaultHandle(vault, ref _gyroErrorHandle);
+            ReleaseOwnedVaultHandle(vault, ref _gyroForcePacketHandle);
+            ReleaseOwnedVaultHandle(vault, ref _gyroTelemetryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _gyroVisualHandle);
+            ReleaseOwnedVaultHandle(vault, ref _gyroProfileHandle);
+            ReleaseOwnedVaultHandle(vault, ref _gyroCounterHandle);
+#if UNITY_EDITOR
+            ReleaseOwnedVaultHandle(vault, ref _gyroCsvScratchHandle);
+#endif
+        }
+
+        private void ClearGyroVaultHandles()
+        {
+            _gyroHandle = default;
+            _gyroErrorHandle = default;
+            _gyroForcePacketHandle = default;
+            _gyroTelemetryHandle = default;
+            _gyroVisualHandle = default;
+            _gyroProfileHandle = default;
+            _gyroCounterHandle = default;
+#if UNITY_EDITOR
+            _gyroCsvScratchHandle = default;
+#endif
+        }
+
 #if UNITY_EDITOR
         private bool TryApplyGyroProfilesCsv()
         {

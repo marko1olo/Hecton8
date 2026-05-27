@@ -1,0 +1,50 @@
+{
+  "id": "UNKNOWN",
+  "date": "2026-05-28",
+  "domain": "Core & Memory Infrastructure / SignalBus Contracts / Zero-GC Runtime Architecture",
+  "status": "STATIC_SOURCE_PROOF_ONLY_RUNTIME_PENDING",
+  "fullBuildRun": false,
+  "fullBuildReason": "User explicitly assigned overall project compilation errors to another agent.",
+  "changedSourceFiles": [
+    "Assets/_Project/Scripts/HectonFluidEngine.cs",
+    "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+    "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+    "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+    "Assets/_Project/Scripts/Atmosphere/AtmosphereMemorySovereigntyValidator1324.cs",
+    "Assets/_Project/Scripts/Editor/SystemDiagnosticsBoard.cs"
+  ],
+  "renames": [
+    "Hecton8.Physics.OceanSurfaceTelemetryEntry -> FluidOceanSurfaceTelemetryEntry",
+    "SubmarineStructuralGrid.StructuralTelemetryEntry -> SubmarineStructuralTelemetryEntry",
+    "AbyssalThermalManager.ThermalTelemetryEntry -> AbyssalThermalManagerTelemetryEntry",
+    "GasDynamicsSolver.AtmosphereTelemetryEntry -> GasDynamicsTelemetryEntry",
+    "SystemDiagnosticsBoard.TelemetrySnapshotRow -> CrashSnapshotRow"
+  ],
+  "proof": {
+    "oldExactStructNameScan": "one owner per old root name",
+    "gitDiffCheck": "exit 0; line-ending warnings only",
+    "braceDelta": 0,
+    "signalBusAudit": {
+      "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_GLOBAL_SIGNAL_NAME_RECHECK.json",
+      "files": 2443,
+      "shaders": 71,
+      "errors": 0,
+      "confirmedErrors": 0,
+      "warnings": 57,
+      "infos": 1024
+    }
+  },
+  "closedWarningCategories": {
+    "DUPLICATE_SIGNAL_LIKE_NAME_REVIEW": 0,
+    "EDITOR_MANAGED_STRING_IN_SIGNAL_REVIEW": 0
+  },
+  "residualWarnings": {
+    "RUNTIME_SYNC_FILE_IO_REVIEW": 57
+  },
+  "notClaimed": [
+    "No profiler microseconds.",
+    "No Unity Editor import proof.",
+    "No Play Mode proof.",
+    "No full solution build proof."
+  ]
+}

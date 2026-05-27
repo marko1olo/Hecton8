@@ -265,8 +265,7 @@ namespace Hecton8.Construction
         {
             _shutdownStarted = false;
             s_active = this;
-            _vault = GlobalRegistry.DataVault;
-            BulkheadContainmentIntentBus.BindDataVault(_vault != null && BootstrapVaultState(_vault) ? _vault : null);
+            RequestDataVaultRebind(GlobalRegistry.DataVault);
             RegisterDispatcherPhases();
             TryRegisterHotSwapListener();
             Application.quitting -= ShutdownActive;
@@ -764,8 +763,13 @@ namespace Hecton8.Construction
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
             where T : struct
         {
-            if (handle.BufferID != 0u)
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)OwnerSystemId)
+            {
                 vault.ReleaseBuffer(in handle);
+            }
 
             handle = default;
         }

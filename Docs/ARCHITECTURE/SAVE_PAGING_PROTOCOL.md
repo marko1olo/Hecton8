@@ -40,7 +40,7 @@ save compatibility. Do not use this file alone to claim the current save contain
 Historical 2026-05-04 boundary:
 
 - This is the save paging protocol contract, not evidence that every sector path has been stress-tested.
-- Historical project-state orientation previously started at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Older project-state orientation used dated reports. Those paths are historical and may be archived or absent; use the current actuality ledger and topology docs.
 - Dirty-sector commit, `.sectmp` recovery, `.bak` fallback, and FileStream/native-window offset correctness must be verified with runtime save/load/corruption tests before status can improve.
 
 ## Scope

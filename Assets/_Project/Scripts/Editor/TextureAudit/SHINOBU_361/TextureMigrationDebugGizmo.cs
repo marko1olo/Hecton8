@@ -80,7 +80,7 @@ namespace Hecton8.Editor.TextureAudit
             if (MaterialPriorityByPath.Count == 0)
                 return;
 
-            Renderer[] renderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+            Renderer[] renderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsInactive.Exclude);
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];

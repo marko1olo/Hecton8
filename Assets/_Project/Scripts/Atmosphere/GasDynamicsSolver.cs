@@ -197,7 +197,7 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<int> _bulkheadRoomAHandle;
         private VaultGenerationHandle<int> _bulkheadRoomBHandle;
         private VaultGenerationHandle<byte> _bulkheadSealedHandle;
-        private VaultGenerationHandle<AtmosphereTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<GasDynamicsTelemetryEntry> _telemetryRingHandle;
         // COLD ALLOC: PendingBaseTransitionSignal[128] - fixed managed staging for same-phase gas mutation - owner: GasDynamicsSolver
         private readonly PendingBaseTransitionSignal[] _deferredBaseTransitions = new PendingBaseTransitionSignal[PendingBaseTransitionCapacity];
         private int _deferredBaseTransitionCount;
@@ -929,7 +929,7 @@ namespace Hecton8.Atmosphere
                 !TryReadLane(in _bulkheadRoomAHandle, _bulkheadCount, out NativeArray<int>.ReadOnly _bulkheadRoomA) ||
                 !TryReadLane(in _bulkheadRoomBHandle, _bulkheadCount, out NativeArray<int>.ReadOnly _bulkheadRoomB) ||
                 !TryReadLane(in _bulkheadSealedHandle, _bulkheadCount, out NativeArray<byte>.ReadOnly _bulkheadSealed) ||
-                !TryReadTelemetryRing(out NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetryRing))
+                !TryReadTelemetryRing(out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing))
             {
                 return false;
             }
@@ -967,7 +967,7 @@ namespace Hecton8.Atmosphere
             AccumulateAudit(_bulkheadRoomB, nameof(_bulkheadRoomB), ref accumulator);
             AccumulateAudit(_bulkheadSealed, nameof(_bulkheadSealed), ref accumulator);
             AccumulateAudit(
-                (long)UnsafeUtility.SizeOf<AtmosphereTelemetryEntry>() * telemetryRing.Length,
+                (long)UnsafeUtility.SizeOf<GasDynamicsTelemetryEntry>() * telemetryRing.Length,
                 nameof(_telemetryRingHandle),
                 ref accumulator);
 
@@ -1171,7 +1171,7 @@ namespace Hecton8.Atmosphere
         private static bool AreDtoLayoutsValid()
         {
             return UnsafeUtility.SizeOf<PendingBaseTransitionSignal>() == 64 &&
-                   UnsafeUtility.SizeOf<AtmosphereTelemetryEntry>() == TelemetryEntrySizeBytes &&
+                   UnsafeUtility.SizeOf<GasDynamicsTelemetryEntry>() == TelemetryEntrySizeBytes &&
                    UnsafeUtility.SizeOf<GasDynamicsNativeMemoryAudit>() == 48;
         }
 
@@ -1466,7 +1466,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            VaultGenerationHandle<AtmosphereTelemetryEntry> handle = vault.EnsureGenerationHandle<AtmosphereTelemetryEntry>(
+            VaultGenerationHandle<GasDynamicsTelemetryEntry> handle = vault.EnsureGenerationHandle<GasDynamicsTelemetryEntry>(
                 BufferID.GasDynamicsTelemetryRing,
                 TelemetryCapacity,
                 SystemID.HabitatAtmosphere,
@@ -1478,7 +1478,7 @@ namespace Hecton8.Atmosphere
             }
 
             if (handle.BufferID != unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing) ||
-                !vault.TryReadOnlyHandle(in handle, out NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetryRing) ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing) ||
                 vault.IsCompactionFenceActive ||
                 !telemetryRing.IsCreated ||
                 telemetryRing.Length < TelemetryCapacity)
@@ -1497,13 +1497,13 @@ namespace Hecton8.Atmosphere
             return vault != null &&
                    !vault.IsCompactionFenceActive &&
                    _telemetryRingHandle.BufferID == unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing) &&
-                   vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetryRing) &&
+                   vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing) &&
                    !vault.IsCompactionFenceActive &&
                    telemetryRing.IsCreated &&
                    telemetryRing.Length >= TelemetryCapacity;
         }
 
-        private bool TryReadTelemetryRing(out NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetryRing)
+        private bool TryReadTelemetryRing(out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing)
         {
             telemetryRing = default;
             IDataVault vault = _dataVault;
@@ -1521,7 +1521,7 @@ namespace Hecton8.Atmosphere
             return true;
         }
 
-        private bool TryAcquireTelemetryRingForStep(out NativeArray<AtmosphereTelemetryEntry> telemetryRing)
+        private bool TryAcquireTelemetryRingForStep(out NativeArray<GasDynamicsTelemetryEntry> telemetryRing)
         {
             telemetryRing = default;
             if (_telemetryRingLocked)
@@ -1551,7 +1551,7 @@ namespace Hecton8.Atmosphere
 
         private bool TryWriteFailureTelemetry(uint failedBufferId, ushort failureCode)
         {
-            if (!TryAcquireTelemetryRingForStep(out NativeArray<AtmosphereTelemetryEntry> telemetryRing))
+            if (!TryAcquireTelemetryRingForStep(out NativeArray<GasDynamicsTelemetryEntry> telemetryRing))
                 return false;
 
             try
@@ -1562,7 +1562,7 @@ namespace Hecton8.Atmosphere
 
                 int writeIndex = _telemetryWriteIndex % telemetryLength;
                 _telemetryWriteIndex = (writeIndex + 1) % telemetryLength;
-                telemetryRing[writeIndex] = new AtmosphereTelemetryEntry
+                telemetryRing[writeIndex] = new GasDynamicsTelemetryEntry
                 {
                     PackedOwner = ((ulong)_telemetryRingHandle.BufferID << 32) | _telemetryRingHandle.SystemID,
                     FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
@@ -1832,7 +1832,7 @@ namespace Hecton8.Atmosphere
             bool completed = false;
             try
             {
-                if (!TryAcquireTelemetryRingForStep(out NativeArray<AtmosphereTelemetryEntry> telemetryRing))
+                if (!TryAcquireTelemetryRingForStep(out NativeArray<GasDynamicsTelemetryEntry> telemetryRing))
                     return;
 
                 try
@@ -2658,7 +2658,7 @@ namespace Hecton8.Atmosphere
 
         private void CheckTelemetryForFault()
         {
-            if (!TryReadTelemetryRing(out NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetryRing))
+            if (!TryReadTelemetryRing(out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
             int telemetryLength = telemetryRing.Length;
@@ -2666,7 +2666,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             int lastIndex = (_telemetryWriteIndex + telemetryLength - 1) % telemetryLength;
-            AtmosphereTelemetryEntry entry = telemetryRing[lastIndex];
+            GasDynamicsTelemetryEntry entry = telemetryRing[lastIndex];
             if ((entry.Flags & TelemetryFlagNaN) != 0)
                 DumpBlackBoxOnce();
         }
@@ -2674,7 +2674,7 @@ namespace Hecton8.Atmosphere
         private void DumpBlackBoxOnce()
         {
             if (_blackBoxDumped ||
-                !TryReadTelemetryRing(out NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetryRing))
+                !TryReadTelemetryRing(out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
             _blackBoxDumped = true;
@@ -2692,7 +2692,7 @@ namespace Hecton8.Atmosphere
                     writer.Write(_tickCount);
                     for (int i = 0; i < telemetryRing.Length; i++)
                     {
-                        AtmosphereTelemetryEntry entry = telemetryRing[i];
+                        GasDynamicsTelemetryEntry entry = telemetryRing[i];
                         writer.Write(entry.PackedOwner);
                         writer.Write(entry.FrameIndex);
                         writer.Write(entry.RoomCount);
@@ -3126,7 +3126,7 @@ namespace Hecton8.Atmosphere
             [ReadOnly, NoAlias] public NativeArray<int> BulkheadRoomA;
             [ReadOnly, NoAlias] public NativeArray<int> BulkheadRoomB;
             [ReadOnly, NoAlias] public NativeArray<byte> BulkheadSealed;
-            [WriteOnly, NoAlias] public NativeArray<AtmosphereTelemetryEntry> TelemetryRing;
+            [WriteOnly, NoAlias] public NativeArray<GasDynamicsTelemetryEntry> TelemetryRing;
 
             public void Execute()
             {
@@ -3281,7 +3281,7 @@ namespace Hecton8.Atmosphere
                 if (!TelemetryRing.IsCreated || (uint)TelemetryWriteIndex >= (uint)TelemetryRing.Length)
                     return;
 
-                TelemetryRing[TelemetryWriteIndex] = new AtmosphereTelemetryEntry
+                TelemetryRing[TelemetryWriteIndex] = new GasDynamicsTelemetryEntry
                 {
                     PackedOwner = ((ulong)TelemetryBufferId << 32) | TelemetrySystemId,
                     FrameIndex = FrameIndex,
@@ -3373,7 +3373,7 @@ namespace Hecton8.Atmosphere
         }
 
         [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
-        internal struct AtmosphereTelemetryEntry
+        internal struct GasDynamicsTelemetryEntry
         {
             [FieldOffset(0)]
             public ulong PackedOwner;

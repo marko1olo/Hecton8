@@ -234,6 +234,7 @@ namespace Hecton8.Graphics.Materials
         private GraphicsBuffer _materialGlobalsBufferB;
         private string _csvPath;
         private string _dumpPath;
+        private JobHandle _simulationHandle;
         private long _csvLastWriteTicks;
         private int _lockedBufferMask;
         private int _activeVisibleCount;
@@ -386,7 +387,7 @@ namespace Hecton8.Graphics.Materials
         private void Initialize()
         {
             _shutdown = false;
-            _vault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
             TryRegisterHotSwapListener();
             EnsureGraphicsBuffers();
             RegisterDispatcherPhases();
@@ -401,10 +402,11 @@ namespace Hecton8.Graphics.Materials
 
             _shutdown = true;
             Application.quitting -= ShutdownActive;
-            UnlockJobBuffers();
+            CompleteSimulationForLifecycle(_vault);
             UnregisterDispatcherPhases();
             TryUnregisterHotSwapListener();
             ReleaseGraphicsBuffers();
+            ReleaseVaultHandles(_vault);
             ResetVaultHandles();
             _vault = null;
             _vaultInitialized = false;
@@ -457,15 +459,32 @@ namespace Hecton8.Graphics.Materials
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            IDataVault previousVault = previousService as IDataVault ?? _vault;
-            UnlockJobBuffers(previousVault);
-            _vault = currentService as IDataVault;
+            RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault releaseVaultFallback)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            IDataVault releaseVault = _vault ?? releaseVaultFallback;
+            CompleteSimulationForLifecycle(releaseVault);
+            ReleaseVaultHandles(releaseVault);
             ResetVaultHandles();
+            _vault = nextVault;
             _vaultInitialized = false;
             _defaultsInitialized = false;
-            _simulationScheduled = false;
+            _activeVisibleCount = 0;
+            _lastScheduledCount = 0;
+            _lastUploadedVisibleCount = 0;
+            _telemetryCursor = 0;
+            _lastDispatcherFrame = 0u;
+            _lastStateHash = 0u;
+            _runtimeFlags = FlagEmergencyMockRates;
+            _csvLastWriteTicks = 0L;
             _visiblePayloadDirty = true;
             _constantsDirty = true;
+            _dumpedUploadFault = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -563,6 +582,35 @@ namespace Hecton8.Graphics.Materials
             _csvScratchHandle = default;
         }
 
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _statesHandle);
+            ReleaseVaultHandle(vault, ref _powersHandle);
+            ReleaseVaultHandle(vault, ref _visibleIndicesHandle);
+            ReleaseVaultHandle(vault, ref _visiblePayloadHandle);
+            ReleaseVaultHandle(vault, ref _constantsHandle);
+            ReleaseVaultHandle(vault, ref _telemetryHandle);
+            ReleaseVaultHandle(vault, ref _mappingHandle);
+            ReleaseVaultHandle(vault, ref _mockBiomassHandle);
+            ReleaseVaultHandle(vault, ref _wearRateHandle);
+            ReleaseVaultHandle(vault, ref _scalarsHandle);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)OwnerSystemId)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
+        }
+
         private void PreSimulationTick(in DispatcherTimingDTO timing)
         {
             IDataVault vault = ResolveVault();
@@ -583,6 +631,9 @@ namespace Hecton8.Graphics.Materials
             in DispatcherJobContext context,
             JobHandle dependsOn)
         {
+            if (_simulationScheduled)
+                return dependsOn;
+
             IDataVault vault = ResolveVault();
             if (vault == null || !EnsureVaultState(vault))
                 return dependsOn;
@@ -652,6 +703,7 @@ namespace Hecton8.Graphics.Materials
             }.Schedule(visibleCount, JobBatchSize, handle);
 
             _simulationScheduled = true;
+            _simulationHandle = handle;
             _visiblePayloadDirty = true;
             H8Memory.RegisterActiveJob(OwnerSystemId, handle);
             return handle;
@@ -661,6 +713,9 @@ namespace Hecton8.Graphics.Materials
         {
             if (_simulationScheduled)
             {
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                    return;
+
                 UnlockJobBuffers();
                 _simulationScheduled = false;
             }
@@ -978,6 +1033,17 @@ namespace Hecton8.Graphics.Materials
             if ((_lockedBufferMask & (1 << 1)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuMaterialPowers, OwnerSystemId);
             if ((_lockedBufferMask & (1 << 0)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuMaterialStates, OwnerSystemId);
             _lockedBufferMask = 0;
+        }
+
+        private void CompleteSimulationForLifecycle(IDataVault lockVault)
+        {
+            if (_simulationScheduled)
+            {
+                DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                _simulationScheduled = false;
+            }
+
+            UnlockJobBuffers(lockVault);
         }
 
         private bool EnsureGraphicsBuffers()

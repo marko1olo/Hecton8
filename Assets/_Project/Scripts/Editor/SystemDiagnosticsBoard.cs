@@ -32,7 +32,7 @@ namespace Hecton8.Editor
         }
 
         [Serializable]
-        private struct TelemetrySnapshotRow
+        private struct CrashSnapshotRow
         {
             [TableColumnWidth(64, Resizable = false)]
             public uint Frame;
@@ -68,8 +68,8 @@ namespace Hecton8.Editor
         private readonly List<RegistryEntrySnapshot> _renderableRows = new List<RegistryEntrySnapshot>(64);
         // COLD ALLOC: List<CrashTelemetryBuffer.EditorSnapshotEntry>[50] - temporary crash telemetry snapshot buffer - owner: SystemDiagnosticsBoard
         private readonly List<CrashTelemetryBuffer.EditorSnapshotEntry> _telemetryScratch = new List<CrashTelemetryBuffer.EditorSnapshotEntry>(50);
-        // COLD ALLOC: List<TelemetrySnapshotRow>[50] - formatted crash telemetry dashboard rows - owner: SystemDiagnosticsBoard
-        private readonly List<TelemetrySnapshotRow> _telemetryRows = new List<TelemetrySnapshotRow>(50);
+        // COLD ALLOC: List<CrashSnapshotRow>[50] - formatted crash telemetry dashboard rows - owner: SystemDiagnosticsBoard
+        private readonly List<CrashSnapshotRow> _telemetryRows = new List<CrashSnapshotRow>(50);
         private static readonly List<GameObject> s_sceneRoots = new List<GameObject>(8);
         private static readonly List<CrashTelemetryBuffer> s_telemetryBuffers = new List<CrashTelemetryBuffer>(2);
 
@@ -92,7 +92,7 @@ namespace Hecton8.Editor
         private List<RegistryEntrySnapshot> Renderables => _renderableRows;
 
         [ShowInInspector, TableList(AlwaysExpanded = true), PropertySpace(SpaceBefore = 10f)]
-        private List<TelemetrySnapshotRow> CrashTelemetry => _telemetryRows;
+        private List<CrashSnapshotRow> CrashTelemetry => _telemetryRows;
 
         [Button("Refresh Snapshot")]
         private void RefreshSnapshot()
@@ -146,7 +146,7 @@ namespace Hecton8.Editor
             for (int i = 0; i < count; i++)
             {
                 CrashTelemetryBuffer.EditorSnapshotEntry entry = _telemetryScratch[i];
-                TelemetrySnapshotRow row = default;
+                CrashSnapshotRow row = default;
                 row.Frame = entry.FrameIndex;
                 row.Systems = ResolveSystemMask(entry.SystemMask);
                 row.Dt = entry.DeltaTime;

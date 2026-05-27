@@ -410,7 +410,7 @@ namespace Hecton8.Core
                 EnsureInputBinding();
                 RefreshCachedDataVaultCold();
                 EnsureDeterministicInputNativeBuffers();
-                EnsureInputReplayWriter();
+                EnsureInputReplayWriterCold();
                 CaptureState();
                 return;
             }
@@ -425,7 +425,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             EnsureInputProfileCsvWatcher();
 #endif
-            EnsureInputReplayWriter();
+            EnsureInputReplayWriterCold();
             TryRegisterToDispatcher();
             _isInitialized = true;
             TryRegisterInputService();
@@ -463,7 +463,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             EnsureInputProfileCsvWatcher();
 #endif
-            EnsureInputReplayWriter();
+            EnsureInputReplayWriterCold();
 
             if (_isInitialized)
             {
@@ -1544,7 +1544,7 @@ namespace Hecton8.Core
             _inputReplaySignal.Set();
         }
 
-        private void EnsureInputReplayWriter()
+        private void EnsureInputReplayWriterCold()
         {
             if (!Application.isPlaying || _inputReplayThread != null)
                 return;

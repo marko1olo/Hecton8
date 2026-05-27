@@ -1947,21 +1947,13 @@ namespace Hecton8.Economy
 
         private void OnDisable()
         {
-            bool deferHandleClear = _jobScheduled && !_activeJobHandle.IsCompleted;
-            if (_jobScheduled && DispatcherJobFence.TryFinalizeCompleted(ref _activeJobHandle))
-            {
-                _jobScheduled = false;
-                PublishCompletedSignals();
-            }
+            CompleteActiveJobForLifecycle();
 
             TryUnregisterHotSwapListener();
             TryUnregisterRuntimeLanes();
 
             if (ReferenceEquals(ActiveForEditor, this))
                 ActiveForEditor = null;
-
-            if (deferHandleClear)
-                return;
 
             ReleaseOwnedVaultHandles(_vault);
             ClearHandles();
@@ -1986,7 +1978,7 @@ namespace Hecton8.Economy
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            CompleteActiveJobForVaultSwap();
+            CompleteActiveJobForLifecycle();
             ReleaseOwnedVaultHandles(_vault);
             ClearHandles();
             _vault = currentService as IDataVault;
@@ -2169,7 +2161,7 @@ namespace Hecton8.Economy
 
         public bool ApplyFactionReputationDelta(uint factionHash, float delta)
         {
-            if (!EnsureVaultBuffers() || _vault == null)
+            if (_jobScheduled || !EnsureVaultBuffers() || _vault == null)
                 return false;
 
             if (!TryOpenVaultView(_vault, in _factionStandingHandle, TradeMarauderConstants.FactionCapacity, out NativeArray<float> standings))
@@ -2183,7 +2175,7 @@ namespace Hecton8.Economy
         public bool TryGetTuningForEditor(out MarauderTradeTuningDTO tuning)
         {
             tuning = default;
-            if (!EnsureVaultBuffers() || _vault == null)
+            if (_jobScheduled || !EnsureVaultBuffers() || _vault == null)
                 return false;
 
             if (!TryOpenVaultView(_vault, in _tuningHandle, 1, out NativeArray<MarauderTradeTuningDTO> tuningArray))
@@ -2200,7 +2192,7 @@ namespace Hecton8.Economy
             _theftProbability = math.saturate(theftProbability);
             _aggressionScale = math.saturate(aggressionScale);
 
-            if (!EnsureVaultBuffers() || _vault == null)
+            if (_jobScheduled || !EnsureVaultBuffers() || _vault == null)
                 return false;
 
             if (!TryOpenVaultView(_vault, in _tuningHandle, 1, out NativeArray<MarauderTradeTuningDTO> tuningArray))
@@ -2218,7 +2210,7 @@ namespace Hecton8.Economy
             states = default;
             routes = default;
             routeCounts = default;
-            if (!EnsureVaultBuffers() || _vault == null)
+            if (_jobScheduled || !EnsureVaultBuffers() || _vault == null)
                 return false;
 
             if (!TryOpenVaultView(_vault, in _statesHandle, TradeMarauderConstants.MaxMarauders, out NativeArray<MarauderStateDTO> mutableStates) ||
@@ -2239,7 +2231,7 @@ namespace Hecton8.Economy
         {
             acceptedRows = 0;
             rejectedRows = 0;
-            if (!EnsureVaultBuffers() || _vault == null)
+            if (_jobScheduled || !EnsureVaultBuffers() || _vault == null)
                 return false;
 
             if (!TryOpenVaultView(_vault, in _weightsHandle, TradeMarauderConstants.MaxEconomyItems, out NativeArray<MarauderEconomyWeightDTO> weights))
@@ -2578,7 +2570,7 @@ namespace Hecton8.Economy
             PublishCompletedSignals();
         }
 
-        private void CompleteActiveJobForVaultSwap()
+        private void CompleteActiveJobForLifecycle()
         {
             if (!_jobScheduled)
                 return;

@@ -1530,6 +1530,42 @@ Scalability potential: No runtime behavior change. The work stays isolated for c
 
 Hardware Impact: Runtime microseconds saved claimed: `0`; scope control only.
 
+## Decision 143 - Move Lockstep Replay Writer Setup To Cold Lifecycle
+
+Problem: `LockstepStateValidator.StageReplayWrite()` ran from the post-fixed simulation route and called writer setup. That setup opens `lockstep_state.h8replay` with `FileStream` and starts a background writer thread.
+
+Solution: Start the replay writer in `OnEnable()` through `EnsureReplayWriterCold()`. The post-fixed route now writes only if the writer already exists; otherwise it skips replay output and continues deterministic hashing/telemetry.
+
+Rejected Alternatives: Keeping first-write setup in `PostFixedTick` was rejected because it can put synchronous file setup on a simulation frame. Retrying file setup from the hot route was rejected because repeated failure would add recurrent IO pressure.
+
+Scalability potential: Low-tier devices avoid a possible first-replay hitch during simulation. Middle, high, and ultra tiers keep replay fidelity when cold initialization succeeds.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. The fix removes a route risk, not a measured cost.
+
+## Decision 144 - Name Cold IO Helpers Honestly
+
+Problem: Core file IO helpers in `InputDispatcher`, `RebindingManager`, and `HectonPersistentPathPolicy` were cold lifecycle/user-commit/persistence routes, but method names did not expose that boundary.
+
+Solution: Rename private helpers to `EnsureInputReplayWriterCold()`, `DeleteOverridesFileIfExistsCold()`, and `TryDeleteOverridesFileCold()`. Add `EnsureParentDirectoryCold()` and keep `EnsureParentDirectory()` as a compatibility wrapper.
+
+Rejected Alternatives: Broad async rewrites for small user-commit files were rejected without profiler proof. Deleting the public path helper was rejected because existing save/bootstrap callers use it.
+
+Scalability potential: Low-tier devices benefit from clearer hot/cold IO contracts. Higher tiers preserve identical behavior with better static enforcement.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; contract clarity and audit precision.
+
+## Decision 145 - Rename Mutating Lockstep DataVault Getter
+
+Problem: `LockstepStateValidator.GetVaultBuffer<T>()` could call `EnsureGenerationHandle<T>()`, which mutates DataVault state. The project doctrine forbids `Get*` read accessors from allocating, growing buffers, or mutating global state.
+
+Solution: Rename the mutating helper to `OpenOrAcquireVaultBufferView<T>()`. Existing pure `TryGetVaultBuffer<T>()` stays as existing-handle-only resolution.
+
+Rejected Alternatives: Leaving the name unchanged was rejected because it encodes the wrong contract. Changing DataVault ownership behavior was rejected because the owner-phase acquisition itself is valid.
+
+Scalability potential: Low-tier devices are protected from future accidental hot/read use of an acquiring helper. Higher tiers keep the same determinism buffers and hash cadence.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; naming/contract correctness only.
+
 ## Decision 122 - Move Mod Cull Telemetry To Vault Ownership
 
 Problem: `ModEventProjectionBridge._cullTelemetry` was still a persistent local blackbox ring in the production route. It had sentinel registration, but mod projection state is a cross-boundary bridge surface and should not be a silent local heap when `GlobalDataVault` is available.
@@ -1661,3 +1697,147 @@ Rejected Alternatives: Treating the transition as too rare to fix was rejected b
 Scalability potential: Low-tier devices keep transition presentation deterministic without live registry polling. Higher tiers keep the same visual and audio transition path.
 
 Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof.
+
+## Decision 133 - Cache Mod Settings UserOptions Instead Of Polling Registry On Apply
+
+Problem: `ModSettingsRegistry.TryApplyToggle()` and `TryApplySlider()` read `GlobalRegistry.UserOptions` while player-facing mod UI callbacks can fire repeatedly. Slider apply also rebuilt the persisted key string each change.
+
+Solution: Cache `UserOptionsPersistence` from cold `ModLoader` binding and hot-swap refresh, and store the built storage key on each setting entry.
+
+Rejected Alternatives: Lazy registry lookup in apply routes was rejected because mod UI callbacks are runtime-facing. Delaying every slider callback until pointer release was rejected because the public API promises callbacks when the player changes the value.
+
+Scalability potential: Low-tier devices avoid hidden global lookup and key-string rebuild during mod settings interaction. Middle, high, and ultra tiers keep identical mod setting semantics with clearer owner routing.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. The fix is route correctness and allocation-surface reduction.
+
+## Decision 134 - Cache Mod Runtime Catalog Owners
+
+Problem: `ModItemRegistry.ResolveActiveCatalog()` and `ModBuildableRegistry.ResolveActiveCatalog()` read inventory/logistics services from `GlobalRegistry` during mod content registration and pending flush routes.
+
+Solution: Cache `IPlayerInventoryService` and `ILogisticsService` from cold `ModLoader` binding and update them through `ModEventProjectionBridge` hot-swap notifications.
+
+Rejected Alternatives: Keeping catalog lookup through registry was rejected because pending flush can run after game-ready and should consume cached owner interfaces. Creating a new global catalog facade was rejected as unnecessary surface growth.
+
+Scalability potential: Low-tier devices avoid global indirection during mod item/buildable flush. Higher tiers keep the same catalog behavior without widening global authority.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. Stability gain is ownership clarity.
+
+## Decision 135 - Remove DataVault Registry Fallback From Future Command Lane Opens
+
+Problem: `FutureCommandSandboxValidator.OpenVaultLane()` fell back to `GlobalRegistry.DataVault`, and rollback checks also pulled the Vault through registry. Those helpers are reached by request/drain/validation paths.
+
+Solution: Bind `IDataVault` cold through `FutureCommandSandboxValidator.BindRegistryServicesCold()`, reset handles on Vault replacement, and refresh through mod hot-swap propagation. Runtime lane opens now read the cached field only.
+
+Rejected Alternatives: Keeping fallback polling was rejected because it hides missing bootstrap dependencies. Releasing every old DataVault buffer on rebind was rejected because the validator owns handles, not the Vault allocations.
+
+Scalability potential: Low-tier devices keep mod sandbox validation predictable without registry fallback branches. Middle, high, and ultra tiers keep identical envelope validation while preserving one owner route for Vault access.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. The correction removes hidden global access from a heavily reused helper.
+
+## Decision 136 - Batch Mod Slider Persistence At Commit
+
+Problem: `ModMenuSettingSliderView.HandleValueChanged()` called `ModSettingsRegistry.TryApplySlider()`, which saved user options and notified settings registry listeners on every slider value event.
+
+Solution: Keep live in-memory apply and mod callback on every value event, but defer disk persistence and registry refresh until pointer-up, submit, disable, or destroy.
+
+Rejected Alternatives: Delaying the mod callback until pointer release was rejected because the mod API promises callbacks when the player changes the value. Keeping per-value disk save was rejected because it pushes synchronous options I/O onto UI drag.
+
+Scalability potential: Low-tier devices avoid repeated synchronous options file writes and settings-panel rebuilds while dragging. Higher tiers keep identical visible setting behavior and live mod feedback.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. The expected gain is fewer main-thread I/O spikes during mod settings interaction.
+
+## Decision 137 - Release Future Command DataVault Lanes On Rebind
+
+Problem: `FutureCommandSandboxValidator` opened twenty DataVault-backed sandbox lanes but shutdown/rebind only cleared descriptors. That leaves the release route implicit and violates one owner -> one release route.
+
+Solution: Add `ReleaseVaultHandles(IDataVault)` and `ReleaseVaultLane<T>()`, call them from shutdown and DataVault rebind after completing the scheduled validation barrier, then reacquire from the new Vault only when initialized.
+
+Rejected Alternatives: Descriptor invalidation was rejected because it hides native ownership. Releasing through `GlobalRegistry.DataVault` was rejected because the old cached Vault is the only correct owner for old handles. Broad DataVault API changes were rejected because the local owner can close its own handles.
+
+Scalability potential: Low-tier devices avoid stale sandbox buffers after teardown or service replacement. Middle, high, and ultra tiers keep the same sandbox capacity and telemetry fidelity without changing gameplay truth.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. This is native lifetime correctness.
+
+## Decision 138 - Rebind Projected Mod Cull Telemetry On DataVault Hot-Swap
+
+Problem: `ModEventProjectionBridge` opened cull telemetry through DataVault or fallback native storage, but `OnGlobalRegistryServiceReplaced()` did not handle `DataVault`. A Vault replacement could leave `_cullTelemetry` pointing at stale storage.
+
+Solution: Add `RebindDataVault(previousVault, currentVault)`, force-complete any scheduled projection job before alias swap, release old telemetry storage, then reopen Vault-backed storage or fallback storage.
+
+Rejected Alternatives: Keeping fallback forever was rejected because production telemetry should use Vault when available. Reopening without completing the scheduled projection job was rejected because a job may still own the projected event queue and telemetry context. Polling `GlobalRegistry.DataVault` from write paths was rejected as hot global fallback.
+
+Scalability potential: Low-tier devices keep bounded 300-entry cull telemetry without stale aliases. Middle, high, and ultra tiers keep the same projected-event fidelity with a valid storage owner after Vault replacement.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. The fix removes stale native alias risk.
+
+## Decision 139 - Split StaticData And Babel Telemetry Buffer Ownership
+
+Problem: `StaticDataStore` and `BabelDictionaryStore` both opened telemetry/BTree buffers through the same StaticData/BTree IDs. `GlobalDataVault.EnsureGenerationHandle<T>()` returns an existing handle without creating a separate consumer lease, so shared logical owners can invalidate each other through `ReleaseBuffer()`.
+
+Solution: Keep StaticData on the existing StaticData/BTree IDs and move Babel telemetry to Babel-specific `BufferID` values. `BabelDictionaryStore` now uses `BabelTelemetryRing`, `BabelTelemetryCursor`, `BabelBTreeTelemetryRing`, `BabelBTreeTelemetryCursor`, and `BabelBTreeTelemetryAccumulator`.
+
+Rejected Alternatives: Sharing the IDs was rejected because ownership and release become ambiguous. Adding a new refcount protocol inside `GlobalDataVault` was rejected as a broad core allocator change not required for two concrete owner collisions.
+
+Scalability potential: Low-tier devices avoid stale telemetry aliases and accidental release of the wrong native buffer. Middle, high, and ultra tiers keep the same telemetry depth and BTree diagnostics without changing gameplay truth.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. This is native ownership correctness.
+
+## Decision 140 - Release Core Vault Handles Before Clearing Descriptors
+
+Problem: Several core systems reset `VaultGenerationHandle<T>` fields on shutdown/rebind without calling `IDataVault.ReleaseBuffer()`: StaticData, Babel, SignalWarden tuning/telemetry/scratchpad, and MacroDatabase scratch/blackbox/dirty queues.
+
+Solution: Add local `ReleaseVaultHandle<T>()` helpers and call them through cached `IDataVault` before clearing handles. MacroDatabase releases handles during shutdown after flushing/clearing owner queues and before `_dataVault` is nulled.
+
+Rejected Alternatives: Descriptor reset was rejected because it hides the release route. Disposing Vault-owned `NativeArray` views locally was rejected because DataVault owns those allocations.
+
+Scalability potential: Low-tier devices avoid stale persistent native capacity after teardown or service replacement. Higher tiers retain the same capacities and telemetry fidelity while ownership remains explicit.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. The expected gain is stability under rebind/shutdown, not measured frame time.
+
+## Decision 141 - Close Babel Partial-Acquire Failure Paths
+
+Problem: `BabelDictionaryStore` could call `EnsureGenerationHandle<byte>()` for mapped bytes or error slice, fail to resolve or validate the returned view, and then reset the handle without a release call.
+
+Solution: Reuse `ReleaseVaultHandle<T>()` in the failed mapped-buffer and error-slice acquisition branches.
+
+Rejected Alternatives: Leaving failures as defaulted descriptors was rejected because failure paths are exactly where stale native ownership becomes hardest to reason about. Throwing exceptions was rejected because the store already reports errors through telemetry and returns false.
+
+Scalability potential: Low-tier devices avoid leaked/stale bootstrap memory after failed file open or Vault resolve. Middle/high/ultra behavior is unchanged.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; failure-path correctness only.
+
+## Decision 142 - Do Not Chase Compile Wall In Core Vault Pass
+
+Problem: A separate `dotnet build Hecton8.slnx` was active from another agent and the user explicitly assigned overall project compile errors to another agent.
+
+Solution: Do not run or fix the full solution build. Use source-only checks and the already-built `SignalBusContractAuditCli` executable for static proof.
+
+Rejected Alternatives: Launching/fixing a full build was rejected by direct user instruction. Killing the other agent's build was rejected because it is outside this pass.
+
+Scalability potential: Keeps core lifetime work isolated from unrelated generated/plugin compile churn.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; scope control only.
+
+## Decision 143 - Make Cross-Domain Telemetry DTO Names Globally Unique
+
+Problem: The SignalBus audit reported duplicate signal-like DTO short names for ocean surface, structural, atmosphere, and thermal telemetry. C# namespaces make this compile-safe, but AOT/operator tooling, dump readers, and route ledgers treat short telemetry names as global identifiers.
+
+Solution: Rename only local/private or narrowly owned duplicates: `FluidOceanSurfaceTelemetryEntry`, `SubmarineStructuralTelemetryEntry`, `AbyssalThermalManagerTelemetryEntry`, and `GasDynamicsTelemetryEntry`. Preserve all struct layout attributes, field offsets, sizes, BufferIDs, SystemIDs, capacities, and behavior.
+
+Rejected Alternatives: Leaving the duplicates was rejected because global telemetry identity stays ambiguous. Renaming the broader public/root DTOs was rejected because it would create wider API churn without better contract value. Adding aliases was rejected because aliases would keep ambiguity for tooling.
+
+Scalability potential: Low-tier devices gain deterministic crash/operator labels without runtime work. Middle, high, and ultra tiers keep identical telemetry payload bytes while report identity is stable.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. This is global contract correctness, not frame-time optimization.
+
+## Decision 144 - Remove Editor Diagnostics Row From Runtime Signal-Like Naming
+
+Problem: `SystemDiagnosticsBoard.TelemetrySnapshotRow` is editor-only and legitimately stores managed strings, but the signal-contract audit flags it as a signal-like payload name.
+
+Solution: Rename the editor row to `CrashSnapshotRow`. The row remains inside `#if UNITY_EDITOR`, and no runtime payload or SignalBus lane changes.
+
+Rejected Alternatives: Keeping the warning was rejected because it hides real signal DTO defects in audit noise. Converting editor strings to unmanaged buffers was rejected because the type is editor UI data, not runtime broadcast data.
+
+Scalability potential: Low, middle, high, and ultra runtime behavior is unchanged. The value is cleaner audit separation between editor dashboards and runtime payload contracts.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor-only rename.

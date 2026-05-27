@@ -663,6 +663,7 @@ namespace Hecton8.AI
 
         private void OnDisable()
         {
+            CompletePendingPipelineForTeardown();
             TryUnregisterOriginShiftListener();
             TryUnregister();
             TryUnregisterHotSwapListener();
@@ -734,6 +735,16 @@ namespace Hecton8.AI
 
             WriteTelemetryFrame();
             UploadAndRenderIndirect();
+        }
+
+        private void CompletePendingPipelineForTeardown()
+        {
+            if (!_pipelineScheduled)
+                return;
+
+            DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
+            _pendingHandle = default;
+            _pipelineScheduled = false;
         }
 
         internal bool TryRegisterEntity(float3 rootPosition, quaternion rootRotation, int legCount, float scale, out int slotIndex)
@@ -832,6 +843,7 @@ namespace Hecton8.AI
             if (TryResolvePersistentBuffers(out _))
                 return;
 
+            ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
             IDataVault vault = _dataVault;
             if (vault == null)
@@ -846,12 +858,20 @@ namespace Hecton8.AI
             _telemetryRingHandle = vault.EnsureGenerationHandle<ProceduralCrabIkTelemetryEntry>(BufferID.ProceduralCrabIkTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
 
             if (!TryResolvePersistentBuffers(out _))
+            {
+                ReleaseVaultHandles(_dataVault);
                 ClearVaultHandles();
+            }
         }
 
         private void DisposeBuffers(JobHandle dependency)
         {
-            _pendingHandle = dependency;
+            JobHandle disposeDependency = dependency;
+            if (_pipelineScheduled)
+                disposeDependency = JobHandle.CombineDependencies(disposeDependency, _pendingHandle);
+
+            DispatcherJobSwap.TryComplete(ref disposeDependency, forceComplete: true);
+            ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
             _pendingHandle = default;
             _pipelineScheduled = false;
@@ -859,7 +879,7 @@ namespace Hecton8.AI
 
         private void RefreshColdDependencies()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
         }
 
         private void ClearVaultHandles()
@@ -871,6 +891,31 @@ namespace Hecton8.AI
             _bodyPosesHandle = default;
             _solvedJointMatricesHandle = default;
             _telemetryRingHandle = default;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _entitiesHandle);
+            ReleaseVaultHandle(vault, ref _footPositionsHandle);
+            ReleaseVaultHandle(vault, ref _targetFootPositionsHandle);
+            ReleaseVaultHandle(vault, ref _stepStatesHandle);
+            ReleaseVaultHandle(vault, ref _bodyPosesHandle);
+            ReleaseVaultHandle(vault, ref _solvedJointMatricesHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.AnimationFauna)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private bool HasPersistentBuffers()
@@ -984,11 +1029,25 @@ namespace Hecton8.AI
                 return;
 
             IDataVault vault = currentService as IDataVault;
-            if (ReferenceEquals(_dataVault, vault))
+            RebindDataVaultForLifecycle(vault, previousService as IDataVault);
+            EnsurePersistentBuffers();
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault releaseVaultFallback)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
                 return;
 
+            CompletePendingPipelineForTeardown();
+            ReleaseVaultHandles(_dataVault ?? releaseVaultFallback);
             ClearVaultHandles();
-            _dataVault = vault;
+            _dataVault = nextVault;
+            InitializeFreeSlots();
+            _pendingOriginShiftOffset = float3.zero;
+            _pendingOriginShiftRebase = false;
+            _lastActiveEntityCount = 0;
+            _telemetryCursor = 0;
+            _telemetryDumped = false;
         }
 
         private void TryRegisterOriginShiftListener()

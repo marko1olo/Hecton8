@@ -25,22 +25,33 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 
 ## Current Contract Snapshot
 
-- Schema revision: `61`
+- Schema revision: `78`
 - Source `ISignal` structs: `173`
 - Mod-projected `SignalBus<T>` lanes: `2`
 - Denied-by-default `ISignal` structs: `171`
 - Accepted command opcodes: `8`
-- Future envelope runtime allowlist: `8` hashes; `TriggerSubtitleCue` and `SubtitleCue` are reserved subtitle aliases, not runtime-allowed opcodes.
+- Future envelope runtime allowlist: `8` hashes; `TriggerSubtitleCue` and `SubtitleCue` are reserved subtitle aliases, not runtime-allowed opcodes, and editor runtime opcode tools must not expose them as injectable opcodes.
 - Public `HectonAPI` surfaces: `15`
 - Public event methods: `7`
 - Native event kinds: `2`
 - SDK builder manifest parity: `ModBuilderWindow.ModManifestData` emits the same `9` manifest fields required by `ModLoader`, including `RequiredAPIVersion` and `ModPriority`; `Validate_Mod_API_Static.ps1` fails if this source parity drifts.
+- SDK entry point: Unity menu `Hecton/Modding/SDK Hub` opens the Mod Builder, creates the external starter kit, links the core modding docs, opens the local `Mods` folder, and runs `Validate_Mod_API_Static.ps1`.
+- External starter kit: `ModdingSDK/ExternalStarterKit/` is a versioned starter template and `Hecton/Modding/SDK Hub -> Create External Starter Kit` can refresh missing files non-destructively. It contains `mod.h8manifest.json`, `mod.json`, graph/table/locale/content/report folders, copied opcode/tuning references that are statically compared against `Docs/Modding/*.csv`, and a README stating that no Unity project is required for manifest/graph/table authoring while runtime remains envelope-only.
+- External local validation: starter kits include `Tools/validate_structure.ps1`, a no-Unity structure validator that checks required files, JSON parseability, canonical mod/dependency IDs, authoring/runtime manifest ID parity, envelope-only graph/manifest flags, empty `EntryAssembly`/`EntryType`, graph node ID uniqueness, graph opcode allowlist membership against `Reference/allowed_opcodes.csv`, and graph budget parity with `mod.h8manifest.json`.
+- External review manifest: starter kits include `Tools/build_review_manifest.ps1`, a no-Unity review handoff tool that runs the structure validator first and writes `Reports/review_manifest.json` with sorted file paths, byte counts, SHA-256 hashes, total bytes, and explicit count/byte limits while excluding `Generated/` and `Reports/` outputs.
+- External identity helper: starter kits include `Tools/set_mod_identity.ps1`, a no-Unity helper that writes the same canonical mod id, display name, author, and version into both manifests and then runs structure validation.
+- External prepare helper: starter kits include `Tools/prepare_mod.ps1`, a one-command no-Unity helper that writes identity, validates structure, and builds `Reports/review_manifest.json` in the correct order.
+- External opcode helper: starter kits include `Tools/list_allowed_opcodes.ps1`, a no-Unity helper that prints allowed graph opcode aliases/hex tokens from `Reference/allowed_opcodes.csv` and can emit JSON for future Workbench/CLI reuse.
+- External shell portability: public starter tools compose child paths through normalized `Join-Path` segments and do not rely on Windows backslash child paths, so the copied kit can use Windows PowerShell or `pwsh` on macOS/Linux.
+- External editor help: starter kits include `Schemas/*.schema.json` plus `.vscode/settings.json`; the local validator checks exact schema URL and fileMatch pairs so schema-aware editors can autocomplete and flag manifest/graph/table/locale mistakes before the PowerShell/pwsh validator runs.
+- SDK builder authoring caps: Mod Builder enumerates bundle build assets from the selected folder with bounded filesystem enumeration and a `512` bundle-eligible asset cap; selected managed assemblies are capped at the loader's `32` top-level DLL limit and duplicate DLL file names are rejected before copy.
+- SDK builder UI validation: Mod Builder uses shallow `OnGUI` validation for responsive editor repaint and performs deep bundle asset discovery plus DLL metadata identity reads only when `Build Mod` is invoked.
 - Manifest byte cap: loader rejects missing, empty, or `>32768` byte `mod.json` files before `File.ReadAllText`.
 - Manifest discovery cap: loader enumerates `mod.json` lazily and caps discovery at `64` manifests before candidate allocation.
 - Canonical mod IDs: loader and SDK builder require lowercase letters/digits separated by single `.`, `_`, or `-`; IDs and dependency IDs cannot use leading/trailing/repeated separators, whitespace, or reserved filesystem device segments.
 - Scope owner proof: `ModExecutionScope` cannot synthesize an anonymous active owner; active scope requires a non-empty mod id and non-zero owner hash.
 - SaveState owner proof: public mod save payloads require active `ModExecutionScope`; engine-owned mod-world payloads use an explicit `hecton.internal.` store route, not key-hash owner synthesis.
-- Reserved managed assembly identities blocked: loader and SDK builder reject `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, and `netstandard` names by file name or assembly metadata identity. The loader scans every accepted top-level package DLL up to the `32` DLL cap and disables over-cap packages; the SDK builder deletes stale output DLLs not selected for the current package build.
+- Reserved managed assembly identities blocked: loader and SDK builder reject `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, and `netstandard` names by file name or assembly metadata identity. The loader scans every accepted top-level package DLL up to the `32` DLL cap and disables over-cap packages; the SDK builder caps selected DLLs at `32`, rejects duplicate output names, and deletes stale output DLLs through bounded cleanup.
 - Top-level package file caps: managed DLL discovery is capped at `32`, legacy AssetBundle discovery at `4`, and legacy localization discovery at `16`.
 - Sandbox control plane: `FutureCommandSandboxValidator`, `MockModQueue` static methods, `MockModQueue` queue handles, and `MockModQueue` instance control methods are internal-only; runtime mods only submit `FutureCommandEnvelope` through `HectonAPI.Commands.RequestFuture`.
 - Direct dispatcher/hooks: `ModCommandDispatcher` static helpers and `HectonModHooks` publication methods are internal-only; public mods route through `HectonAPI.Commands` and `HectonAPI.Events`.
@@ -55,10 +66,13 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 
 ## Primary Files
 
+- `Assets/_Project/Scripts/Editor/ModdingSDK/ModdingSdkHubWindow.cs` - Unity Editor SDK hub; menu path `Hecton/Modding/SDK Hub`.
+- `Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.cs` - current Unity Editor package builder; menu path `Hecton/Modding/Mod Builder`.
 - `Signal_Schema.json` - machine-readable source-backed contract.
 - `Mod_API_Specification.md` - human-facing API specification.
 - `Validate_Mod_API_Static.ps1` - required static drift gate.
 - `Runtime_Verification_Playbook.md` - required Unity runtime proof path before `VERIFIED`.
+- `External_Starter_Kit_File_Contract.md` - public modder file layout, Unity/no-Unity answer, and starter kit rejection rules.
 - `Change_Control_Checklist.md` - required edit checklist for any mod API contract change.
 - `Sample_InfiniteO2_Mod.md` - safe sample mod spec with no current survival mutation authority.
 - `Future_Command_Kernel_Reservations.md` - non-public reservations for future engine-owned command kernels; no enum/runtime expansion by itself.

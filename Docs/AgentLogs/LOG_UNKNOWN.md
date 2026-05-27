@@ -1361,3 +1361,249 @@ Proof:
 - Static audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_GLOBAL_ROUTE_CACHE_RECHECK.json`.
 - Audit result: `files=2442`, `shaders=71`, `errors=0`, `confirmedErrors=0`, `warnings=145`, `infos=1172`.
 - Full project compile errors were intentionally not fixed by user instruction.
+
+## 2026-05-27 - Mod Registry Cache Pass
+
+What was wrong:
+- `ModSettingsRegistry` read `GlobalRegistry.UserOptions` from mod setting register/apply routes.
+- `ModItemRegistry.ResolveActiveCatalog()` and `ModBuildableRegistry.ResolveActiveCatalog()` read inventory/logistics services from registry.
+- `FutureCommandSandboxValidator.OpenVaultLane()` and rollback checks fell back to `GlobalRegistry.DataVault`.
+- `ModMenuSettingSliderView` caused options disk save and registry refresh on every slider value event.
+
+What was done:
+- Cached `UserOptionsPersistence`, `IPlayerInventoryService`, `ILogisticsService`, and `IDataVault` through cold binding and hot-swap refresh.
+- Stored mod setting storage keys on entries so apply routes do not rebuild them.
+- Removed the `OpenVaultLane()` registry fallback.
+- Batched slider persistence to commit events while keeping live mod callbacks.
+- Added `UNITY_MOD_REGISTRY_CACHE_PASS_UNKNOWN_20260527.md/.json`.
+
+Cinematic cheats used:
+- None. This was global-route and mod sandbox ownership work, not simulation.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof has run.
+
+Proof:
+- `git diff --check` passed on touched files with LF/CRLF warnings only.
+- Brace delta is `0` for all touched source files.
+- Targeted scan finds direct `GlobalRegistry.UserOptions/PlayerInventory/Logistics/DataVault` reads only in cold bind/install routes in touched files.
+- Static audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_MOD_REGISTRY_CACHE_RECHECK.json`.
+- Audit result: `files=2443`, `shaders=71`, `errors=0`, `confirmedErrors=0`, `warnings=145`, `infos=1172`.
+- Touched-file audit findings are info-only: declared/registered local queues, Vault alias, cold/fatal dump I/O, manifest file I/O.
+- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=697 encodingWithoutUtf8Sig=0`; `OOP_Doc_Scanner.py finalPass=true activeFileCount=697 sourceSyncPass=true`.
+- Full project compile errors were intentionally not fixed by user instruction.
+
+## 2026-05-27 - Vault Rebind Release Pass
+
+What was wrong:
+- `FutureCommandSandboxValidator` cleared DataVault lane descriptors without releasing the underlying Vault handles on shutdown/rebind.
+- `ModEventProjectionBridge` did not rebind cull telemetry storage when the DataVault service was replaced.
+
+What was done:
+- Added explicit release coverage for all `20/20` sandbox `VaultLane<T>` handles.
+- Added projected mod cull telemetry release/reopen flow for DataVault hot-swap and fallback storage.
+- Completed any scheduled projection job before changing the cull telemetry storage alias.
+
+Cinematic cheats used:
+- None. This is native lifecycle and global authority cleanup, not simulation/presentation fakery.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof has run.
+
+Proof:
+- `git diff --check` passed on touched source with LF/CRLF warnings only.
+- Brace delta is `0` for `FutureCommandSandboxValidator.cs` and `ModEventProjectionBridge.cs`.
+- Static audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_VAULT_REBIND_RELEASE_RECHECK.json`.
+- Audit result: `files=2443`, `shaders=71`, `errors=0`, `confirmedErrors=0`, `warnings=145`, `infos=1172`.
+- Full project compile errors were intentionally not fixed by user instruction.
+
+## 2026-05-28 - Workstation Orphan Process Sweep
+
+What was wrong:
+- `C:\hades\dental-crm` had orphan-root dev-server process trees holding local ports `4100` and `5173`.
+- `Tools\HectonPhiStaticAudit.py --no-atlas --no-fail` was running with a missing parent process.
+- No non-responsive GUI windows were found.
+- CPU load remained high after cleanup because a live `dotnet build Hecton8.slnx` task was still active under Codex-owned PowerShell; this was not killed because it was not orphaned or hung.
+
+What was done:
+- Terminated orphan tree rooted at PID `13384`: `npm run dev`, `concurrently`, API watch, Vite `5173`, `tsx`, and `esbuild` children.
+- Terminated orphan audit PID `39656`.
+- Detected a second orphan `dental-crm` dev-server tree rooted at PID `2892`, then terminated its API, web, Vite, `tsx`, and `esbuild` children.
+- Verified ports `4100` and `5173` were closed after the second sweep; only unrelated Python listeners on `8000` and `8080` remained.
+- Surveyed storage junk candidates without deleting data.
+
+Cinematic cheats used:
+- None. This was workstation process and disk hygiene, not runtime simulation.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof has run.
+- Workstation frame/build pressure reduced by removing stale Node/Vite/tsx trees; no deterministic project runtime gain claimed.
+
+Junk inventory:
+- `C:\hades\Hecton8\Library`: `3.87 GB`, Unity-generated cache; `2.96 GB` older than 7 days.
+- `C:\Users\danat\AppData\Local\Temp`: `2.58 GB`; top large files are Visual Studio installer/runtime artifacts.
+- `C:\hades\.tmp`: `0.96 GB`, old Edge debug/profile artifacts.
+- `C:\$Recycle.Bin`: `0.97 GB`.
+- `C:\Users\danat\AppData\Local\npm-cache`: `0.45 GB`.
+- `C:\Users\danat\AppData\Local\NVIDIA\DXCache`: `0.25 GB`.
+- `C:\Users\danat\AppData\Local\Unity\cache`: `0.16 GB`.
+- `C:\Users\danat\AppData\Local\CrashDumps`: `0.12 GB`.
+- `C:\hades\Hecton8\Logs`: `0.13 GB`.
+
+Proof:
+- Final orphan list contained only protected/session processes: `csrss.exe`, `winlogon.exe`, `explorer.exe`, `WindowsTerminal.exe`, `Notepad.exe`.
+- Final hung-window count: `0`.
+- Final watched dev ports: `4100` closed, `5173` closed, unrelated `8000` and `8080` still listening.
+- Active non-orphan load left running: `dotnet build Hecton8.slnx`; no `csc.exe` found in the last build-process scan.
+
+## 2026-05-28 - Workstation Junk Cleanup
+
+What was wrong:
+- Disk junk remained after the process sweep: user temp, `C:\hades\.tmp`, recycle bin, crash dumps, NVIDIA cache, Unity cache, and Hecton project `Temp/Obj`.
+- User explicitly excluded `C:\Users\danat\AppData\Local\npm-cache`, `C:\hades\Hecton8\Library`, and `C:\hades\Hecton8\Logs`.
+- During the first cleanup pass, `dotnet build Hecton8.Core.csproj` was active, so `Hecton8\Temp` and `Hecton8\Obj` were deferred until the build ended.
+- `C:\hades\dental-crm` dev-server respawned again as orphan-root PID `5576` after the earlier sweep.
+
+What was done:
+- Cleaned old/unlocked user temp files, `C:\hades\.tmp`, recycle bin, crash dumps, NVIDIA shader cache, Unity user cache, then cleaned `Hecton8\Temp` and `Hecton8\Obj` after the active Hecton build ended.
+- Preserved the three excluded paths exactly: `npm-cache`, `Hecton8\Library`, and `Hecton8\Logs`.
+- Killed the respawned orphan `dental-crm` dev tree rooted at PID `5576`, including Vite/API/tsx/esbuild children.
+
+Cinematic cheats used:
+- None. This was workstation cleanup, not simulation or rendering work.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No game profiler proof.
+- Workstation pressure reduced by removing stale temp/cache data and a repeated orphan Node dev tree.
+
+Cleanup proof:
+- Freed approximately `5.01 GB`: user temp `2.389 GB`, recycle bin `0.975 GB`, `C:\hades\.tmp` `0.959 GB`, NVIDIA DXCache `0.250 GB`, Unity cache `0.183 GB`, crash dumps `0.117 GB`, Hecton `Temp/Obj` `0.137 GB`.
+- Final C: free space: `153.22 GB` / `475.70 GB` (`32.2%` free).
+- Final preserved sizes: `npm-cache 0.448 GB`, `Hecton8\Library 3.869 GB`, `Hecton8\Logs 0.125 GB`.
+- Final watched dev ports: `4100` closed, `5173` closed; unrelated Python listeners on `8000` and `8080` remained.
+- Final orphan list contained only protected/session processes: `csrss.exe`, `winlogon.exe`, `explorer.exe`, `WindowsTerminal.exe`, `Notepad.exe`.
+
+## 2026-05-28 - Workstation Safe Improvement Pass
+
+What was wrong:
+- `C:\hades\dental-crm` contained stale `.edge-debug*` Microsoft Edge profile directories totaling `2.760 GB`.
+- `dental-crm` dev-server respawned again as orphan-root PID `46256` and reopened the same Vite/API process tree.
+- Orphan `HectonPhiStaticAudit.py --no-fail` PID `26420` was running with a missing parent.
+- Active CPU load also included live Hecton work: `dotnet build Hecton8.slnx`, `csc.exe`, and later `OOP_Doc_Scanner.py`; these were not killed because they were active task-owned work, not abandoned processes.
+
+What was done:
+- Verified live Edge/WebView processes did not use `C:\hades\dental-crm\.edge-debug*` as their `user-data-dir`.
+- Deleted `12` stale `.edge-debug*` directories from `C:\hades\dental-crm`.
+- Terminated the respawned orphan `dental-crm` dev-server tree rooted at PID `46256`.
+- Terminated orphan audit PID `26420`.
+- Inspected scheduled tasks and startup entries. No `dental-crm`, `npm`, Hecton, or Python autostart source was found. NVIDIA `NvNodeLauncher` and normal OpenVPN/Bitdefender/Realtek/Edge RunOnce entries were left unchanged.
+
+Cinematic cheats used:
+- None. This was workstation hygiene and process containment.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No game profiler proof.
+- Workstation pressure reduced by deleting `2.760 GB` of stale browser debug profile data and stopping abandoned Node/Python process trees.
+
+Cleanup proof:
+- Final C: free space: `158.45 GB` / `475.70 GB` (`33.3%` free).
+- `C:\hades\dental-crm` final size: `0.459 GB`.
+- Final watched dev ports: `4100` closed, `5173` closed; unrelated Python listeners on `8000` and `8080` remained.
+- Final temp/cache sizes: user temp `0.202 GB`, Windows temp `0`, `C:\hades\.tmp` `0`, CrashDumps `0`, NVIDIA DX/GL cache `0`, Unity user caches `0`.
+- Preserved by instruction: `npm-cache`, `Hecton8\Library`, `Hecton8\Logs`, and Hecton archive logs.
+
+## 2026-05-28 - Core Vault Release Pass
+
+What was wrong:
+- `StaticDataStore` and `BabelDictionaryStore` shared telemetry/BTree DataVault buffer IDs while `EnsureGenerationHandle<T>()` does not create a separate lease for existing buffers.
+- StaticData, Babel, SignalWarden tuning/telemetry/scratchpad, and MacroDatabase routes cleared Vault handles without consistently calling `ReleaseBuffer()`.
+- Babel mapped dictionary/error-slice acquisition failure branches reset handles without release.
+
+What was done:
+- Added Babel-specific telemetry/BTree buffer IDs and moved Babel telemetry off StaticData/BTree shared IDs.
+- Added release helpers and wired shutdown/rebind/close/failure paths through cached `IDataVault`.
+- `GlobalSignals.DisposeAllQueues()` now releases tuning, telemetry ring, and scratchpad Vault handles.
+- `H8MacroDatabaseService.Shutdown()` now releases scratch, blackbox, dirty payload, payload-copy, and sector-coordinate handles before clearing Vault state.
+- MacroDatabase create/temp cleanup helpers were renamed with `Cold` suffix to document persistence-phase IO.
+
+Cinematic cheats used:
+- None. This was core memory lifecycle work, not simulation/rendering.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected value is lower stale-native/rebind/shutdown risk, not measured frame-time improvement.
+
+Proof:
+- `git diff --check` on touched source: exit `0`; line-ending warnings only.
+- Brace balance: `0` for all six touched source files.
+- StaticData/Babel duplicate buffer ID scan: `0` duplicates across their `EnsureGenerationHandle<T>()` routes.
+- Final SignalBus audit: `Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_CORE_VAULT_RELEASE_COLD_RECHECK.json`, `files=2443`, `shaders=71`, `errors=0`, `confirmedErrors=0`, `warnings=73`, `infos=1020`.
+- Touched-file non-info audit findings: `0`.
+- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=703 encodingWithoutUtf8Sig=0`; `OOP_Doc_Scanner.py finalPass=true activeFileCount=703 sourceSyncPass=true`.
+
+Residuals:
+- Full solution build was not run by this agent; user assigned overall compile errors to another agent.
+- No Unity Editor import, Play Mode, profiler, GC, save/load, or player-build proof.
+
+## 2026-05-28 - Core Sync IO And Accessor Pass
+
+What was wrong:
+- `LockstepStateValidator.StageReplayWrite()` could open/create replay file state from the post-fixed simulation route.
+- Several cold Core IO helpers were named like normal runtime helpers, so the static contract could not distinguish lifecycle/user-commit IO from hot IO.
+- `LockstepStateValidator.GetVaultBuffer<T>()` was not a pure getter; it could call `EnsureGenerationHandle<T>()`.
+
+What was done:
+- Moved lockstep replay writer setup to `OnEnable()` via `EnsureReplayWriterCold()`.
+- Removed writer setup from `StageReplayWrite()`; it now uses only an already-open writer or skips replay writing.
+- Renamed cold IO helpers in `InputDispatcher` and `RebindingManager`; added `HectonPersistentPathPolicy.EnsureParentDirectoryCold()` with compatibility wrapper.
+- Renamed mutating lockstep DataVault helper to `OpenOrAcquireVaultBufferView<T>()`.
+
+Cinematic cheats used:
+- None. This was core route/lifecycle cleanup.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected value is avoiding a possible first-replay synchronous file setup hitch in post-fixed simulation.
+
+Proof:
+- `git diff --check` on touched source: exit `0`; line-ending warnings only.
+- Brace balance: `0` for all four touched source files.
+- Final SignalBus audit: `Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_CORE_SYNC_IO_ACCESSOR_RECHECK.json`, `files=2443`, `shaders=71`, `errors=0`, `confirmedErrors=0`, `warnings=68`, `infos=1025`.
+- Core subtree non-info audit findings: `0`.
+- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=704 encodingWithoutUtf8Sig=0`; `OOP_Doc_Scanner.py finalPass=true activeFileCount=704 sourceSyncPass=true`.
+
+Residuals:
+- Full solution build was not run by this agent; user assigned overall compile errors to another agent.
+- No Unity Editor import, Play Mode, profiler, GC, save/load, or player-build proof.
+
+## 2026-05-28 - Global Signal Name Pass
+
+What was wrong:
+- SignalBus audit still had `DUPLICATE_SIGNAL_LIKE_NAME_REVIEW=8` and `EDITOR_MANAGED_STRING_IN_SIGNAL_REVIEW=3`.
+- The duplicate names were namespace-safe C#, but unsafe as global telemetry/operator identifiers.
+
+What was done:
+- Renamed local/narrow duplicate telemetry DTOs:
+  - `OceanSurfaceTelemetryEntry` in `HectonFluidEngine` -> `FluidOceanSurfaceTelemetryEntry`
+  - private `StructuralTelemetryEntry` in `SubmarineStructuralGrid` -> `SubmarineStructuralTelemetryEntry`
+  - private `ThermalTelemetryEntry` in `AbyssalThermalManager` -> `AbyssalThermalManagerTelemetryEntry`
+  - nested `GasDynamicsSolver.AtmosphereTelemetryEntry` -> `GasDynamicsTelemetryEntry`
+- Renamed editor-only `TelemetrySnapshotRow` -> `CrashSnapshotRow`.
+- Kept layout, offsets, capacities, BufferIDs, SystemIDs, and runtime behavior unchanged.
+
+Cinematic cheats used:
+- None. This was telemetry contract hygiene.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- Final SignalBus audit: `Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_GLOBAL_SIGNAL_NAME_RECHECK.json`, `files=2443`, `shaders=71`, `errors=0`, `confirmedErrors=0`, `warnings=57`, `infos=1024`.
+- Closed categories: `DUPLICATE_SIGNAL_LIKE_NAME_REVIEW=0`, `EDITOR_MANAGED_STRING_IN_SIGNAL_REVIEW=0`.
+- Touched source brace delta: `0`.
+- Scoped `git diff --check`: exit `0`; line-ending warnings only.
+
+Residuals:
+- Remaining warnings are `RUNTIME_SYNC_FILE_IO_REVIEW=57`, spread outside the Core subtree.
+- Full solution build was not run by this agent; user assigned overall compile errors to another agent.
+- No Unity Editor import, Play Mode, profiler, GC, save/load, or player-build proof.

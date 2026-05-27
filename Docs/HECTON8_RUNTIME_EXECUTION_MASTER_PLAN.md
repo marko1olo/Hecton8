@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Runtime Execution Master Plan
 
-Date: 2026-05-26
+Date: 2026-05-28
 Status: PENDING VERIFICATION
 Evidence class: STATIC_DOC
 
@@ -8,7 +8,8 @@ Purpose: stable execution order for moving HECTON-8 toward a measurable runtime 
 
 ## Authority Boundary
 
-- Read `Docs/PROJECT_BASELINE.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/README.md`, and `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` before using this plan.
+- Read `Docs/PROJECT_BASELINE.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, and `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` before using this plan.
+- Product-route work must also read `Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` and `Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md`.
 - Current proof snapshots live in the actuality ledger, not here.
 - Source under `Assets/_Project` wins over this plan when implementation has drifted.
 - No Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, player build, save/load, shader, platform, or visual proof is implied by this document.
@@ -57,6 +58,8 @@ Purpose: stable execution order for moving HECTON-8 toward a measurable runtime 
 7. Prove first playable route.
    - Runtime/content work should remove a blocker for the first 20 minutes.
    - No broad system expansion without route value or owner-debt reduction.
+   - Current static new-game spine: `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`.
+   - Current V0 proof target: Copper Wire route from boot/world/swim/copper/quest/craft to save/load restored state.
 
 8. Harden presentation with budgeted fakes.
    - Use saved CPU/GPU budget to buy better visuals.

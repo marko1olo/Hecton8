@@ -189,7 +189,7 @@ namespace Hecton8.Construction
         private void OnEnable()
         {
             s_active = this;
-            _vault = GlobalRegistry.DataVault;
+            BindDataVaultForLifecycle(GlobalRegistry.DataVault);
             InitializeDumpWriterCold();
             _buffersReady = TryInitializeBuffers();
             if (_buffersReady && generateMockOnEnable)
@@ -258,12 +258,20 @@ namespace Hecton8.Construction
                 CompleteMockSeedForTeardown();
                 CompleteScheduledSolverForTeardown();
                 UnlockJobBuffers();
-                ReleaseOwnedBuffers();
-                _vault = currentService as IDataVault;
+                BindDataVaultForLifecycle(currentService as IDataVault);
                 _buffersReady = _vault != null && TryInitializeBuffers();
                 if (_buffersReady && generateMockOnEnable)
                     GenerateMockDrainageNetwork();
             }
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            ReleaseOwnedBuffers();
+            _vault = nextVault;
         }
 
         private bool _registeredHotSwap;
@@ -1409,36 +1417,71 @@ namespace Hecton8.Construction
             if (_vault == null)
             {
                 ResetHandles();
+                ResetRuntimeStateForVaultRelease();
                 return;
             }
 
-            _vault.ReleaseBuffer(in _flowGpuHandle);
-            _vault.ReleaseBuffer(in _frameSummaryHandle);
-            _vault.ReleaseBuffer(in _csvScratchHandle);
-            _vault.ReleaseBuffer(in _profilesHandle);
-            _vault.ReleaseBuffer(in _countersHandle);
-            _vault.ReleaseBuffer(in _telemetryCursorHandle);
-            _vault.ReleaseBuffer(in _telemetryHandle);
-            _vault.ReleaseBuffer(in _tuningHandle);
-            _vault.ReleaseBuffer(in _roomDrainLocksHandle);
-            _vault.ReleaseBuffer(in _pumpMassErrorHandle);
-            _vault.ReleaseBuffer(in _pumpRemainderHandle);
-            _vault.ReleaseBuffer(in _pumpPowerNodeHashesHandle);
-            _vault.ReleaseBuffer(in _pumpBaseMaxRateHandle);
-            _vault.ReleaseBuffer(in _powerPotentialHandle);
-            _vault.ReleaseBuffer(in _pressureBackHandle);
-            _vault.ReleaseBuffer(in _pressureFrontHandle);
-            _vault.ReleaseBuffer(in _csrWriteCursorHandle);
-            _vault.ReleaseBuffer(in _csrFlatEdgeIndexHandle);
-            _vault.ReleaseBuffer(in _csrFlowHandle);
-            _vault.ReleaseBuffer(in _csrConductanceHandle);
-            _vault.ReleaseBuffer(in _csrDestinationsHandle);
-            _vault.ReleaseBuffer(in _csrOffsetsHandle);
-            _vault.ReleaseBuffer(in _pumpRoomIndicesHandle);
-            _vault.ReleaseBuffer(in _nodeAupHandle);
-            _vault.ReleaseBuffer(in _pipeEdgesHandle);
-            _vault.ReleaseBuffer(in _pumpNodesHandle);
+            ReleaseOwnedHandle(ref _flowGpuHandle);
+            ReleaseOwnedHandle(ref _frameSummaryHandle);
+            ReleaseOwnedHandle(ref _csvScratchHandle);
+            ReleaseOwnedHandle(ref _profilesHandle);
+            ReleaseOwnedHandle(ref _countersHandle);
+            ReleaseOwnedHandle(ref _telemetryCursorHandle);
+            ReleaseOwnedHandle(ref _telemetryHandle);
+            ReleaseOwnedHandle(ref _tuningHandle);
+            ReleaseOwnedHandle(ref _roomDrainLocksHandle);
+            ReleaseOwnedHandle(ref _pumpMassErrorHandle);
+            ReleaseOwnedHandle(ref _pumpRemainderHandle);
+            ReleaseOwnedHandle(ref _pumpPowerNodeHashesHandle);
+            ReleaseOwnedHandle(ref _pumpBaseMaxRateHandle);
+            ReleaseOwnedHandle(ref _powerPotentialHandle);
+            ReleaseOwnedHandle(ref _pressureBackHandle);
+            ReleaseOwnedHandle(ref _pressureFrontHandle);
+            ReleaseOwnedHandle(ref _csrWriteCursorHandle);
+            ReleaseOwnedHandle(ref _csrFlatEdgeIndexHandle);
+            ReleaseOwnedHandle(ref _csrFlowHandle);
+            ReleaseOwnedHandle(ref _csrConductanceHandle);
+            ReleaseOwnedHandle(ref _csrDestinationsHandle);
+            ReleaseOwnedHandle(ref _csrOffsetsHandle);
+            ReleaseOwnedHandle(ref _pumpRoomIndicesHandle);
+            ReleaseOwnedHandle(ref _nodeAupHandle);
+            ReleaseOwnedHandle(ref _pipeEdgesHandle);
+            ReleaseOwnedHandle(ref _pumpNodesHandle);
             ResetHandles();
+            ResetRuntimeStateForVaultRelease();
+        }
+
+        private void ReleaseOwnedHandle<T>(ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)OwnerSystem)
+            {
+                _vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
+        }
+
+        private void ResetRuntimeStateForVaultRelease()
+        {
+            _solverHandle = default;
+            _mockSeedHandle = default;
+            _lockedBufferMask = 0UL;
+            _solverScheduleTimestamp = 0L;
+            _frameIndex = 0u;
+            _flowBufferWriteIndex = 0;
+            _solveAccumulator = 0f;
+            _solverScheduled = false;
+            _pressureFrontIsA = true;
+            _topologyDirty = true;
+            _flowUploadDirty = false;
+            _mockSeedScheduled = false;
+            _blackBoxDumped = false;
+            _debugActivePumps = 0;
+            _debugFrameEvacuatedM3 = 0f;
+            _debugAveragePressure = 0f;
         }
 
         private void ResetHandles()

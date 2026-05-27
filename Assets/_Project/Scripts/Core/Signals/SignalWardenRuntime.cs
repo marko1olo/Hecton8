@@ -479,6 +479,32 @@ namespace Hecton8.Core.Contracts.Signals
                    csvScratch.Length >= CsvScratchBytes;
         }
 
+        /// <summary>Releases vault-backed tuning buffers during signal shutdown.</summary>
+        public static void ReleaseHandlesOnly()
+        {
+            IDataVault vault = _vault;
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _profilesHandle);
+                ReleaseVaultHandle(vault, ref _countHandle);
+                ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            }
+
+            _vault = null;
+            _profilesHandle = default;
+            _countHandle = default;
+            _csvScratchHandle = default;
+            _initialized = 0;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
         internal static uint ComputeLabelHash(ReadOnlySpan<byte> label)
         {
             const uint fnvOffset = 2166136261u;
@@ -817,10 +843,25 @@ namespace Hecton8.Core.Contracts.Signals
         /// <summary>Releases cached vault handles. GlobalDataVault owns backing memory.</summary>
         public static void ReleaseHandlesOnly()
         {
+            IDataVault vault = _vault;
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _ringHandle);
+                ReleaseVaultHandle(vault, ref _cursorHandle);
+            }
+
             _vault = null;
             _ringHandle = default;
             _cursorHandle = default;
             _initialized = 0;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         /// <summary>Writes one black-box row. Call cadence is owned by the signal corridor.</summary>
@@ -2465,6 +2506,24 @@ namespace Hecton8.Core.Contracts.Signals
 
         public static void ReleaseHandlesOnly()
         {
+            IDataVault vault = _vault;
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _frontBytesHandle);
+                ReleaseVaultHandle(vault, ref _backBytesHandle);
+                ReleaseVaultHandle(vault, ref _frontHeadersHandle);
+                ReleaseVaultHandle(vault, ref _backHeadersHandle);
+                ReleaseVaultHandle(vault, ref _committedSignalsHandle);
+                ReleaseVaultHandle(vault, ref _committedCountHandle);
+                ReleaseVaultHandle(vault, ref _telemetryHandle);
+                ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+                ReleaseVaultHandle(vault, ref _tuningHandle);
+                ReleaseVaultHandle(vault, ref _coalescenceBucketsHandle);
+                ReleaseVaultHandle(vault, ref _overflowSignalsHandle);
+                ReleaseVaultHandle(vault, ref _overflowHeaderHandle);
+                ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            }
+
             _vault = null;
             _frontBytesHandle = default;
             _backBytesHandle = default;
@@ -2480,6 +2539,14 @@ namespace Hecton8.Core.Contracts.Signals
             _overflowHeaderHandle = default;
             _csvScratchHandle = default;
             _initialized = 0;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         public static bool TryAcquireWriteContext(uint frame, double3 sectorOriginAup, out SignalThreadLocalWriteContext context)

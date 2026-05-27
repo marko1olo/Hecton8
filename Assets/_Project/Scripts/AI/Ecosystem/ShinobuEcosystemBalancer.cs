@@ -311,7 +311,7 @@ namespace Hecton8.AI.Ecosystem
             UnlockJobBuffers();
             ShinobuSpatialGridForensics.ShutdownDumpWorker();
             _gpuUploadDispatcher.Dispose();
-            ClearCachedState();
+            ReleaseVaultStateForLifecycle(clearRenderState: true);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -334,19 +334,7 @@ namespace Hecton8.AI.Ecosystem
             CompleteFrameJobForTeardown();
             UnlockJobBuffers();
             ShinobuSpatialGridForensics.ShutdownDumpWorker();
-            _dataVault = currentService as IDataVault;
-            ResetVaultHandles();
-            _telemetryCursor = 0;
-            _flockingTelemetryCursor = 0;
-            _simulationFrameCounter = 0u;
-            _lastFlockingDispersalSignalFrame = 0u;
-            _spatialGridRangeEpoch = BumpSpatialGridRangeEpoch(_spatialGridRangeEpoch);
-            _csvTimestampTicks = 0L;
-            _swarmSpeciesCsvTimestampTicks = 0L;
-            _spatialGridCsvTimestampTicks = 0L;
-            _dumpedFault = false;
-            _dumpedFlockingFault = false;
-            _dumpedSpatialGridFault = false;
+            RebindDataVaultForLifecycle(currentService as IDataVault);
 
             if (_dataVault == null || !EnsureVaultState())
             {
@@ -938,6 +926,9 @@ namespace Hecton8.AI.Ecosystem
         private bool EnsureVaultState()
         {
             ShinobuEcosystemLayoutManifest.VerifyColdBoot();
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, currentVault))
+                RebindDataVaultForLifecycle(currentVault);
 
             IDataVault vault = _dataVault;
             if (vault == null)
@@ -1200,10 +1191,10 @@ namespace Hecton8.AI.Ecosystem
 
         private IDataVault EnsureDataVaultCold()
         {
-            if (_dataVault != null)
-                return _dataVault;
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, currentVault))
+                RebindDataVaultForLifecycle(currentVault);
 
-            _dataVault = GlobalRegistry.DataVault;
             return _dataVault;
         }
 
@@ -2187,7 +2178,75 @@ namespace Hecton8.AI.Ecosystem
             _swarmSpeciesProfileHandle = default;
         }
 
-        private void ClearCachedState()
+        private void RebindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            ReleaseVaultStateForLifecycle(clearRenderState: false);
+            _dataVault = nextVault;
+        }
+
+        private void ReleaseVaultStateForLifecycle(bool clearRenderState)
+        {
+            CompleteFrameJobForTeardown();
+            UnlockJobBuffers();
+            ShinobuSpatialGridForensics.ShutdownDumpWorker();
+            ReleaseOwnedVaultHandles(_dataVault);
+            ClearCachedState(clearRenderState);
+        }
+
+        private void ReleaseOwnedVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedVaultHandle(vault, ref _entityHandle);
+            ReleaseOwnedVaultHandle(vault, ref _aupHandle);
+            ReleaseOwnedVaultHandle(vault, ref _boidStateHandle);
+            ReleaseOwnedVaultHandle(vault, ref _entitySnapshotHandle);
+            ReleaseOwnedVaultHandle(vault, ref _aupSnapshotHandle);
+            ReleaseOwnedVaultHandle(vault, ref _boidStateSnapshotHandle);
+            ReleaseOwnedVaultHandle(vault, ref _sectorHandle);
+            ReleaseOwnedVaultHandle(vault, ref _tuningHandle);
+            ReleaseOwnedVaultHandle(vault, ref _counterHandle);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _flockingThreatHandle);
+            ReleaseOwnedVaultHandle(vault, ref _flockingThreatCountHandle);
+            ReleaseOwnedVaultHandle(vault, ref _flockingTelemetryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _flockingCounterHandle);
+            ReleaseOwnedVaultHandle(vault, ref _debugCellHandle);
+            ReleaseOwnedVaultHandle(vault, ref _renderMatrixHandle);
+            ReleaseOwnedVaultHandle(vault, ref _renderCustomDataHandle);
+            ReleaseOwnedVaultHandle(vault, ref _indirectArgsHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialHashBucketHeadHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialHashNextHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridEntryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridSortScratchHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridBucketRangeHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridTelemetryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridTelemetryCursorHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridTuningHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridProfileHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridCsvScratchHandle);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridDumpSnapshotHandle);
+            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseOwnedVaultHandle(vault, ref _legacyScratchHandle);
+            ReleaseOwnedVaultHandle(vault, ref _swarmSpeciesProfileHandle);
+        }
+
+        private static void ReleaseOwnedVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.AIEcology)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
+        }
+
+        private void ClearCachedState(bool clearRenderState)
         {
             _dataVault = null;
             _vaultBuffersReady = false;
@@ -2211,10 +2270,13 @@ namespace Hecton8.AI.Ecosystem
             _dumpedFault = false;
             _dumpedFlockingFault = false;
             _dumpedSpatialGridFault = false;
-            _proceduralRenderEnabled = false;
-            _proceduralRenderMaterial = null;
-            _proceduralRenderBounds = default;
-            _proceduralRenderLayer = 0;
+            if (clearRenderState)
+            {
+                _proceduralRenderEnabled = false;
+                _proceduralRenderMaterial = null;
+                _proceduralRenderBounds = default;
+                _proceduralRenderLayer = 0;
+            }
         }
 
         private void RefreshCameraSignals()

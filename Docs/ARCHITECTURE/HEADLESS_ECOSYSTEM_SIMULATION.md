@@ -36,7 +36,7 @@ Historical 2026-05-04 boundary:
 
 - This is the headless ecosystem implementation contract, not proof of live headless correctness.
 
-- Historical project-state orientation previously started at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Older project-state orientation used dated reports. Those paths are historical and may be archived or absent; use the current actuality ledger and topology docs.
 
 - Headless fauna, AUP route ownership, hibernation catch-up, and save-sector reconciliation remain high-risk until runtime tests prove no presentation dependency and no persistence drift.
 

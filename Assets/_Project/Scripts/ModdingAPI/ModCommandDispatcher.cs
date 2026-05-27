@@ -438,6 +438,7 @@ namespace Hecton8.Modding
 
         internal static void BindRegistryServicesCold()
         {
+            FutureCommandSandboxValidator.BindRegistryServicesCold();
             _abyssalFlowGpu = GlobalRegistry.AbyssalFlowGpu;
             _audioService = GlobalRegistry.Audio;
         }
@@ -446,6 +447,8 @@ namespace Hecton8.Modding
             GlobalRegistryServiceSlot serviceSlot,
             object currentService)
         {
+            FutureCommandSandboxValidator.OnGlobalRegistryServiceReplaced(serviceSlot, currentService);
+
             if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
             {
                 _abyssalFlowGpu = currentService as IAbyssalFlowGpuReadModel;

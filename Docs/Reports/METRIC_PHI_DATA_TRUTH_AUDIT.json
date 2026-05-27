@@ -3,15 +3,6 @@
   "rows": [
     {
       "arm64Violations": 60,
-      "executionTimeMs": 2054.841,
-      "filesScanned": 2368,
-      "performanceRegressionWarning": true,
-      "schema": "hecton8.binary_schema_audit.v1",
-      "source": "AssemblyDependencyAudit.py",
-      "structsValidated": 2967
-    },
-    {
-      "arm64Violations": 60,
       "executionTimeMs": 586.976,
       "filesScanned": 2368,
       "performanceRegressionWarning": true,
@@ -3549,6 +3540,18 @@
       "schemaMismatches": 0,
       "executionTimeMs": 1064.882,
       "performanceRegressionWarning": true
+    },
+    {
+      "agentId": "DOC_ROOT_ARCH_AUDIT",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 2,
+      "structsValidated": 32,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 491.846,
+      "performanceRegressionWarning": false
     }
   ]
 }

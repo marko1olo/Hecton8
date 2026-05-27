@@ -23,7 +23,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Modding;
-using Hecton8.Optimization;
 using Hecton8.Quest;
 using Hecton8.UI;
 using Hecton8.World;
@@ -48,8 +47,6 @@ namespace Hecton8.SaveSystem
         private const int SaveTelemetryCapacity = 300;
         private const int WfcOutpostTelemetryCapacity = 300;
         private const int WfcOutpostEventTelemetryCapacity = 300;
-        private const float SafeGcCollectFrameBudgetSeconds = 0.014f;
-        private const long VramAbortThresholdBytes = 1800L * 1024L * 1024L;
         private const uint AsyncPersistenceSourceHash = 0x41505953u; // APYS
         private const uint WorldPagerSourceHash = 0x48384250u; // H8BP
         private const uint WfcOutpostPersistenceSourceHash = 0x57464350u; // WFCP
@@ -252,7 +249,6 @@ namespace Hecton8.SaveSystem
         private int _wfcOutpostSnapshotCacheNextIndex;
         private int _wfcOutpostSnapshotCacheRetryIndex;
         private uint _operationSequence;
-        private bool _postSaveVramGcPending;
         private bool _wfcOutpostBlackBoxDumped;
         private LoadingScreenController _cachedLoadingScreenController;
         private string _integritySlotName;
@@ -1233,7 +1229,6 @@ namespace Hecton8.SaveSystem
             DrainWfcSectorHydratedSignals();
             DrainChunkDehydratedSignals();
             PollWorldPagerSavingNotification();
-            DrainPostSaveVramGc();
         }
 
         public bool TryRequestSave(byte slotIndex, uint sourceHash, uint operationId = 0u)
@@ -2199,18 +2194,6 @@ namespace Hecton8.SaveSystem
             _worldPagerSavingNotificationArmed = false;
         }
 
-        private void DrainPostSaveVramGc()
-        {
-            if (!_postSaveVramGcPending)
-                return;
-
-            if (SystemDispatcher.CurrentFrameUnscaledDeltaTime > SafeGcCollectFrameBudgetSeconds)
-                return;
-
-            _postSaveVramGcPending = false;
-            GC.Collect(0, GCCollectionMode.Optimized, false);
-        }
-
         private uint ResolveOperationId(uint requestedOperationId)
         {
             if (requestedOperationId != 0u)
@@ -2666,21 +2649,6 @@ namespace Hecton8.SaveSystem
                 Flags = 0
             };
             SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
-        }
-
-        private void RequestVramAbortGcIfNeeded()
-        {
-            long usedVramBytes = 0L;
-            IVramBudgetReadModel monitor = GlobalRegistry.VRAMBudgetReadModel;
-            if (monitor != null)
-                usedVramBytes = monitor.TotalVRAMBytes;
-            else
-                usedVramBytes = VRAMBudgetTracker.EstimatedVRAMBytes;
-
-            if (usedVramBytes <= VramAbortThresholdBytes)
-                return;
-
-            _postSaveVramGcPending = true;
         }
 
         private void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
@@ -3223,7 +3191,6 @@ namespace Hecton8.SaveSystem
                     thumbnailCompletion.Succeeded != 0 ? 0u : 2u);
                 PublishSaveCompleted(slotIndex, operationId, totalTimer.ElapsedMilliseconds, compressedSizeBytes, succeeded: true);
                 PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Completed, 1f, 0u);
-                RequestVramAbortGcIfNeeded();
                 StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
                 SaveSlotIntegrityState savedIntegrity = backupRetention > 0
                     ? SaveSlotIntegrityState.HealthyWithBackup

@@ -875,7 +875,8 @@ namespace Hecton8.Tools
 
             if (IsHandleCreated(in handle))
             {
-                vault.ReleaseBuffer(in handle);
+                if (handle.SystemID == (uint)SystemID.GameplayTools)
+                    vault.ReleaseBuffer(in handle);
                 handle = default;
             }
 
@@ -1641,9 +1642,13 @@ namespace Hecton8.Tools
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
             if (!IsHandleCreated(in handle))
+            {
+                handle = default;
                 return;
+            }
 
-            vault.ReleaseBuffer(in handle);
+            if (handle.SystemID == (uint)SystemID.GameplayTools)
+                vault.ReleaseBuffer(in handle);
             handle = default;
         }
 

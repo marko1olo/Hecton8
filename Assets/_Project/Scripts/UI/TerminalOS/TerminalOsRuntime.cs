@@ -3790,6 +3790,7 @@ namespace Hecton8.UI
 
         private void DisposeNativeResources()
         {
+            ReleaseVaultHandles(_vault);
             ClearVaultHandles();
             _nativeResourcesReady = false;
             _vault = null;
@@ -3850,6 +3851,45 @@ namespace Hecton8.UI
             _decryptionTerminalsHandle = default;
             _decryptionKnobInputHandle = default;
             _decryptionTelemetryRingHandle = default;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _terminalStatesHandle);
+            ReleaseVaultHandle(vault, ref _screenCommandsHandle);
+            ReleaseVaultHandle(vault, ref _glyphUvsHandle);
+            ReleaseVaultHandle(vault, ref _terminalPositionsHandle);
+            ReleaseVaultHandle(vault, ref _terminalForwardHandle);
+            ReleaseVaultHandle(vault, ref _dirtyIndicesHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _mockPowerSignalHandle);
+            ReleaseVaultHandle(vault, ref _mockDamageSignalHandle);
+            ReleaseVaultHandle(vault, ref _mockPowerStatusSignalHandle);
+            ReleaseVaultHandle(vault, ref _buttonAabbHandle);
+            ReleaseVaultHandle(vault, ref _panelInstancesHandle);
+            ReleaseVaultHandle(vault, ref _clickScratchHandle);
+            ReleaseVaultHandle(vault, ref _terminalPlanesHandle);
+            ReleaseVaultHandle(vault, ref _gazeRayHandle);
+            ReleaseVaultHandle(vault, ref _terminalInteractionsHandle);
+            ReleaseTerminalProjectionVaultHandles(vault);
+            ReleaseVaultHandle(vault, ref _decryptionPuzzlesHandle);
+            ReleaseVaultHandle(vault, ref _decryptionTerminalsHandle);
+            ReleaseVaultHandle(vault, ref _decryptionKnobInputHandle);
+            ReleaseVaultHandle(vault, ref _decryptionTelemetryRingHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : unmanaged
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.UI)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

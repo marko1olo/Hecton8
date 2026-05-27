@@ -1,6 +1,6 @@
 ﻿# Platform Portability Proof Ladder
 
-Date: 2026-05-19
+Date: 2026-05-28
 
 Status: PENDING VERIFICATION
 
@@ -168,7 +168,7 @@ python Tools/PlatformPortabilityProofAudit.py --fail-on-missing-build-artifact
 
 ```
 
-Current HFI R21 static map:
+Historical HFI R21 static map:
 
 - required XR packages are present in `Packages/manifest.json` and
 
@@ -182,10 +182,16 @@ Current HFI R21 static map:
 
 - Addressables data files: `0`;
 
-- Data Monolith payload is missing;
+- Data Monolith payload was missing in that historical map;
 
 - build artifacts/logs: `0`;
 
 - PICO package candidates: `0`.
 
-Interpretation: Quest scaffold exists. Quest readiness does not.
+Current 2026-05-28 static filesystem check:
+
+- Data Monolith payload exists at `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`;
+- payload size is `1,064,384` bytes;
+- this changes only the static file-presence fact.
+
+Interpretation: Quest scaffold exists. Quest readiness does not. Data Monolith file presence does not prove content-payload readiness without import, boot, checksum, player, and route proof.

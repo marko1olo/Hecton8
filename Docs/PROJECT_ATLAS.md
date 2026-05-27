@@ -1,8 +1,8 @@
 ﻿# PROJECT_ATLAS
 
-Date: 2026-05-26
+Date: 2026-05-28
 Status: TOOL CONTRACT / STATIC DOMAIN INDEX
-Owner: DOCS_ACTUALIZATION
+Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / GENERATED_SOURCE_INDEX
 
 Purpose: stable root path for atlas tooling and the 85-domain project map. This file preserves required verification tokens and the domain table only; full generated detail belongs in generated artifacts or deprecated snapshots.
@@ -27,6 +27,8 @@ These phrases are intentionally preserved because local validators and data tool
 - 85 Identified Domains
 - observedAssemblyCount = 83
 - observedDomainIndexCount = 85
+
+Compatibility note: `observedAssemblyCount = 83` is a preserved legacy tool token, not the current asmdef count. Current static source reality on 2026-05-28 is recorded in `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`: `167` first-party asmdefs under `Assets/_Project`; generated dependency detail lives in `Docs/Generated/DEPENDENCY_GRAPH.md`.
 
 ## H-Phi / DataSovereignty Boundary
 
@@ -56,7 +58,7 @@ These phrases are intentionally preserved because local validators and data tool
 
 | 6 | `1: CORE & MEMORY INFRASTRUCTURE (Engine Foundation)` | `Native Arena Allocator` | Native Arena Allocator: Custom UnsafeUtility allocator for bypassing TempJob limits and memory pooling for Burst Jobs. |
 
-| 7 | `1: CORE & MEMORY INFRASTRUCTURE (Engine Foundation)` | `Crash Telemetry (Blackbox)` | Crash Telemetry (Blackbox): Circular event buffer (32-byte structures). Dump to .h8dump during crashes or FPS drops on a background thread. |
+| 7 | `1: CORE & MEMORY INFRASTRUCTURE (Engine Foundation)` | `Crash Telemetry (Blackbox)` | Fixed-size black-box rings keep the last 300 frames of high-level state. Primary fault dumps use bounded `Docs/AgentLogs/Dump_*.bin` files; `.h8dump` mirrors are legacy-only when current source keeps them. |
 
 | 8 | `1: CORE & MEMORY INFRASTRUCTURE (Engine Foundation)` | `Scalability Dictator (Hardware)` | Scalability Dictator (Hardware): Continuous `GlobalQualityWeight` scaling of Math LOD, cadence, capacity, and presentation cost from survival budget to visual-overrun budget. |
 | 9 | `1: CORE & MEMORY INFRASTRUCTURE (Engine Foundation)` | `Platform Abstraction Layer (PAL)` | Platform Abstraction Layer (PAL): IInputProvider. Steam Deck broadcasting of Trackpad/gyro/gamepad inputs without API leaks in Core. |
@@ -93,7 +95,7 @@ These phrases are intentionally preserved because local validators and data tool
 
 | 25 | `3: FLORA, FAUNA & BIOTA (Ecosystem and AI)` | `Predator Steering & Lunge` | Predator Steering & Lunge: Octant-aligned navigation, S-curved attacks, obstacle avoidance (SDF raycasts). |
 
-| 26 | `3: FLORA, FAUNA & BIOTA (Ecosystem and AI)` | `A Funnel Smoothing` | A Funnel Smoothing:* 3D voxel-based pathfinding with smoothed "square" corners (String Pulling). |
+| 26 | `3: FLORA, FAUNA & BIOTA (Ecosystem and AI)` | `Funnel Smoothing` | 3D voxel-based pathfinding with smoothed "square" corners (String Pulling). |
 
 | 27 | `3: FLORA, FAUNA & BIOTA (Ecosystem and AI)` | `Leviathan Procedural IK` | Leviathan Procedural IK: Boneless VAT body blending + burst calculation of tentacles/tails (Constrained S-Curves). |
 
@@ -103,7 +105,7 @@ These phrases are intentionally preserved because local validators and data tool
 
 | 30 | `3: FLORA, FAUNA & BIOTA (Ecosystem and AI)` | `Fauna Genetics & Mutation` | Fauna Genetics & Mutation: 64-bit trait masks (size, aggression, coloration) transferred when spawning in biomes. |
 
-| 31 | `4: PLAYER, KINEMATICS & TOOLS (Locomotion and Equipment)` | `Kinematic Character Controller (KCC)` | Kinematic Character Controller (KCC): Asynchronous capsule casts. Speculative collisions. Complete absence of SphereCastNonAlloc in the main thread. |
+| 31 | `4: PLAYER, KINEMATICS & TOOLS (Locomotion and Equipment)` | `Kinematic Character Controller (KCC)` | Kinematic Character Controller (KCC): asynchronous capsule casts, speculative collisions, and no main-thread `SphereCastNonAlloc` route without a documented exception. |
 
 | 32 | `4: PLAYER, KINEMATICS & TOOLS (Locomotion and Equipment)` | `Hydrodynamic Drag & Buoyancy` | Hydrodynamic Drag & Buoyancy: Scalar mass and inertia calculation. force * math.rcp(mass + addedMass). |
 
@@ -125,7 +127,7 @@ These phrases are intentionally preserved because local validators and data tool
 
 | 41 | `5: COMBAT & SURVIVAL PHYSIOLOGY (Combat and Body)` | `Combat Damage Router` | Combat Damage Router: NativeQueue for ForcePackets. Damage distribution to modules, players, or creatures in a single pass. |
 
-| 42 | `5: COMBAT & SURVIVAL PHYSIOLOGY (Combat and Body)` | `Armor Penetration LUT` | Armor Penetration LUT: 8x8 penetration tables. Hitboxes based on local AABB primitives (Headshot multipliers). |
+| 42 | `5: COMBAT & SURVIVAL PHYSIOLOGY (Combat and Body)` | `Armor Penetration LUT` | Armor Penetration LUT: 8x6 material-row x angle-step penetration tables. Hitboxes based on local AABB primitives (Headshot multipliers). |
 
 | 43 | `5: COMBAT & SURVIVAL PHYSIOLOGY (Combat and Body)` | `Status Effects Engine` | Status Effects Engine: 32-bit masks. Bleeding, poison, and stun processing in the SlowTick job. |
 

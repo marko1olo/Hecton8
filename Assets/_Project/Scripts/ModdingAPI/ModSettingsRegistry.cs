@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Hecton8.Core;
 using Hecton8.Input;
 using UnityEngine;
 
@@ -91,12 +92,27 @@ namespace Hecton8.Modding
         private static readonly List<SettingEntry> _entries = new List<SettingEntry>(32);
         // COLD ALLOC: Dictionary<string,int>[32] — compound key to setting index lookup — owner: ModSettingsRegistry
         private static readonly Dictionary<uint, int> _entryIndexByHash = new Dictionary<uint, int>(32);
+        private static UserOptionsPersistence s_userOptions;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _entries.Clear();
             _entryIndexByHash.Clear();
+            s_userOptions = null;
+        }
+
+        internal static void BindRegistryServicesCold()
+        {
+            s_userOptions = GlobalRegistry.UserOptions;
+        }
+
+        internal static void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.UserOptionsRuntime)
+                s_userOptions = currentService as UserOptionsPersistence;
         }
 
         internal static void RegisterToggle(string modId, string settingName, bool defaultValue, Action<bool> onValueChanged)
@@ -104,8 +120,9 @@ namespace Hecton8.Modding
             if (!TryGetCompoundHash(modId, settingName, out uint compoundHash))
                 return;
 
-            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
-            bool value = options != null ? options.GetBool(BuildStorageKey(compoundHash), defaultValue) : defaultValue;
+            string storageKey = BuildStorageKey(compoundHash);
+            UserOptionsPersistence options = s_userOptions;
+            bool value = options != null ? options.GetBool(storageKey, defaultValue) : defaultValue;
 
             SettingEntry entry = new SettingEntry
             {
@@ -113,6 +130,7 @@ namespace Hecton8.Modding
                 ModHash = ModCommandDispatcher.ComputeModHash(modId),
                 SettingName = settingName,
                 DisplayName = settingName,
+                StorageKey = storageKey,
                 KeyHash = compoundHash,
                 Kind = ModSettingKind.Toggle,
                 BoolValue = value,
@@ -133,9 +151,10 @@ namespace Hecton8.Modding
             float safeMax = Mathf.Max(minValue, maxValue);
             float safeDefault = Mathf.Clamp(defaultValue, safeMin, safeMax);
 
-            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
+            string storageKey = BuildStorageKey(compoundHash);
+            UserOptionsPersistence options = s_userOptions;
             float value = options != null
-                ? Mathf.Clamp(options.GetFloat(BuildStorageKey(compoundHash), safeDefault), safeMin, safeMax)
+                ? Mathf.Clamp(options.GetFloat(storageKey, safeDefault), safeMin, safeMax)
                 : safeDefault;
 
             SettingEntry entry = new SettingEntry
@@ -144,6 +163,7 @@ namespace Hecton8.Modding
                 ModHash = ModCommandDispatcher.ComputeModHash(modId),
                 SettingName = settingName,
                 DisplayName = settingName,
+                StorageKey = storageKey,
                 KeyHash = compoundHash,
                 Kind = ModSettingKind.Slider,
                 FloatValue = value,
@@ -197,10 +217,10 @@ namespace Hecton8.Modding
             entry.BoolValue = value;
             _entries[index] = entry;
 
-            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
+            UserOptionsPersistence options = s_userOptions;
             if (options != null)
             {
-                options.SetBool(BuildStorageKey(entry.KeyHash), value);
+                options.SetBool(entry.StorageKey, value);
                 options.Save();
             }
 
@@ -209,7 +229,7 @@ namespace Hecton8.Modding
             return true;
         }
 
-        internal static bool TryApplySlider(string modId, string settingName, float value)
+        internal static bool TryApplySlider(string modId, string settingName, float value, bool persist = true)
         {
             if (!TryGetEntry(modId, settingName, out int index))
                 return false;
@@ -225,14 +245,33 @@ namespace Hecton8.Modding
             entry.FloatValue = clamped;
             _entries[index] = entry;
 
-            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
+            UserOptionsPersistence options = s_userOptions;
             if (options != null)
             {
-                options.SetFloat(BuildStorageKey(entry.KeyHash), clamped);
-                options.Save();
+                options.SetFloat(entry.StorageKey, clamped);
+                if (persist)
+                    options.Save();
             }
 
             InvokeSliderCallback(entry.ModId, entry.ModHash, entry.FloatChanged, clamped);
+            if (persist)
+                ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
+            return true;
+        }
+
+        internal static bool TryPersistSetting(string modId, string settingName)
+        {
+            if (!TryGetEntry(modId, settingName, out int index))
+                return false;
+
+            UserOptionsPersistence options = s_userOptions;
+            if (options == null)
+                return false;
+
+            if (!options.TrySave())
+                return false;
+
+            SettingEntry entry = _entries[index];
             ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
             return true;
         }
@@ -346,6 +385,7 @@ namespace Hecton8.Modding
             public uint ModHash;
             public string SettingName;
             public string DisplayName;
+            public string StorageKey;
             public uint KeyHash;
             public ModSettingKind Kind;
             public bool BoolValue;

@@ -397,10 +397,7 @@ namespace Hecton8.Animation.FaunaProcedural
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            CompletePendingSolverForTeardown();
-            ReleaseVaultHandles(_dataVault ?? previousService as IDataVault);
-            _dataVault = currentService as IDataVault;
-            ClearHandles();
+            BindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
             if (EnsureVaultBuffers())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
@@ -539,7 +536,28 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private void RefreshColdDependencies()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            BindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault currentVault, IDataVault releaseVaultOverride)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            CompletePendingSolverForTeardown();
+            ReleaseVaultHandles(_dataVault ?? releaseVaultOverride);
+            ClearHandles();
+            _dataVault = currentVault;
+            _activeSkeletonCount = 0;
+            _activeMatrixUploadCount = 0;
+            _latestMatrixStateHash = 0u;
+            _uploadedMatrixStateHash = 0u;
+            _uploadedMatrixCount = 0;
+            _uploadedSkeletonCount = 0;
+            _uploadedQuality = -1f;
+            _gpuUploadDirty = true;
+            _gpuShaderConstantsDirty = true;
+            _gpuBufferDataValid = false;
         }
 
         private bool EnsureVaultBuffers()
@@ -670,8 +688,11 @@ namespace Hecton8.Animation.FaunaProcedural
             out NativeArray<T> buffer,
             NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct
         {
-            if (TryResolveVaultBuffer(vault, in handle, requiredLength, out buffer))
+            if (IsOwnedVaultHandle(in handle, bufferId) &&
+                TryResolveVaultBuffer(vault, in handle, requiredLength, out buffer))
+            {
                 return true;
+            }
 
             if (vault == null)
                 return false;
@@ -1134,11 +1155,22 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (!IsVaultHandleCreated(in handle))
-                return;
+            if (IsOwnedVaultHandle(in handle))
+                vault.ReleaseBuffer(in handle);
 
-            vault.ReleaseBuffer(in handle);
             handle = default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return IsVaultHandleCreated(in handle) &&
+                   handle.SystemID == (uint)SystemID.AnimationFauna;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return IsOwnedVaultHandle(in handle) &&
+                   handle.BufferID == (uint)expectedBufferId;
         }
 
         private void ClearHandles()

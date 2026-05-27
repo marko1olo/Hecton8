@@ -1,0 +1,50 @@
+{
+  "agentId": "UNKNOWN",
+  "date": "2026-05-27",
+  "status": "STATIC_SOURCE_PROOF_ONLY_RUNTIME_PENDING",
+  "domain": "Core & Memory Infrastructure / SignalBus Contracts / Zero-GC Runtime Architecture",
+  "changedFiles": [
+    "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+    "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs"
+  ],
+  "problem": [
+    "FutureCommandSandboxValidator invalidated VaultLane descriptors on shutdown/rebind without releasing DataVault handles.",
+    "ModEventProjectionBridge did not rebind cull telemetry storage when GlobalRegistryServiceSlot.DataVault changed."
+  ],
+  "fix": [
+    "FutureCommandSandboxValidator now releases all twenty VaultLane handles through the cached old IDataVault before rebinding or shutdown.",
+    "ModEventProjectionBridge now releases/reopens cull telemetry storage on DataVault hot-swap and forced-completes any scheduled projection job before changing the telemetry alias."
+  ],
+  "proof": {
+    "gitDiffCheck": "exit 0; line-ending warnings only",
+    "braceBalance": {
+      "FutureCommandSandboxValidator.cs": 0,
+      "ModEventProjectionBridge.cs": 0
+    },
+    "signalBusAudit": {
+      "artifact": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_VAULT_REBIND_RELEASE_RECHECK.json",
+      "files": 2443,
+      "shaders": 71,
+      "errors": 0,
+      "confirmedErrors": 0,
+      "warnings": 145,
+      "infos": 1172
+    },
+    "vaultLaneReleaseCoverage": {
+      "declaredVaultLaneFields": 20,
+      "releaseCalls": 20
+    }
+  },
+  "notClaimed": [
+    "No profiler proof",
+    "No Unity Editor import proof",
+    "No Play Mode proof",
+    "No full solution build proof by user instruction"
+  ],
+  "runtimeMicrosecondsSavedClaimed": 0,
+  "residualWarnings": {
+    "SRP_BATCHER_HOT_PATH_MATERIAL_REVIEW": 69,
+    "RUNTIME_SYNC_FILE_IO_REVIEW": 65,
+    "DUPLICATE_SIGNAL_LIKE_NAME_REVIEW": 8
+  }
+}

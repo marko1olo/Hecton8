@@ -95,6 +95,7 @@ namespace Hecton8.World
         private readonly VisualSyncPhaseSystem _visualSyncPhase;
 
         private IDataVault _vault;
+        private IDataVault _pendingLifecycleRebindVault;
         private VaultGenerationHandle<ChunkMetadataDTO> _metadataHandle;
         private VaultGenerationHandle<TerrainChunkSectorCoordDTO> _sectorCoordsHandle;
         private VaultGenerationHandle<byte> _stagingBytesHandle;
@@ -441,6 +442,7 @@ namespace Hecton8.World
                 s_active = null;
             _initialized = 0;
             _vault = null;
+            _pendingLifecycleRebindVault = null;
             _chunkRootFullPath = null;
             _dumpFullPath = null;
             _pathBuffer = null;
@@ -467,7 +469,9 @@ namespace Hecton8.World
 
             UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
             ReleaseNativeState();
+            IDataVault pendingRebindVault = _pendingLifecycleRebindVault;
             _vault = null;
+            _pendingLifecycleRebindVault = null;
             _chunkRootFullPath = null;
             _dumpFullPath = null;
             _pathBuffer = null;
@@ -479,6 +483,12 @@ namespace Hecton8.World
             _compressedSlabByteLength = 0;
             _dumpSnapshotByteLength = 0;
             Volatile.Write(ref _deferredShutdown, 0);
+
+            if (pendingRebindVault != null && isActiveAndEnabled)
+            {
+                _vault = pendingRebindVault;
+                Initialize();
+            }
         }
 
         private void RegisterDispatcher()
@@ -535,8 +545,28 @@ namespace Hecton8.World
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                IDataVault nextVault = currentService as IDataVault;
                 if (_initialized == 0)
-                    _vault = currentService as IDataVault;
+                {
+                    if (Volatile.Read(ref _deferredShutdown) != 0)
+                    {
+                        _pendingLifecycleRebindVault = nextVault;
+                        return;
+                    }
+
+                    _vault = nextVault;
+                    if (nextVault != null &&
+                        isActiveAndEnabled &&
+                        Volatile.Read(ref _deferredShutdown) == 0)
+                    {
+                        Initialize();
+                    }
+                }
+                else
+                {
+                    RebindDataVaultForLifecycle(nextVault);
+                }
+
                 return;
             }
 
@@ -549,6 +579,57 @@ namespace Hecton8.World
 
             UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
             RegisterDispatcher();
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            UnregisterDispatcher(keepVisualSyncForDeferredShutdown: true);
+            CompletePendingPagerJobsForLifecycle();
+            if (!StopWorker())
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo | TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                _pendingLifecycleRebindVault = nextVault;
+                Volatile.Write(ref _deferredShutdown, 1);
+                if (ReferenceEquals(s_active, this))
+                    s_active = null;
+                _initialized = 0;
+                return;
+            }
+
+            ReleaseNativeState();
+            _vault = nextVault;
+            _pendingLifecycleRebindVault = null;
+            ResetRuntimeStateCounters();
+            Volatile.Write(ref _deferredShutdown, 0);
+
+            if (nextVault == null)
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                if (ReferenceEquals(s_active, this))
+                    s_active = null;
+                _initialized = 0;
+                return;
+            }
+
+            AllocateNativeState();
+            if (!AreRequiredVaultBuffersReady())
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                ReleaseNativeState();
+                if (ReferenceEquals(s_active, this))
+                    s_active = null;
+                _initialized = 0;
+                return;
+            }
+
+            LoadColdStreamingProfile();
+            StartWorker();
+            RegisterDispatcher();
+            _initialized = 1;
+            s_active = this;
         }
 
         private void AllocateNativeState()
@@ -1048,6 +1129,24 @@ namespace Hecton8.World
             }
 
             return finalized;
+        }
+
+        private void CompletePendingPagerJobsForLifecycle()
+        {
+            if (_pendingResidency != 0)
+            {
+                DispatcherJobFence.TryComplete(ref _pendingResidencyHandle, forceComplete: true);
+                _pendingResidency = 0;
+                if (_pendingResidencyStartTimestamp > 0L)
+                    _lastEvalMicros = ElapsedMicroseconds(_pendingResidencyStartTimestamp);
+                _pendingResidencyStartTimestamp = 0L;
+            }
+
+            if (_pendingEviction != 0)
+            {
+                DispatcherJobFence.TryComplete(ref _pendingEvictionHandle, forceComplete: true);
+                _pendingEviction = 0;
+            }
         }
 
         private TerrainChunkPagerTuningDTO ResolveFrameTuning()

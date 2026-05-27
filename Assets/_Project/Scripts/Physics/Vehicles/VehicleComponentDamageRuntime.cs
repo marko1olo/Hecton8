@@ -131,6 +131,15 @@ namespace Hecton8.Physics.Vehicles
             _coreBlackboxWarmed = false;
         }
 
+        private void OnDestroy()
+        {
+            CompleteDamageForLifecycle();
+            ReleaseOwnedVaultHandles(_dataVault);
+            ClearVaultHandles();
+            _dataVault = null;
+            _buffersReady = false;
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -149,14 +158,7 @@ namespace Hecton8.Physics.Vehicles
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            if (_damagePending)
-                DispatcherJobFence.TryComplete(ref _damageHandle, forceComplete: true);
-
-            _damagePending = false;
-            UnlockDamageBuffers();
-            _dataVault = currentService as IDataVault;
-            ClearVaultHandles();
-            _buffersReady = false;
+            RebindDataVaultForLifecycle(currentService as IDataVault);
             if (isActiveAndEnabled && _dataVault != null)
             {
                 EnsureVaultBuffers(forceReinitialize: false);
@@ -336,11 +338,9 @@ namespace Hecton8.Physics.Vehicles
 
         private bool EnsureDataVault()
         {
-            if (_dataVault != null)
-                return true;
-
-            _dataVault = GlobalRegistry.DataVault;
-
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, currentVault))
+                RebindDataVaultForLifecycle(currentVault);
             return _dataVault != null;
         }
 
@@ -410,6 +410,57 @@ namespace Hecton8.Physics.Vehicles
             _kinematicConfigHandle = default;
             _cellCount = 0;
             _csvLoaded = false;
+        }
+
+        private void CompleteDamageForLifecycle()
+        {
+            if (_damagePending)
+                DispatcherJobFence.TryComplete(ref _damageHandle, forceComplete: true);
+
+            _damagePending = false;
+            UnlockDamageBuffers();
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            CompleteDamageForLifecycle();
+            ReleaseOwnedVaultHandles(_dataVault);
+            ClearVaultHandles();
+            _dataVault = nextVault;
+            _buffersReady = false;
+        }
+
+        private void ReleaseOwnedVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedVaultHandle(vault, ref _gridWriteHandle);
+            ReleaseOwnedVaultHandle(vault, ref _gridReadHandle);
+            ReleaseOwnedVaultHandle(vault, ref _signalHandle);
+            ReleaseOwnedVaultHandle(vault, ref _mockSignalHandle);
+            ReleaseOwnedVaultHandle(vault, ref _stateWriteHandle);
+            ReleaseOwnedVaultHandle(vault, ref _stateReadHandle);
+            ReleaseOwnedVaultHandle(vault, ref _tuningHandle);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryCursorHandle);
+#if UNITY_EDITOR
+            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle);
+#endif
+        }
+
+        private static void ReleaseOwnedVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.VehiclesPhysics)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

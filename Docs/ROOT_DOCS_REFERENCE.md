@@ -1,8 +1,8 @@
 ﻿# Root Docs Reference
 
-Date: 2026-05-26
+Date: 2026-05-28
 Status: STATIC POLICY
-Owner: DOCS_ACTUALIZATION
+Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_FILESYSTEM
 
 ## Root Policy
@@ -36,6 +36,8 @@ Pre-cleanup verbose root copies are historical only:
 - `Docs/Data/Profiles` - static authoring/tuning profiles, not root doctrine.
 - `Docs/ARCHITECTURE/README.md` - architecture contract index.
 - `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` - source constants, concise proof snapshots, and documentation-change register.
+- `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` - current static scene spine, package envelope, and source owner map.
+- `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` - 85-domain roster mapped to active architecture docs and source areas by echelon.
 
 ## Evidence Placement
 

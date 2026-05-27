@@ -1019,6 +1019,56 @@ namespace Hecton8.Thermodynamics
             _reactorThermalVisualWriteIndex = 0;
         }
 
+        private void ReleaseReactorThermalVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedVaultHandle(vault, ref _reactorStates);
+            ReleaseOwnedVaultHandle(vault, ref _reactorKinematics);
+            ReleaseOwnedVaultHandle(vault, ref _reactorCount);
+            ReleaseOwnedVaultHandle(vault, ref _reactorTuning);
+            ReleaseOwnedVaultHandle(vault, ref _reactorTelemetryRing);
+            ReleaseOwnedVaultHandle(vault, ref _reactorTelemetryCursor);
+            ReleaseOwnedVaultHandle(vault, ref _reactorProfiles);
+            ReleaseOwnedVaultHandle(vault, ref _reactorProfileCount);
+            ReleaseOwnedVaultHandle(vault, ref _reactorCsvScratch);
+            ReleaseOwnedVaultHandle(vault, ref _reactorScratch);
+            ReleaseOwnedVaultHandle(vault, ref _reactorDumpLatch);
+            ReleaseOwnedVaultHandle(vault, ref _baseReactorStates);
+            ReleaseOwnedVaultHandle(vault, ref _baseReactorTuning);
+            ReleaseOwnedVaultHandle(vault, ref _baseReactorPowerLedger);
+            ReleaseOwnedVaultHandle(vault, ref _baseReactorTelemetryRing);
+            ReleaseOwnedVaultHandle(vault, ref _baseReactorTelemetryCursor);
+            ReleaseOwnedVaultHandle(vault, ref _baseReactorVisuals);
+            ReleaseOwnedVaultHandle(vault, ref _baseReactorDumpLatch);
+            ReleaseOwnedVaultHandle(vault, ref _baseReactorProfiles);
+            ReleaseOwnedVaultHandle(vault, ref _baseReactorProfileCount);
+        }
+
+        private void ClearReactorThermalVaultHandles()
+        {
+            _reactorStates = default;
+            _reactorKinematics = default;
+            _reactorCount = default;
+            _reactorTuning = default;
+            _reactorTelemetryRing = default;
+            _reactorTelemetryCursor = default;
+            _reactorProfiles = default;
+            _reactorProfileCount = default;
+            _reactorCsvScratch = default;
+            _reactorScratch = default;
+            _reactorDumpLatch = default;
+            _baseReactorStates = default;
+            _baseReactorTuning = default;
+            _baseReactorPowerLedger = default;
+            _baseReactorTelemetryRing = default;
+            _baseReactorTelemetryCursor = default;
+            _baseReactorVisuals = default;
+            _baseReactorDumpLatch = default;
+            _baseReactorProfiles = default;
+            _baseReactorProfileCount = default;
+            _reactorBridgeInitialized = false;
+            _reactorSharedBufferLockMask = 0;
+        }
+
         private void TryLoadReactorProfilesCold()
         {
 #if UNITY_EDITOR

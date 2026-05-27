@@ -122,7 +122,7 @@ namespace Hecton8.Graphics.Materials
         [FieldOffset(60)] public uint _pad2;
     }
 
-    public sealed unsafe class VisualPressureAgingRuntime
+    public sealed unsafe class VisualPressureAgingRuntime : IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystemId = SystemID.GraphicsMaterials;
         private const uint SystemHash = 0x53323139u; // S219
@@ -211,6 +211,7 @@ namespace Hecton8.Graphics.Materials
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
+        private bool _registeredHotSwap;
         private JobHandle _scheduledSimulationHandle;
         private bool _vaultInitialized;
         private bool _defaultsInitialized;
@@ -495,6 +496,7 @@ namespace Hecton8.Graphics.Materials
                 TryInitializeVaultState(_vault);
                 RefreshExternalInputHandles(_vault);
             }
+            TryRegisterHotSwapListener();
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
             Application.quitting += ShutdownActive;
@@ -509,6 +511,8 @@ namespace Hecton8.Graphics.Materials
             Application.quitting -= ShutdownActive;
             CloseAgingBufferSnapshotLease();
             CloseDegradationBufferSnapshotLease();
+            TryUnregisterHotSwapListener();
+            CompleteSimulationForLifecycle();
             UnlockJobBuffers();
             UnregisterDispatcherPhases();
             ReleaseGraphicsBuffers();
@@ -520,6 +524,32 @@ namespace Hecton8.Graphics.Materials
             _scheduledSimulationHandle = default;
             if (ReferenceEquals(s_active, this))
                 s_active = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            IDataVault nextVault = currentService as IDataVault;
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            CloseAgingBufferSnapshotLease();
+            CloseDegradationBufferSnapshotLease();
+            CompleteSimulationForLifecycle();
+            UnlockJobBuffers();
+            ReleaseVaultHandles(previousService as IDataVault ?? _vault);
+            _vault = nextVault;
+            _vaultInitialized = false;
+            if (_vault == null)
+                return;
+
+            TryInitializeVaultState(_vault);
+            RefreshExternalInputHandles(_vault);
         }
 
         private void RegisterDispatcherPhases()
@@ -558,6 +588,23 @@ namespace Hecton8.Graphics.Materials
             }
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private IDataVault ResolveVault()
         {
             return _vault;
@@ -583,7 +630,15 @@ namespace Hecton8.Graphics.Materials
             JobHandle dependsOn)
         {
             if (_simulationScheduled)
-                return dependsOn;
+            {
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledSimulationHandle))
+                    return JobHandle.CombineDependencies(dependsOn, _scheduledSimulationHandle);
+
+                UnlockJobBuffers();
+                _runtimeFlags &= ~FlagJobFencePending;
+                _simulationScheduled = false;
+                _hasGeneratedPayload = _activeCount > 0;
+            }
 
             IDataVault vault = ResolveVault();
             if (vault == null || !HasCurrentOwnedCoreState(vault))
@@ -714,19 +769,29 @@ namespace Hecton8.Graphics.Materials
         {
             if (_simulationScheduled)
             {
-                if (!_scheduledSimulationHandle.IsCompleted)
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledSimulationHandle))
                 {
                     _runtimeFlags |= FlagJobFencePending;
                     return;
                 }
 
                 _runtimeFlags &= ~FlagJobFencePending;
-                // SHINOBU_219: SystemDispatcher owns the completion fence; this phase only releases Vault locks.
                 UnlockJobBuffers();
                 _simulationScheduled = false;
-                _scheduledSimulationHandle = default;
                 _hasGeneratedPayload = _activeCount > 0;
             }
+        }
+
+        private void CompleteSimulationForLifecycle()
+        {
+            if (!_simulationScheduled)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _scheduledSimulationHandle, forceComplete: true);
+            _runtimeFlags &= ~FlagJobFencePending;
+            UnlockJobBuffers();
+            _simulationScheduled = false;
+            _hasGeneratedPayload = _activeCount > 0;
         }
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)

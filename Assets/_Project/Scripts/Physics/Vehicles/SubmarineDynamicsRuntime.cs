@@ -157,12 +157,8 @@ namespace Hecton8.Physics.Vehicles
 
         private void OnDisable()
         {
-            if (_integratorPending)
-                DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: true);
-
-            _integratorPending = false;
+            CompleteIntegratorForLifecycle();
             VehicleCommandSignalBus.Unregister(this);
-            UnlockSimulationBuffers();
             DumpBlackBoxIfFaulted();
             DumpGyroBlackBoxIfFaulted();
             DisposeGyroRuntime();
@@ -170,6 +166,19 @@ namespace Hecton8.Physics.Vehicles
             TryUnregisterHotSwapListener();
             TryUnregisterRuntimeLanes();
             _coreBlackboxWarmed = false;
+            if (ReferenceEquals(_latest, this))
+                _latest = null;
+        }
+
+        private void OnDestroy()
+        {
+            CompleteIntegratorForLifecycle();
+            DisposeGyroRuntime();
+            ReleaseOwnedVaultHandles(_dataVault);
+            ClearVaultHandles();
+            _dataVault = null;
+            _buffersReady = false;
+
             if (ReferenceEquals(_latest, this))
                 _latest = null;
         }
@@ -192,14 +201,7 @@ namespace Hecton8.Physics.Vehicles
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            if (_integratorPending)
-                DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: true);
-
-            _integratorPending = false;
-            UnlockSimulationBuffers();
-            _dataVault = currentService as IDataVault;
-            ClearVaultHandles();
-            _buffersReady = false;
+            RebindDataVaultForLifecycle(currentService as IDataVault);
             if (isActiveAndEnabled && _dataVault != null)
             {
                 EnsureVaultBuffers();
@@ -455,11 +457,9 @@ namespace Hecton8.Physics.Vehicles
 
         private bool EnsureDataVault()
         {
-            if (_dataVault != null)
-                return true;
-
-            _dataVault = GlobalRegistry.DataVault;
-
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, currentVault))
+                RebindDataVaultForLifecycle(currentVault);
             return _dataVault != null;
         }
 
@@ -527,6 +527,59 @@ namespace Hecton8.Physics.Vehicles
             _configHandle = default;
             _dragLutHandle = default;
             _vehicleDamageStateReadHandle = default;
+            ClearGyroVaultHandles();
+        }
+
+        private void CompleteIntegratorForLifecycle()
+        {
+            if (_integratorPending)
+                DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: true);
+
+            _integratorPending = false;
+            UnlockSimulationBuffers();
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            CompleteIntegratorForLifecycle();
+            ReleaseOwnedVaultHandles(_dataVault);
+            ClearVaultHandles();
+            _dataVault = nextVault;
+            _buffersReady = false;
+        }
+
+        private void ReleaseOwnedVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedVaultHandle(vault, ref _stateHandle);
+            ReleaseOwnedVaultHandle(vault, ref _controlHandle);
+            ReleaseOwnedVaultHandle(vault, ref _pidHandle);
+            ReleaseOwnedVaultHandle(vault, ref _massHandle);
+            ReleaseOwnedVaultHandle(vault, ref _forceHandle);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _addedMassHandle);
+            ReleaseOwnedVaultHandle(vault, ref _hydrodynamicsTelemetryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _hullProfileHandle);
+            ReleaseOwnedVaultHandle(vault, ref _addedMassTuningHandle);
+            ReleaseOwnedVaultHandle(vault, ref _configHandle);
+            ReleaseOwnedVaultHandle(vault, ref _dragLutHandle);
+            ReleaseGyroVaultHandles(vault);
+        }
+
+        private static void ReleaseOwnedVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.VehiclesPhysics)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private bool TryResolveVaultHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)

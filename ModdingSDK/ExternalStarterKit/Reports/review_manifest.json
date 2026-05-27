@@ -1,0 +1,129 @@
+{
+    "Schema":  "hecton8.external_review_manifest.v1",
+    "Runtime":  "envelope-only",
+    "RootId":  "com.example.starter",
+    "FileCount":  23,
+    "TotalBytes":  32609,
+    "Limits":  {
+                   "MaxFiles":  256,
+                   "MaxFileBytes":  4194304,
+                   "MaxTotalBytes":  33554432
+               },
+    "Files":  [
+                  {
+                      "Path":  ".vscode/settings.json",
+                      "Bytes":  662,
+                      "Sha256":  "8cd163fa3744749bdc5e63bebec003f9af9fd0cde86f52b2b578ae50347fdd7d"
+                  },
+                  {
+                      "Path":  "Content/assets.h8manifest.json",
+                      "Bytes":  59,
+                      "Sha256":  "612bc2476835ccc41edbd0dd74b97d7eaac3d578a87763c55c6162085df75b81"
+                  },
+                  {
+                      "Path":  "Content/README.md",
+                      "Bytes":  213,
+                      "Sha256":  "b8d3655db98835a70aa14db6e5ea57e139b0fffd71698e45efb759f9b3c800c9"
+                  },
+                  {
+                      "Path":  "Graphs/main.h8graph.json",
+                      "Bytes":  284,
+                      "Sha256":  "47f94f9ca298da001f6e83ab3374ff5a74a80997d09da2bb02f2ebf2e7ba7748"
+                  },
+                  {
+                      "Path":  "Locales/en.h8loc.json",
+                      "Bytes":  78,
+                      "Sha256":  "a02773914383721694176cc94cd9a53046ef68e57c94926ff09f0eaed2e2d84d"
+                  },
+                  {
+                      "Path":  "mod.h8manifest.json",
+                      "Bytes":  567,
+                      "Sha256":  "8df4bb9873df856e38d169ef2b91d1c199280445c413a030843698de81cae3b2"
+                  },
+                  {
+                      "Path":  "mod.json",
+                      "Bytes":  294,
+                      "Sha256":  "6c5be00a7deb5a95cb3c091e727bbfc14ea866c48fa13c974c74d7cd42a816dd"
+                  },
+                  {
+                      "Path":  "README.md",
+                      "Bytes":  3116,
+                      "Sha256":  "7e5de789212c9e45ef84f6edc93e0afae32908ce20578d2f20a4464382876401"
+                  },
+                  {
+                      "Path":  "Reference/allowed_opcodes.csv",
+                      "Bytes":  438,
+                      "Sha256":  "3b93f458b8da2eb9e78d4b6b1b53895529b9a1739c4fa40dc0b3d0dd4b0e074f"
+                  },
+                  {
+                      "Path":  "Reference/kernel_tuning_profiles.csv",
+                      "Bytes":  312,
+                      "Sha256":  "4de3721d6813b516672f6e9d7b14fdc5d4bc8723abd3713b46687aab5008c4cf"
+                  },
+                  {
+                      "Path":  "Reference/README.md",
+                      "Bytes":  202,
+                      "Sha256":  "4dddd5d490132109aefe8e37ba23b92a01c6c60105d7e195e9709759c88ad7f9"
+                  },
+                  {
+                      "Path":  "Schemas/assets.schema.json",
+                      "Bytes":  738,
+                      "Sha256":  "f60698bfe2b3b10f5f2306923ea979cb324d047ee9638e2199b7f425da31055d"
+                  },
+                  {
+                      "Path":  "Schemas/h8graph.schema.json",
+                      "Bytes":  942,
+                      "Sha256":  "862e10ac3e988d9479c0bc2020a9323f10a297ae94fa04a4440e07f4f85d7f57"
+                  },
+                  {
+                      "Path":  "Schemas/h8mod.authoring.schema.json",
+                      "Bytes":  1774,
+                      "Sha256":  "80c60970c12ae4d3f167c954998e8d87844cc22185da8fce42a0a8f38eeaf29c"
+                  },
+                  {
+                      "Path":  "Schemas/locale.schema.json",
+                      "Bytes":  488,
+                      "Sha256":  "72acb467c704c66ff94919bd18a00a355feaf7028e7141edf2e6b8c41d561c00"
+                  },
+                  {
+                      "Path":  "Schemas/runtime.mod.schema.json",
+                      "Bytes":  987,
+                      "Sha256":  "3647603930580a17e85d9e1c70a879cb54923a4748c41ac9bdfd227d9066e7a9"
+                  },
+                  {
+                      "Path":  "Schemas/settings_table.schema.json",
+                      "Bytes":  660,
+                      "Sha256":  "38a7917762e5443ed743b334c27bd2b716fd07bed7bbf78c091d3741ee497696"
+                  },
+                  {
+                      "Path":  "Tables/settings.h8table.json",
+                      "Bytes":  65,
+                      "Sha256":  "069e7de8160b3a5c206404c3fa3d59aa31cb802db382be33999243a37923c473"
+                  },
+                  {
+                      "Path":  "Tools/build_review_manifest.ps1",
+                      "Bytes":  3808,
+                      "Sha256":  "49016d6393f5352c1bbc75e7e483553ab777f5e4a82c12a19c757d0bdc0597b9"
+                  },
+                  {
+                      "Path":  "Tools/prepare_mod.ps1",
+                      "Bytes":  1535,
+                      "Sha256":  "bea4c048a91bdb1b5c3edeef3f7f2be0d689b1ee5a3bac0e36a1d4954eadb719"
+                  },
+                  {
+                      "Path":  "Tools/README.md",
+                      "Bytes":  2028,
+                      "Sha256":  "41e0e6cb7dbd0d7097fe55c082dc97ed2aea113a3841aaa885349a788bc78f29"
+                  },
+                  {
+                      "Path":  "Tools/set_mod_identity.ps1",
+                      "Bytes":  3537,
+                      "Sha256":  "d170ce8046c353317e815f365e2697827a1e0b09fcaef8e773d7c1d215239495"
+                  },
+                  {
+                      "Path":  "Tools/validate_structure.ps1",
+                      "Bytes":  9822,
+                      "Sha256":  "eb3418967b1984ccff507af5231a12c7e082b2ce936069fc601189095cbebc16"
+                  }
+              ]
+}

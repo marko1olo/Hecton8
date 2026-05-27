@@ -534,6 +534,7 @@ namespace Hecton8.Modding
             if (_initialized)
                 return;
 
+            BindRegistryServicesCold();
             ValidateLayoutOrDump();
 
             ConfigureSignalLanes();
@@ -547,30 +548,25 @@ namespace Hecton8.Modding
         internal static void Shutdown()
         {
             CompleteScheduledPreSimulationForBarrier();
-            _pendingRingHandle = default;
-            _devNullRingHandle = default;
-            _stagingHandle = default;
-            _statsHandle = default;
-            _opcodeRecordsHandle = default;
-            _telemetryRingHandle = default;
-            _telemetryCursorHandle = default;
-            _modderBlackboxMemoryHandle = default;
-            _tuningHandle = default;
-            _perModCountersHandle = default;
-            _memoryLeasesHandle = default;
-            _approvedAssetManifestHandle = default;
-            _ringStateHandle = default;
-            _kernelOpcodeMapHandle = default;
-            _kernelTelemetryRingHandle = default;
-            _kernelTelemetryCursorHandle = default;
-            _kernelCameraJuiceImpulseHandle = default;
-            _kernelCameraJuiceStateHandle = default;
-            _kernelTuningProfilesHandle = default;
-            _kernelCsvScratchHandle = default;
+            ReleaseVaultHandles(_dataVault);
+            _dataVault = null;
             _scheduledValidationHandle = default;
             _scheduledValidationState = default;
             _scheduledValidationActive = false;
             _initialized = false;
+        }
+
+        internal static void BindRegistryServicesCold()
+        {
+            RebindDataVault(GlobalRegistry.DataVault);
+        }
+
+        internal static void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+                RebindDataVault(currentService as IDataVault);
         }
 
         internal static bool Request(in FutureCommandEnvelope envelope)
@@ -2019,12 +2015,57 @@ namespace Hecton8.Modding
             return smallest;
         }
 
+        private static void RebindDataVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            CompleteScheduledPreSimulationForBarrier();
+            ReleaseVaultHandles(_dataVault);
+            _dataVault = vault;
+
+            if (_initialized && vault != null)
+                AcquireVaultBuffers();
+        }
+
+        private static void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultLane(vault, ref _pendingRingHandle);
+            ReleaseVaultLane(vault, ref _devNullRingHandle);
+            ReleaseVaultLane(vault, ref _stagingHandle);
+            ReleaseVaultLane(vault, ref _statsHandle);
+            ReleaseVaultLane(vault, ref _opcodeRecordsHandle);
+            ReleaseVaultLane(vault, ref _telemetryRingHandle);
+            ReleaseVaultLane(vault, ref _telemetryCursorHandle);
+            ReleaseVaultLane(vault, ref _modderBlackboxMemoryHandle);
+            ReleaseVaultLane(vault, ref _tuningHandle);
+            ReleaseVaultLane(vault, ref _perModCountersHandle);
+            ReleaseVaultLane(vault, ref _memoryLeasesHandle);
+            ReleaseVaultLane(vault, ref _approvedAssetManifestHandle);
+            ReleaseVaultLane(vault, ref _ringStateHandle);
+            ReleaseVaultLane(vault, ref _kernelOpcodeMapHandle);
+            ReleaseVaultLane(vault, ref _kernelTelemetryRingHandle);
+            ReleaseVaultLane(vault, ref _kernelTelemetryCursorHandle);
+            ReleaseVaultLane(vault, ref _kernelCameraJuiceImpulseHandle);
+            ReleaseVaultLane(vault, ref _kernelCameraJuiceStateHandle);
+            ReleaseVaultLane(vault, ref _kernelTuningProfilesHandle);
+            ReleaseVaultLane(vault, ref _kernelCsvScratchHandle);
+        }
+
+        private static void ReleaseVaultLane<T>(IDataVault vault, ref VaultLane<T> lane) where T : struct
+        {
+            if (vault != null && IsLaneCreated(in lane))
+                vault.ReleaseBuffer(in lane.Handle);
+
+            lane = default;
+        }
+
         private static bool IsRollbackFrozen()
         {
             if (_rollbackFreezeOverride)
                 return true;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 !TryReadVaultBuffer(
                     vault,
@@ -2041,11 +2082,10 @@ namespace Hecton8.Modding
 
         private static void AcquireVaultBuffers()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
-            _dataVault = vault;
             bool coldAcquire = !IsLaneCreated(in _ringStateHandle);
 
             _pendingRingHandle = AcquireVaultLane<FutureCommandEnvelope>(
@@ -2495,7 +2535,7 @@ namespace Hecton8.Modding
 
         private static NativeArray<T> OpenVaultLane<T>(ref VaultLane<T> lane) where T : struct
         {
-            IDataVault vault = _dataVault != null ? _dataVault : GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 !IsLaneCreated(in lane) ||
                 !vault.TryResolveHandle(in lane.Handle, out NativeArray<T> buffer) ||

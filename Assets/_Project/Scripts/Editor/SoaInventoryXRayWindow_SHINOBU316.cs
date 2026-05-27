@@ -189,7 +189,7 @@ namespace Hecton8.Editor
 
         private static PlayerInventory FindInventory()
         {
-            return UnityEngine.Object.FindObjectOfType<PlayerInventory>();
+            return UnityEngine.Object.FindAnyObjectByType<PlayerInventory>();
         }
     }
 

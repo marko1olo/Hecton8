@@ -69,9 +69,9 @@ SDK/package authoring details are in [SDK_Authoring_Interface_Plan.md](SDK_Autho
 | `RequiredAPIVersion` | `int` | Must be positive and no higher than `CurrentAPIVersion`. |
 | `ModPriority` | `int` | Arbitration priority for conflicting mod world requests. |
 
-SDK builder parity: `ModBuilderWindow.ModManifestData` emits the same `9` manifest fields as `ModLoader.ModManifest`, including positive `RequiredAPIVersion` and `ModPriority`. `ModBuilderWindow` validates the required API against current loader API version `2`, validates canonical mod/dependency ids, and uses the canonical trimmed mod id for output path and manifest identity. Treat this as static source proof only; SDK-built packages remain `PENDING VERIFICATION` until Unity runtime smoke evidence proves load behavior without manual edits.
+SDK builder parity: `ModBuilderWindow.ModManifestData` emits the same `9` manifest fields as `ModLoader.ModManifest`, including positive `RequiredAPIVersion` and `ModPriority`. `ModBuilderWindow` validates the required API against current loader API version `2`, validates canonical mod/dependency ids, caps selected managed DLLs at the loader's `32` top-level DLL cap, rejects duplicate selected DLL file names, keeps `OnGUI` validation shallow, and uses the canonical trimmed mod id for output path and manifest identity. Treat this as static source proof only; SDK-built packages remain `PENDING VERIFICATION` until Unity runtime smoke evidence proves load behavior without manual edits.
 
-Reserved managed assembly identities are blocked in both cold package paths. `ModLoader` disables packages whose `EntryAssembly`, resolved DLL file name, or any accepted top-level package DLL metadata identity claims an engine-owned name; packages above the 32-DLL top-level cap are disabled instead of partially trusted. `ModBuilderWindow` rejects selected DLLs with the same reserved identities before copying them into `Mods/[ModId]` and deletes stale top-level DLLs that are not part of the current build. This keeps `InternalsVisibleTo` friend assemblies such as `Hecton8.Plugins` first-party only and prevents a future managed-mode reopening from turning assembly-name spoofing or stale support DLLs into an internal API route.
+Reserved managed assembly identities are blocked in both cold package paths. `ModLoader` disables packages whose `EntryAssembly`, resolved DLL file name, or any accepted top-level package DLL metadata identity claims an engine-owned name; packages above the 32-DLL top-level cap are disabled instead of partially trusted. `ModBuilderWindow` rejects selected DLLs with the same reserved identities during Build Mod deep validation and deletes stale top-level DLLs that are not part of the current build through bounded cleanup. This keeps `InternalsVisibleTo` friend assemblies such as `Hecton8.Plugins` first-party only and prevents a future managed-mode reopening from turning assembly-name spoofing or stale support DLLs into an internal API route.
 
 ## Metadata Fields
 
@@ -139,7 +139,7 @@ JSON is allowed here only as cold mod-owned text. It is still forbidden as signa
 - `mod.json` bounded discovery cap or lazy enumeration before candidate allocation is removed.
 - `ModBuilderWindow.ModManifestData` drifts from `ModLoader.ModManifest`.
 - Canonical mod id, dependency id, or EntryAssembly filename-only validation is removed from loader or SDK builder.
-- Reserved managed assembly identity validation or top-level package DLL scanning is removed from `ModLoader` or `ModBuilderWindow`.
+- Reserved managed assembly identity validation, builder DLL input cap parity, duplicate DLL filename rejection, or top-level package DLL scanning is removed from `ModLoader` or `ModBuilderWindow`.
 - Bounded top-level DLL, bundle, or localization discovery is removed from `ModLoader`.
 - `ModMetadata`, `ModRuntimeInfo`, `IHectonMod`, or `IHectonVersionedMod` shapes change.
 - SaveState public method count changes.

@@ -27,6 +27,11 @@ namespace Hecton8.Core
 
         public static void EnsureParentDirectory(string absoluteFilePath)
         {
+            EnsureParentDirectoryCold(absoluteFilePath);
+        }
+
+        public static void EnsureParentDirectoryCold(string absoluteFilePath)
+        {
             string directory = Path.GetDirectoryName(absoluteFilePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);

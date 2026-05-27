@@ -406,13 +406,22 @@ namespace Hecton8.Core.Content
         private void ReleaseVaultHandles()
         {
             IDataVault vault = _vault;
-            if (vault == null)
-                return;
+            ReleaseVaultHandle(vault, ref _statesHandle);
+            ReleaseVaultHandle(vault, ref _countHandle);
+        }
 
-            if (_statesHandle.BufferID != 0u)
-                vault.ReleaseBuffer(in _statesHandle);
-            if (_countHandle.BufferID != 0u)
-                vault.ReleaseBuffer(in _countHandle);
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.ContentAuthority)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private unsafe bool TryResolveNormalized(
@@ -1604,17 +1613,24 @@ namespace Hecton8.Core.Content
 
         private void ReleaseAuthorityVaultHandles(IDataVault vault)
         {
-            if (vault == null)
-                return;
+            ReleaseAuthorityVaultHandle(vault, ref _telemetryHandle);
+            ReleaseAuthorityVaultHandle(vault, ref _telemetryCursorHandle);
+            ReleaseAuthorityVaultHandle(vault, ref _pendingLoadsHandle);
+            ReleaseAuthorityVaultHandle(vault, ref _pendingLoadCountHandle);
+        }
 
-            if (_telemetryHandle.BufferID != 0u)
-                vault.ReleaseBuffer(in _telemetryHandle);
-            if (_telemetryCursorHandle.BufferID != 0u)
-                vault.ReleaseBuffer(in _telemetryCursorHandle);
-            if (_pendingLoadsHandle.BufferID != 0u)
-                vault.ReleaseBuffer(in _pendingLoadsHandle);
-            if (_pendingLoadCountHandle.BufferID != 0u)
-                vault.ReleaseBuffer(in _pendingLoadCountHandle);
+        private static void ReleaseAuthorityVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.ContentAuthority)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private static bool TryResolveOrAcquire<T>(
@@ -1993,15 +2009,30 @@ namespace Hecton8.Core.Content
 
         private void CacheDependencies()
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
-            _bundleRefs.BindVault(_dataVault);
+            RebindDataVaultCold(GlobalRegistry.DataVault);
             if (_vramMonitor == null)
                 _vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
             if (_vramPressure == null)
                 _vramPressure = GlobalRegistry.VRAMPressureReadModel;
             if (_assetLifecycle == null)
                 _assetLifecycle = GlobalRegistry.AssetLifecyclePressureSink;
+        }
+
+        private void RebindDataVaultCold(IDataVault replacementVault, IDataVault releaseVaultFallback = null)
+        {
+            if (ReferenceEquals(_dataVault, replacementVault))
+            {
+                _bundleRefs.BindVault(_dataVault);
+                return;
+            }
+
+            ReleaseAuthorityVaultHandles(_dataVault ?? releaseVaultFallback);
+            _bundleRefs.BindVault(replacementVault);
+            _dataVault = replacementVault;
+            _telemetryHandle = default;
+            _telemetryCursorHandle = default;
+            _pendingLoadsHandle = default;
+            _pendingLoadCountHandle = default;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -2012,13 +2043,7 @@ namespace Hecton8.Core.Content
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    ReleaseAuthorityVaultHandles(previousService as IDataVault ?? _dataVault);
-                    _dataVault = currentService as IDataVault;
-                    _bundleRefs.BindVault(_dataVault);
-                    _telemetryHandle = default;
-                    _telemetryCursorHandle = default;
-                    _pendingLoadsHandle = default;
-                    _pendingLoadCountHandle = default;
+                    RebindDataVaultCold(currentService as IDataVault, previousService as IDataVault);
                     break;
                 case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
                     _vramMonitor = currentService as IVramBudgetReadModel;

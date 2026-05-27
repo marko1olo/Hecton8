@@ -117,6 +117,14 @@ namespace Hecton8.UI
             _terminalInputRowHashesHandle = default;
         }
 
+        private void ReleaseTerminalProjectionVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _terminalInputStatesHandle);
+            ReleaseVaultHandle(vault, ref _terminalInputTelemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _terminalInputTuningHandle);
+            ReleaseVaultHandle(vault, ref _terminalInputRowHashesHandle);
+        }
+
         private void InitializeTerminalProjectionState()
         {
             InitializeTerminalProjectionTuningState();

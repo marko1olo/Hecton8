@@ -75,7 +75,7 @@ Required evidence:
 - Blank or anonymous execution scope cannot satisfy public facade owner guards; active scope requires a non-empty mod id and non-zero owner hash.
 - Package declares capabilities that match emitted opcode families.
 - No managed entry path is declared.
-- Package DLL file names and assembly metadata identities do not use reserved engine/runtime names: `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, or `netstandard`; the cold gate scans every accepted top-level package DLL up to the 32-DLL cap, over-cap packages are disabled, and the SDK builder has removed stale output DLLs.
+- Package DLL file names and assembly metadata identities do not use reserved engine/runtime names: `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, or `netstandard`; the cold gate scans every accepted top-level package DLL up to the 32-DLL cap, over-cap packages are disabled, and the SDK builder caps selected DLLs at `32`, rejects duplicate output names, and removes stale output DLLs through bounded cleanup.
 - No loose runtime asset/content file is discovered as a runtime ingress path.
 - Public `HectonAPI.Events` subscribe/publish calls outside active `ModExecutionScope` throw `IllegalContractException` before reporting envelope-only quarantine status.
 - `SubscribeNative` native byte payload sources have explicit schema-checked layouts: `InteractionEventPayload = 32` bytes and `CraftingEventPayload = 64` bytes.
@@ -380,6 +380,7 @@ Required result:
 - `FutureCommandSandboxConstantsPublic = False`
 - `FutureCommandEnvelopeExposesSizeBytes = True`
 - `FutureSubtitleCueAliasesReserved = True`
+- `EditorRuntimeOpcodeTunersRejectReservedSubtitleAliases = True`
 - `ModRuntimeInfoMembersInternalOnly = True`
 - `LegacyCommandFacadesRequireActiveScope = True`
 - `ModRegistryListenersUsePrivateAdapters = True`
@@ -393,8 +394,62 @@ Required result:
 - `RawTextureMaxDimension = 2048`
 - `RawTextureByteCapEnforcedBeforeRead = True`
 - `RawTextureReadFailsClosed = True`
+- `AssetBundleSuffixFallbackDisabled = True`
+- `AssetBundleGetAllAssetNamesForbidden = True`
+- `ModdingSdkHubPresent = True`
+- `ModdingSdkHubOpensBuilder = True`
+- `ModdingSdkHubLinksCoreDocs = True`
+- `ModdingSdkHubRunsStaticValidator = True`
+- `ModdingSdkHubShowsEnvelopeOnlyBoundary = True`
+- `ExternalStarterKitGeneratorPresent = True`
+- `ExternalStarterKitWritesAuthoringManifest = True`
+- `ExternalStarterKitWritesRuntimeManifest = True`
+- `ExternalStarterKitWritesFolderReadmes = True`
+- `ExternalStarterKitCopiesOpcodeReferences = True`
+- `ExternalStarterKitDocumentsNoUnityProjectRequirement = True`
+- `ExternalStarterKitDocumentsEnvelopeOnlyBoundary = True`
+- `ExternalStarterKitWritesLocalStructureValidator = True`
+- `ExternalStarterKitValidatorChecksRequiredFiles = True`
+- `ExternalStarterKitValidatorChecksEnvelopeOnly = True`
+- `ExternalStarterKitValidatorChecksManagedEntryDisabled = True`
+- `ExternalStarterKitValidatorChecksCanonicalIds = True`
+- `ExternalStarterKitValidatorChecksManifestIdParity = True`
+- `ExternalStarterKitValidatorChecksDependencyIds = True`
+- `ExternalStarterKitValidatorChecksGraphOpcodes = True`
+- `ExternalStarterKitValidatorChecksGraphBudget = True`
+- `ExternalStarterKitValidatorRejectsInvalidGraphOpcode = True`
+- `ExternalStarterKitWritesReviewManifestBuilder = True`
+- `ExternalStarterKitWritesIdentityTool = True`
+- `ExternalStarterKitWritesPrepareTool = True`
+- `ExternalStarterKitIdentityToolValidatesCanonicalId = True`
+- `ExternalStarterKitToolsAvoidNestedPowerShell = True`
+- `ExternalStarterKitToolsUsePortableJoinPath = True`
+- `ExternalStarterKitIdentityToolPasses = True`
+- `ExternalStarterKitPrepareToolPasses = True`
+- `ExternalStarterKitWritesJsonSchemas = True`
+- `ExternalStarterKitValidatorChecksJsonSchemas = True`
+- `ExternalStarterKitValidatorChecksEditorSchemaMappings = True`
+- `ExternalStarterKitTemplateVersioned = True`
+- `ExternalStarterKitTemplatePassesLocalValidator = True`
+- `ExternalStarterKitTemplateReferenceCsvsMatchSource = True`
+- `ExternalStarterKitReviewManifestPasses = True`
+- `ExternalStarterKitReviewManifestHashesFiles = True`
+- `ExternalStarterKitReviewManifestExcludesReports = True`
+- `ExternalStarterKitReviewManifestHasLimits = True`
+- `ExternalStarterKitReviewManifestRejectsOversizedFile = True`
+- `ExternalStarterKitTemplateJsonSchemasVersioned = True`
+- `ExternalStarterKitTemplateJsonSchemasParse = True`
+- `ExternalStarterKitEditorSchemaMappingPresent = True`
+- `MaxBundleBuildAssetCount = 512`
+- `BundleBuildAssetDiscoveryUsesBoundedEnumeration = True`
+- `MaxManagedAssemblyInputCount = 32`
+- `MaxStaleAssemblyCleanupScanCount = 128`
+- `BuilderManagedAssemblyInputCapMatchesLoader = True`
+- `BuilderSkipsExpensiveValidationDuringOnGUI = True`
+- `StaleDllCleanupUsesBoundedEnumeration = True`
+- `BuilderRejectsDuplicateManagedAssemblyFileNames = True`
 
-Static opcode evidence: `TriggerSubtitleCue` and `SubtitleCue` are reserved subtitle aliases. They must be absent from `allowed_opcodes.csv`, `GenerateEmergencyMockOpcodes()`, and the editor runtime opcode tuner until localization owner proof exists.
+Static opcode evidence: `TriggerSubtitleCue` and `SubtitleCue` are reserved subtitle aliases. They must be absent from `allowed_opcodes.csv`, `GenerateEmergencyMockOpcodes()`, the editor runtime opcode tuner, and the kernel inspector injector until localization owner proof exists.
 
 Static loader-diagnostic evidence: `ModRuntimeInfo` and every member in it must remain internal-only. No public DTO may expose `DirectoryPath`, `AssetBundlePath`, load status, or loader failure text.
 

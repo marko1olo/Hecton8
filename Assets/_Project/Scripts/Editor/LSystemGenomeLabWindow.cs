@@ -14,7 +14,11 @@ namespace Hecton8.Editor
 {
     public sealed class LSystemGenomeLabWindow : EditorWindow
     {
-        private FloraGenomeChunkWorkspace _previewWorkspace;
+        private NativeArray<byte> _previewExpandedSymbols;
+        private NativeArray<byte> _previewScratchSymbols;
+        private NativeArray<BranchMatrixDTO> _previewBranchMatrices;
+        private NativeArray<HazardZoneDTO> _previewHazardZones;
+        private NativeArray<TurtleStackFrameDTO> _previewTurtleStack;
         private int _selectedGenomeIndex;
         private int _previewMatrixCount;
         private bool _previewActive;
@@ -39,8 +43,7 @@ namespace Hecton8.Editor
         private void OnDisable()
         {
             SceneView.duringSceneGui -= DrawPreviewSceneGui;
-            if (_previewWorkspace.IsCreated)
-                _previewWorkspace.Dispose();
+            DisposePreviewWorkspace();
             if (_previewSegmentMesh != null)
                 DestroyImmediate(_previewSegmentMesh);
             if (_previewMaterial != null)
@@ -157,15 +160,17 @@ namespace Hecton8.Editor
             if (!genomes.IsCreated || (uint)genomeIndex >= (uint)genomes.Length)
                 return;
 
-            if (!_previewWorkspace.IsCreated)
+            if (!IsPreviewWorkspaceCreated)
             {
-                _previewWorkspace = CreateEditorPreviewWorkspace(
+                CreateEditorPreviewWorkspace(
                     FloraGenomeLSystemConstants.DefaultExpandedSymbolCapacity,
                     4096,
                     256,
                     FloraGenomeLSystemConstants.DefaultTurtleStackCapacity,
                     Allocator.Persistent);
             }
+
+            FloraGenomeChunkWorkspace previewWorkspace = BuildPreviewWorkspaceView();
 
             NativeArray<FloraPlantSeedDTO> seed = new NativeArray<FloraPlantSeedDTO>(1, Allocator.TempJob);
             NativeArray<FloraGenomeJobStats> stats = new NativeArray<FloraGenomeJobStats>(1, Allocator.TempJob);
@@ -193,8 +198,8 @@ namespace Hecton8.Editor
                     Genomes = genomes,
                     GenomeIndex = genomeIndex,
                     HardwareTier = (byte)FloraGenomeHardwareTier.High,
-                    ExpandedSymbols = _previewWorkspace.ExpandedSymbols,
-                    ScratchSymbols = _previewWorkspace.ScratchSymbols,
+                    ExpandedSymbols = previewWorkspace.ExpandedSymbols,
+                    ScratchSymbols = previewWorkspace.ScratchSymbols,
                     Stats = stats
                 }.Run();
 
@@ -202,24 +207,24 @@ namespace Hecton8.Editor
                 {
                     Genomes = genomes,
                     PlantSeeds = seed,
-                    Symbols = _previewWorkspace.ExpandedSymbols,
+                    Symbols = previewWorkspace.ExpandedSymbols,
                     GenomeIndex = genomeIndex,
                     PlantIndex = 0,
                     FrameIndex = (uint)Time.frameCount,
                     HardwareTier = (byte)FloraGenomeHardwareTier.High,
-                    TurtleStack = _previewWorkspace.TurtleStack,
-                    BranchMatrices = _previewWorkspace.BranchMatrices,
+                    TurtleStack = previewWorkspace.TurtleStack,
+                    BranchMatrices = previewWorkspace.BranchMatrices,
                     MatrixWriteOffset = 0,
-                    MatrixWriteCapacity = _previewWorkspace.BranchMatrices.Length,
-                    HazardZones = _previewWorkspace.HazardZones,
+                    MatrixWriteCapacity = previewWorkspace.BranchMatrices.Length,
+                    HazardZones = previewWorkspace.HazardZones,
                     HazardWriteOffset = 0,
-                    HazardWriteCapacity = _previewWorkspace.HazardZones.Length,
+                    HazardWriteCapacity = previewWorkspace.HazardZones.Length,
                     BlackBox = blackBox,
                     BlackBoxCursor = cursor,
                     Stats = stats
                 }.Run();
 
-                _previewMatrixCount = math.min(math.max(0, stats[0].MatrixCount), _previewWorkspace.BranchMatrices.Length);
+                _previewMatrixCount = math.min(math.max(0, stats[0].MatrixCount), previewWorkspace.BranchMatrices.Length);
                 _previewActive = true;
                 SceneView.RepaintAll();
             }
@@ -238,7 +243,7 @@ namespace Hecton8.Editor
 
         private void DrawPreviewSceneGui(SceneView sceneView)
         {
-            if (!_previewActive || !_previewWorkspace.IsCreated || !_previewWorkspace.BranchMatrices.IsCreated)
+            if (!_previewActive || !IsPreviewWorkspaceCreated || !_previewBranchMatrices.IsCreated)
                 return;
             if (Event.current.type != EventType.Repaint)
                 return;
@@ -250,28 +255,55 @@ namespace Hecton8.Editor
             int count = math.min(_previewMatrixCount, 4096);
             for (int i = 0; i < count; i++)
             {
-                BranchMatrixDTO dto = _previewWorkspace.BranchMatrices[i];
+                BranchMatrixDTO dto = _previewBranchMatrices[i];
                 UnityEngine.Graphics.DrawMeshNow(_previewSegmentMesh, ToMatrix4x4(dto.Matrix));
             }
         }
 
-        private static FloraGenomeChunkWorkspace CreateEditorPreviewWorkspace(
+        private bool IsPreviewWorkspaceCreated =>
+            _previewExpandedSymbols.IsCreated &&
+            _previewScratchSymbols.IsCreated &&
+            _previewBranchMatrices.IsCreated &&
+            _previewHazardZones.IsCreated &&
+            _previewTurtleStack.IsCreated;
+
+        private FloraGenomeChunkWorkspace BuildPreviewWorkspaceView()
+        {
+            return FloraGenomeChunkWorkspace.FromVault(
+                _previewExpandedSymbols,
+                _previewScratchSymbols,
+                _previewBranchMatrices,
+                _previewHazardZones,
+                _previewTurtleStack);
+        }
+
+        private void CreateEditorPreviewWorkspace(
             int symbolCapacity,
             int matrixCapacity,
             int hazardCapacity,
             int turtleStackCapacity,
             Allocator allocator)
         {
-            return new FloraGenomeChunkWorkspace
-            {
-                ExpandedSymbols = new NativeArray<byte>(math.max(1, symbolCapacity), allocator, NativeArrayOptions.UninitializedMemory),
-                ScratchSymbols = new NativeArray<byte>(math.max(1, symbolCapacity), allocator, NativeArrayOptions.UninitializedMemory),
-                BranchMatrices = new NativeArray<BranchMatrixDTO>(math.max(1, matrixCapacity), allocator, NativeArrayOptions.UninitializedMemory),
-                HazardZones = new NativeArray<HazardZoneDTO>(math.max(1, hazardCapacity), allocator, NativeArrayOptions.UninitializedMemory),
-                TurtleStack = new NativeArray<TurtleStackFrameDTO>(math.max(1, turtleStackCapacity), allocator, NativeArrayOptions.UninitializedMemory),
-                OwnsNativeMemory = 1,
-                IsVaultBacked = 0
-            };
+            DisposePreviewWorkspace();
+            _previewExpandedSymbols = new NativeArray<byte>(math.max(1, symbolCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+            _previewScratchSymbols = new NativeArray<byte>(math.max(1, symbolCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+            _previewBranchMatrices = new NativeArray<BranchMatrixDTO>(math.max(1, matrixCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+            _previewHazardZones = new NativeArray<HazardZoneDTO>(math.max(1, hazardCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+            _previewTurtleStack = new NativeArray<TurtleStackFrameDTO>(math.max(1, turtleStackCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+        }
+
+        private void DisposePreviewWorkspace()
+        {
+            if (_previewExpandedSymbols.IsCreated)
+                _previewExpandedSymbols.Dispose();
+            if (_previewScratchSymbols.IsCreated)
+                _previewScratchSymbols.Dispose();
+            if (_previewBranchMatrices.IsCreated)
+                _previewBranchMatrices.Dispose();
+            if (_previewHazardZones.IsCreated)
+                _previewHazardZones.Dispose();
+            if (_previewTurtleStack.IsCreated)
+                _previewTurtleStack.Dispose();
         }
 
         private bool EnsurePreviewDrawResources()

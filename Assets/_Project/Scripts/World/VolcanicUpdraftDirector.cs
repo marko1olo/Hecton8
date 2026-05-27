@@ -1032,6 +1032,21 @@ namespace Hecton8.World
                 ActiveRuntimeInstance = null;
         }
 
+        private void OnDestroy()
+        {
+            if (_fixedPipelineScheduled)
+            {
+                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
+                _fixedPipelineScheduled = false;
+            }
+
+            UnlockExternalBuffers();
+            UnlockOwnBuffers();
+            ReleaseOwnVaultHandles(_dataVault);
+            ClearVaultHandles();
+            _dataVault = null;
+        }
+
         public uint GetFixedSystemIdHash()
         {
             return FixedSystemHash;
@@ -1295,7 +1310,7 @@ namespace Hecton8.World
 
         private void ResolveColdRegistryDependencies()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVault(GlobalRegistry.DataVault);
             _thermodynamicsService = AbyssalThermalManager.ActiveRuntimeInstance;
             if (Application.isPlaying && !_registeredHotSwap)
                 _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -1327,10 +1342,41 @@ namespace Hecton8.World
 
             UnlockExternalBuffers();
             UnlockOwnBuffers();
+            ReleaseOwnVaultHandles(_dataVault);
             ClearVaultHandles();
             _dataVault = currentVault;
             if (_dataVault != null && isActiveAndEnabled)
                 EnsureVaultBuffers();
+        }
+
+        private void ReleaseOwnVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnVaultHandle(vault, ref _ventHandle);
+            ReleaseOwnVaultHandle(vault, ref _settingsHandle);
+            ReleaseOwnVaultHandle(vault, ref _telemetryHandle);
+            ReleaseOwnVaultHandle(vault, ref _mockSubmarineHandle);
+            ReleaseOwnVaultHandle(vault, ref _mockLeviathanHandle);
+            ReleaseOwnVaultHandle(vault, ref _mockDebrisHandle);
+            ReleaseOwnVaultHandle(vault, ref _floatSignalHandle);
+            ReleaseOwnVaultHandle(vault, ref _dynamicWakeHandle);
+            ReleaseOwnVaultHandle(vault, ref _mockFlowFieldHandle);
+            ReleaseOwnVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseOwnVaultHandle(vault, ref _counterHandle);
+            ReleaseOwnVaultHandle(vault, ref _playerHeatHandle);
+        }
+
+        private static void ReleaseOwnVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)OwnerSystem)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private void ClearVaultHandles()

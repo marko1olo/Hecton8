@@ -19,6 +19,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Core;
     using Hecton8.Core.Contracts;
     using Hecton8.Core.Contracts.Signals;
+    using Hecton8.Core.Memory;
     using Hecton8.Interaction;
     using Hecton8.Inventory;
     using Hecton.Localization;
@@ -1151,12 +1152,16 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.HabitatDeconstructionRuntime:
                     _cachedHabitatDeconstructionSystem = currentService as IHabitatDeconstructionSystem;
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    EnsureDodRuntimesInitialized(currentService as IDataVault);
+                    break;
             }
         }
 
-        private static void EnsureDodRuntimesInitialized()
+        private static void EnsureDodRuntimesInitialized(IDataVault vault = null)
         {
-            var vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                vault = GlobalRegistry.DataVault;
             LaserCutterDodRuntime.EnsureInitialized(vault);
             if (WfcLaserCutRuntime.EnsureInitialized(vault))
                 WfcLaserCutRuntime.RefreshOwnerPhaseContext();

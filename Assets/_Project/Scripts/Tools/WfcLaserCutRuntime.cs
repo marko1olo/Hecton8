@@ -78,6 +78,7 @@ namespace Hecton8.Tools
             {
                 ReleaseVaultHandles(_dataVault);
                 ClearVaultHandles();
+                ResetRuntimeStateForVaultRebind();
                 _dataVault = null;
                 return false;
             }
@@ -86,6 +87,7 @@ namespace Hecton8.Tools
             {
                 ReleaseVaultHandles(_dataVault);
                 ClearVaultHandles();
+                ResetRuntimeStateForVaultRebind();
                 _dataVault = vault;
             }
 
@@ -255,7 +257,8 @@ namespace Hecton8.Tools
 
             if (IsVaultHandleCreated(in handle))
             {
-                vault.ReleaseBuffer(in handle);
+                if (handle.SystemID == (uint)SystemID.GameplayTools)
+                    vault.ReleaseBuffer(in handle);
                 handle = default;
             }
 
@@ -299,10 +302,31 @@ namespace Hecton8.Tools
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
             if (!IsVaultHandleCreated(in handle))
+            {
+                handle = default;
                 return;
+            }
 
-            vault.ReleaseBuffer(in handle);
+            if (handle.SystemID == (uint)SystemID.GameplayTools)
+                vault.ReleaseBuffer(in handle);
             handle = default;
+        }
+
+        private static void ResetRuntimeStateForVaultRebind()
+        {
+            _activeSectorHash = 0UL;
+            _activeGridHandle = 0u;
+            _activeGenerationSequence = 0u;
+            _activeCellCount = 0;
+            _blackBoxCursor = 0u;
+            _doorsCutCount = 0u;
+            _latestSystemStress01 = 0f;
+            _pendingCutSphereWs = default;
+            _pendingCutProgress01 = 0f;
+            _pendingCutHeat01 = 0f;
+            _pendingCutMolten01 = 0f;
+            _pendingCutOverkill01 = 0f;
+            _cutShaderGlobalsDirty = false;
         }
 
         private static void RefreshActiveGridFromSignals(NativeArray<float> cutProgress01)

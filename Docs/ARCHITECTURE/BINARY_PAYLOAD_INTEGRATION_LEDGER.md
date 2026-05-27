@@ -1,8 +1,8 @@
 ﻿# Binary Payload Integration Ledger
 
-Date: 2026-05-23
+Date: 2026-05-28
 Status: PENDING VERIFICATION
-Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
+Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM
 
 ## Current Source Constants
@@ -18,6 +18,7 @@ Evidence class: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM
 | Data Monolith payload bytes | `1064384` |
 
 Payload path: `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
+2026-05-28 static filesystem check confirms the payload exists at this path. This is still not import, boot, checksum, player, or save/load proof.
 
 ## Active Boundary
 

@@ -562,7 +562,7 @@ namespace Hecton8.Quest
         }
 
         /// <summary>
-        /// Defers native scratch disposal behind the active resolver handle.
+        /// Fences active resolver work before releasing native scratch and Vault handles.
         /// </summary>
         public JobHandle Dispose(JobHandle dependency)
         {
@@ -570,7 +570,6 @@ namespace Hecton8.Quest
                 return dependency;
 
             JobHandle disposeDependency = dependency;
-            bool canReleaseVaultBuffers = !_hasScheduled;
             if (_hasScheduled)
             {
                 disposeDependency = JobHandle.CombineDependencies(disposeDependency, _scheduledHandle);
@@ -584,8 +583,8 @@ namespace Hecton8.Quest
                 _triggerSpatialHash = default;
             }
 
-            if (canReleaseVaultBuffers)
-                QuestDagVault.ReleaseBuffers(_vault, ref _handles);
+            DispatcherJobFence.TryComplete(ref disposeDependency, forceComplete: true);
+            QuestDagVault.ReleaseBuffers(_vault, ref _handles);
 
             _disposed = true;
             return disposeDependency;

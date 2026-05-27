@@ -217,6 +217,7 @@ namespace Hecton8.AI.Ambient
             TryUnregisterHotSwapListener();
             ReleaseGraphicsResources();
             ReleaseBiotaRuntimeMaterial();
+            ReleaseVaultHandles(_vault);
             ClearVaultHandles();
             _vault = null;
             _ecosystem = null;
@@ -586,6 +587,7 @@ namespace Hecton8.AI.Ambient
 
                 case GlobalRegistryServiceSlot.DataVault:
                     CompleteActiveJobForTeardown();
+                    ReleaseVaultHandles(_vault);
                     ClearVaultHandles();
                     _vault = currentService as IDataVault;
                     EnsureVaultBuffers();
@@ -858,6 +860,30 @@ namespace Hecton8.AI.Ambient
             _macroHydrationCounterHandle = default;
             _telemetryRingHandle = default;
             _telemetryCursorHandle = default;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _biotaAupHandle);
+            ReleaseVaultHandle(vault, ref _biotaVelocityHandle);
+            ReleaseVaultHandle(vault, ref _biotaStateHandle);
+            ReleaseVaultHandle(vault, ref _macroHydrationCounterHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.AmbientBiota)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private void ClearMacroCounters(NativeArray<int> counters)

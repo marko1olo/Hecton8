@@ -40,6 +40,8 @@ Evidence class: STATIC_DOC
 - core memory and SignalBus ownership deep-pass reports
 - global route stability and registry hot-path reports
 - global route cache and dispatcher dependency reports
+- mod registry cache and DataVault binding reports
+- DataVault rebind/release lifecycle reports
 - SignalBus hot-path audits
 - documentation structure scans
 

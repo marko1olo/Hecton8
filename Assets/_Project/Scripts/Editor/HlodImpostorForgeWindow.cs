@@ -388,8 +388,9 @@ namespace Hecton8.Editor
                 return false;
             }
 
-            ReadOnlySpan<byte> hemisphere = ReadOnlySpan<byte>.Empty;
-            TryReadCell(line, ref cursor, out hemisphere);
+            ReadOnlySpan<byte> hemisphere = cursor <= line.Length
+                ? Trim(line.Slice(cursor))
+                : ReadOnlySpan<byte>.Empty;
             record.Name = ToFixedString(name);
             record.ViewCount = TryParseInt(views, out int viewCount) ? math.clamp(viewCount, 1, 64) : 16;
             record.AtlasResolution = TryParseInt(atlas, out int atlasResolution) ? math.clamp(atlasResolution, 512, 8192) : 4096;

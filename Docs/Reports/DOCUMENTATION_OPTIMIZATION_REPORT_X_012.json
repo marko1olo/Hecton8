@@ -1,13 +1,13 @@
 ﻿{
   "schema": "hecton8.documentation_actuality_scan.x012.v1",
-  "generatedUtc": "2026-05-27T18:59:55.945108+00:00",
+  "generatedUtc": "2026-05-27T22:34:49.645271+00:00",
   "repoRoot": "C:\\hades\\Hecton8",
   "scope": "repository root approved text anchors plus Docs/**/*.md/txt",
   "checks": {
-    "activeFileCount": 695,
-    "activeWordCount": 1439392,
-    "inventoryFileCount": 5344,
-    "inventoryWordCount": 36938270,
+    "activeFileCount": 705,
+    "activeWordCount": 1448021,
+    "inventoryFileCount": 5626,
+    "inventoryWordCount": 38448056,
     "rootTextDocs": [
       "AGENTS.md",
       "BUILD_PLAYTEST_ISSUES.md",
@@ -33,25 +33,25 @@
     "sourceSyncPass": true,
     "wordReduction": {
       "method": "current active words plus X_012 archived report/root words minus concise replacement anchor words",
-      "activeWordCountAfter": 1439392,
-      "reconstructedActiveWordCountBefore": 2095881,
-      "retiredActiveWords": 656489,
-      "reductionRatio": 0.31322818423374227,
-      "reductionPercent": 31.322818423374226,
+      "activeWordCountAfter": 1448021,
+      "reconstructedActiveWordCountBefore": 2103861,
+      "retiredActiveWords": 655840,
+      "reductionRatio": 0.31173162105291174,
+      "reductionPercent": 31.173162105291176,
       "reductionPass": true,
       "archivedRootFiles": 2,
       "archivedReportFiles": 160,
       "archivedArchitectureFiles": 2,
       "archivedArchitectureDiffFiles": 2,
       "currentRootAnchorWords": 582,
-      "currentBinaryPayloadLedgerWords": 154,
-      "currentActualityLedgerWords": 1745,
-      "currentArchitectureReplacementWords": 1899,
-      "architectureRetiredWords": 117122
+      "currentBinaryPayloadLedgerWords": 175,
+      "currentActualityLedgerWords": 2373,
+      "currentArchitectureReplacementWords": 2548,
+      "architectureRetiredWords": 116473
     },
     "architecture": {
-      "activeArchitectureFileCount": 182,
-      "activeArchitectureWordCount": 156294,
+      "activeArchitectureFileCount": 184,
+      "activeArchitectureWordCount": 158646,
       "markerHits": {
         "staleDocBoundaryRefreshMarkers": 0,
         "staleBoundary51Boilerplate": 0,
@@ -61,8 +61,15 @@
       "longNarrativeParagraphsOver180Words": [],
       "longNarrativeParagraphCount": 0,
       "strictUnstructuredParagraphThresholdWords": 27,
-      "strictUnstructuredParagraphsOverThreshold": [],
-      "strictUnstructuredParagraphCount": 0,
+      "strictUnstructuredParagraphsOverThreshold": [
+        {
+          "path": "Docs/ARCHITECTURE/VOCAL_SYNTHESIS_PIPELINE_SHINOBU_260.md",
+          "paragraph": 29,
+          "wordCount": 32,
+          "preview": "Voice playback is presentation-only. It must not enter StateRingBuffer, save Merkle, WAL, deterministic gameplay authority, or network rollback truth. Fault pro"
+        }
+      ],
+      "strictUnstructuredParagraphCount": 1,
       "strictUnstructuredSentenceThresholdWords": 27,
       "strictUnstructuredSentencesOverThreshold": [],
       "strictUnstructuredSentenceCount": 0,
@@ -76,9 +83,9 @@
       "strictNonContractTextFileCount": 0,
       "tutorialMarkerHits": [],
       "tutorialMarkerHitCount": 0,
-      "pass": true
+      "pass": false
     },
     "activeParameterSyncPass": true,
-    "finalPass": true
+    "finalPass": false
   }
 }

@@ -1,0 +1,25 @@
+﻿{
+    "batch":  "Batch013",
+    "mode":  "final self-file refresh",
+    "created":  "2026-05-28 00:51:33",
+    "files":  [
+                  {
+                      "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_ARCHIVE_13.md",
+                      "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch013\\Tasks\\Status_ARCHIVE_13.md",
+                      "bytes":  2105,
+                      "refreshed":  "2026-05-28T00:51:18.6321880+04:00"
+                  },
+                  {
+                      "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_ARCHIVE_13.md",
+                      "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch013\\AgentLogs\\Rationale_ARCHIVE_13.md",
+                      "bytes":  2968,
+                      "refreshed":  "2026-05-28T00:51:18.6321880+04:00"
+                  },
+                  {
+                      "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_ARCHIVE_13.md",
+                      "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch013\\AgentLogs\\LOG_ARCHIVE_13.md",
+                      "bytes":  1704,
+                      "refreshed":  "2026-05-28T00:51:18.6341974+04:00"
+                  }
+              ]
+}

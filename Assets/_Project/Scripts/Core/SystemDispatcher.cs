@@ -131,7 +131,6 @@ namespace Hecton8.Core
         private const double LateFrameFlushPassSpikeMilliseconds = 0.5;
         private const float PauseDepthOfFieldBlendSeconds = 0.2f;
         private const float VisualStaticGlitchDurationSeconds = 1f;
-        private const float SafeGcCollectFrameBudgetSeconds = 0.014f;
         private const double HomeostasisEmergencySlowTickIntervalSeconds = 1.0;
 #if UNITY_EDITOR
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
@@ -5773,8 +5772,7 @@ namespace Hecton8.Core
             if (objectPool != null)
                 objectPool.FlushInactivePoolsForMemoryPressure();
 
-            if (CurrentFrameDeltaTime > 0f && CurrentFrameDeltaTime < SafeGcCollectFrameBudgetSeconds)
-                System.GC.Collect(0, System.GCCollectionMode.Optimized, false);
+            // Manual managed GC is forbidden in gameplay lanes; pressure response stays in pool trim and DataVault defrag routes.
         }
 
         internal static void MarkLateFrameEventDispatchDeferred()

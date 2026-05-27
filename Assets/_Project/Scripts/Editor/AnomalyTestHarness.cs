@@ -721,7 +721,11 @@ namespace Hecton8.Editor
                 sliceHandle.Complete();
 
                 Assert.AreEqual(1, sliceStatus[0], "Stamp-overflow flood fill did not defer before clearing.");
-                Assert.IsTrue(deferredFloodStates.TryDequeue(out AnomalyBasinFloodFillState state), "Stamp-overflow flood fill did not persist deferred state.");
+                if (!deferredFloodStates.TryDequeue(out AnomalyBasinFloodFillState state))
+                {
+                    Assert.IsTrue(false, "Stamp-overflow flood fill did not persist deferred state.");
+                    return;
+                }
                 Assert.AreEqual(2, state.Phase, "Stamp-overflow flood fill did not enter visited-stamp clear phase.");
                 Assert.AreEqual(0, state.ClearIndex, "Stamp-overflow flood fill cleared cells in the candidate-start slice.");
                 Assert.AreEqual(visitedSentinel, visitedStamp[0], "Stamp-overflow flood fill performed a blocking full clear in the candidate-start slice.");
@@ -744,7 +748,11 @@ namespace Hecton8.Editor
                 sliceHandle.Complete();
 
                 Assert.AreEqual(1, sliceStatus[0], "Stamp-overflow flood fill completed the visited clear inside one slice.");
-                Assert.IsTrue(deferredFloodStates.TryDequeue(out state), "Stamp-overflow flood fill did not persist partial clear state.");
+                if (!deferredFloodStates.TryDequeue(out state))
+                {
+                    Assert.IsTrue(false, "Stamp-overflow flood fill did not persist partial clear state.");
+                    return;
+                }
                 Assert.AreEqual(2, state.Phase, "Stamp-overflow flood fill left clear phase before the visited buffer was fully cleared.");
                 Assert.IsTrue(state.ClearIndex > 0 && state.ClearIndex < PixelCount, "Stamp-overflow flood fill clear index was not partial.");
                 Assert.AreEqual(0, visitedStamp[0], "Stamp-overflow flood fill did not clear the first visited stamp.");

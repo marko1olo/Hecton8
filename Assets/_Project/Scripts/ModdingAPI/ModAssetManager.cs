@@ -117,24 +117,6 @@ namespace Hecton8.Modding
             if (asset != null)
                 return asset;
 
-            string[] assetNames = bundle.GetAllAssetNames();
-            if (assetNames == null || assetNames.Length == 0)
-                return null;
-
-            for (int i = 0; i < assetNames.Length; i++)
-            {
-                string candidate = assetNames[i];
-                if (candidate == null)
-                    continue;
-
-                if (!EndsWithAssetPath(candidate, assetName))
-                    continue;
-
-                asset = bundle.LoadAsset<TAsset>(candidate);
-                if (asset != null)
-                    return asset;
-            }
-
             Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Asset '", assetName, "' was not found in bundle for mod '", modId, "'."));
             return null;
         }
@@ -397,25 +379,6 @@ namespace Hecton8.Modding
 
                 return hash;
             }
-        }
-
-        private static bool EndsWithAssetPath(string candidate, string requested)
-        {
-            if (string.IsNullOrEmpty(candidate) ||
-                string.IsNullOrEmpty(requested) ||
-                candidate.Length < requested.Length)
-            {
-                return false;
-            }
-
-            int offset = candidate.Length - requested.Length;
-            for (int i = 0; i < requested.Length; i++)
-            {
-                if (NormalizeAssetPathChar(candidate[offset + i]) != NormalizeAssetPathChar(requested[i]))
-                    return false;
-            }
-
-            return true;
         }
 
         private static bool StartsWithAssetsPrefix(string value)

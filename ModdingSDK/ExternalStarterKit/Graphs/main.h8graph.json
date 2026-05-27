@@ -1,0 +1,8 @@
+{
+  "Schema": "hecton8.h8graph.draft.v1",
+  "GraphName": "main",
+  "Runtime": "envelope-only",
+  "MaxEnvelopesPerFrame": 0,
+  "Nodes": [],
+  "Notes": "Empty graph emits no runtime packets. Node Opcode values must be a hex token or comment alias from Reference/allowed_opcodes.csv."
+}

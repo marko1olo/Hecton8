@@ -10,11 +10,11 @@ Scope: cited local paths exist at capture time. No compile/import/Play/profiler/
 
 - `Assets/_Project/Scripts/World/GlobalWorldSampler.cs`
 
-- `Assets/_Project/Scripts/World/Terrain/HybridTerrainSeamJobs.cs`
+- `Assets/_Project/Scripts/World/HybridTerrainSeamJobs.cs`
 
 - `Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs`
 
-- `Assets/_Project/Scripts/World/Terrain/Hecton8.World.Terrain.asmdef`
+- Prior terrain asmdef anchor `Assets/_Project/Scripts/World/Terrain/Hecton8.World.Terrain.asmdef` is absent in the current checkout; do not cite terrain-assembly isolation until a current asmdef exists.
 
 ## Runtime Contract
 
@@ -67,9 +67,9 @@ Each wrapper consumes a caller `JobHandle inputDeps` and returns the scheduled o
 
 ## Compile Guard
 
-`Assets/_Project/Scripts/World/Terrain/Hecton8.World.Terrain.asmdef` references only `Hecton8.World.Contracts` and Unity Burst/Collections/Jobs/Mathematics. No sibling gameplay, flora, vehicle, audio, or streaming runtime assembly is referenced from the terrain job assembly.
+No current terrain asmdef exists at `Assets/_Project/Scripts/World/Terrain/Hecton8.World.Terrain.asmdef`. Terrain job assembly isolation is therefore not current proof.
 
-`WorldGenerativeGeologyTerrainSeamApplier` lives in the broad `Hecton8.Core` assembly and consumes the terrain job assembly through the pre-existing Core reference. This pass did not add or edit asmdef references.
+`WorldGenerativeGeologyTerrainSeamApplier` and `HybridTerrainSeamJobs.cs` are current source anchors under the broad source tree. This document does not claim a clean terrain-only asmdef boundary.
 
 ## Data Lanes
 
@@ -155,7 +155,7 @@ Editor hot-reload target `biome_atlas_overrides.csv` is absent in the current ch
 
 ## Verification
 
-- Forbidden-pattern grep scope: `GlobalWorldSampler.cs`, `HybridTerrainSeamJobs.cs`.
+- Forbidden-pattern grep scope: `GlobalWorldSampler.cs`, `World/HybridTerrainSeamJobs.cs`.
 - Local grep text reported no forbidden Physics, terrain, random, file IO, packing, low-precision Burst, frame-time, or property hot-path patterns.
 - Missing proof tuple: command, timestamp, environment, output.
 - Rerun before using as current proof.
@@ -179,4 +179,4 @@ Status: STATIC SOURCE ORIENTATION / DATAVAULT SCRATCH+BLACKBOX SOURCE NOTES / RE
 
 `Assets/_Project/Scripts/World/GlobalWorldSampler.cs` is the terrain truth path for SHINOBU_41. It fuses MapMagic-style quantized height samples and voxel SDF samples through polynomial smooth-min without Unity Physics.
 
-`Assets/_Project/Scripts/World/Terrain/HybridTerrainSeamJobs.cs` and `Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs` are the cold Unity Terrain seam writeback path. They now consume `GlobalQualityWeight` for hybrid MapMagic/SDF patch deformation instead of selecting by hardware tier.
+`Assets/_Project/Scripts/World/HybridTerrainSeamJobs.cs` and `Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs` are the cold Unity Terrain seam writeback path. They now consume `GlobalQualityWeight` for hybrid MapMagic/SDF patch deformation instead of selecting by hardware tier.

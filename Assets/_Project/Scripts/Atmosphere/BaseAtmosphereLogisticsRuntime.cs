@@ -69,6 +69,7 @@ namespace Hecton8.Atmosphere
         private BufferID _lockedBackBufferId;
         private uint _lastDispatcherFrame;
         private long _jobScheduleTimestamp;
+        private JobHandle _simulationHandle;
         private float _lastAverageOxygen01 = AtmosphereLogisticsConstants.DefaultOxygen01;
         private float _lastMaxCarbonDioxide01 = AtmosphereLogisticsConstants.DefaultCarbonDioxide01;
         private float _lastMaxToxin01;
@@ -309,6 +310,7 @@ namespace Hecton8.Atmosphere
 
             _shutdown = true;
             Application.quitting -= ShutdownActive;
+            CompleteSimulationForLifecycle();
             UnlockJobBuffers();
             TryUnregisterHotSwapListener();
             UnregisterDispatcherPhases();
@@ -447,6 +449,16 @@ namespace Hecton8.Atmosphere
 
         private JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
         {
+            if (_simulationScheduled)
+            {
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                    return JobHandle.CombineDependencies(dependsOn, _simulationHandle);
+
+                _simulationScheduled = false;
+                UnlockJobBuffers();
+                ApplyPendingVaultRebindIfSafe();
+            }
+
             IDataVault vault = ResolveVault();
             if (vault == null || !EnsureVaultState(vault))
                 return dependsOn;
@@ -617,6 +629,7 @@ namespace Hecton8.Atmosphere
                 }.Schedule(handle);
 
                 _simulationScheduled = true;
+                _simulationHandle = handle;
                 _jobScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 H8Memory.RegisterActiveJob(OwnerSystemId, handle);
                 keepLocksForScheduledJob = true;
@@ -637,6 +650,9 @@ namespace Hecton8.Atmosphere
                 UnlockJobBuffers();
                 return;
             }
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                return;
 
             _simulationScheduled = false;
             _lastMicros = ElapsedMicroseconds(_jobScheduleTimestamp);
@@ -661,6 +677,16 @@ namespace Hecton8.Atmosphere
                     _dumpWrittenThisFault = false;
             }
 
+            UnlockJobBuffers();
+        }
+
+        private void CompleteSimulationForLifecycle()
+        {
+            if (!_simulationScheduled)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+            _simulationScheduled = false;
             UnlockJobBuffers();
         }
 

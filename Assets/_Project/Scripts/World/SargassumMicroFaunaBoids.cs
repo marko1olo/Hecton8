@@ -7864,6 +7864,7 @@ namespace Hecton8.World
 
         private void ClearVaultHandles(JobHandle disposeDependency)
         {
+            DispatcherJobSwap.TryComplete(ref disposeDependency, forceComplete: true);
             _grazingAnchorsHandle = default;
             _massiveThreatsHandle = default;
             _formationBeaconsHandle = default;
@@ -7964,19 +7965,18 @@ namespace Hecton8.World
 
         private void DisposeFoveatedSimulationBuffers(JobHandle externalDependency)
         {
+            JobHandle disposeDependency = externalDependency;
             if (_foveatedSimulationScheduled)
             {
-                _foveatedSimulationInputHandle = default;
-                _foveatedSimulationFrontHandle = default;
-                _foveatedSimulationBackHandle = default;
-                _foveatedSimulationHandle = default;
+                disposeDependency = JobHandle.CombineDependencies(disposeDependency, _foveatedSimulationHandle);
                 _foveatedSimulationScheduled = false;
-                return;
             }
 
+            DispatcherJobSwap.TryComplete(ref disposeDependency, forceComplete: true);
             _foveatedSimulationInputHandle = default;
             _foveatedSimulationFrontHandle = default;
             _foveatedSimulationBackHandle = default;
+            _foveatedSimulationHandle = default;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

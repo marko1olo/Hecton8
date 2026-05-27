@@ -512,7 +512,7 @@ namespace Hecton8.Input
             RecordControlRemapTelemetry(in saveResult.Telemetry);
             if (saveResult.RecordCount == 0)
             {
-                if (!DeleteOverridesFileIfExists())
+                if (!DeleteOverridesFileIfExistsCold())
                     return false;
             }
 
@@ -559,7 +559,7 @@ namespace Hecton8.Input
                     return false;
                 }
 
-                if (clearSavedOverrides && !DeleteOverridesFileIfExists())
+                if (clearSavedOverrides && !DeleteOverridesFileIfExistsCold())
                 {
                     if (!TryRestoreRuntimeOverrideRollback(rollbackCount))
                         LogWarning("Runtime binding override rollback failed after saved override deletion failed.");
@@ -612,17 +612,17 @@ namespace Hecton8.Input
             return false;
         }
 
-        private bool DeleteOverridesFileIfExists()
+        private bool DeleteOverridesFileIfExistsCold()
         {
             string tempPath = GetOverridesTempFilePath();
-            if (!TryDeleteOverridesFile(tempPath, "Failed to delete temp binding overrides file."))
+            if (!TryDeleteOverridesFileCold(tempPath, "Failed to delete temp binding overrides file."))
                 return false;
 
             string path = GetOverridesFilePath();
-            return TryDeleteOverridesFile(path, "Failed to delete binding overrides file.");
+            return TryDeleteOverridesFileCold(path, "Failed to delete binding overrides file.");
         }
 
-        private bool TryDeleteOverridesFile(string path, string warning)
+        private bool TryDeleteOverridesFileCold(string path, string warning)
         {
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return true;

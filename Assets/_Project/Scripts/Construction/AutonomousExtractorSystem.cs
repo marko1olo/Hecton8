@@ -221,8 +221,7 @@ namespace Hecton8.Construction
             {
                 CompleteScheduledJobForTeardown();
                 ReleaseJobBufferLocks();
-                ReleaseVaultBuffers(previousService as IDataVault ?? _dataVault);
-                _dataVault = currentService as IDataVault;
+                RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
                 if (isActiveAndEnabled)
                     EnsureVaultCapacity(MaxModuleCapacity);
                 return;
@@ -608,20 +607,23 @@ namespace Hecton8.Construction
 
         private IDataVault CacheDataVaultCold()
         {
-            if (_dataVault != null)
-                return _dataVault;
-
-            _dataVault = GlobalRegistry.DataVault;
+            if (_dataVault == null)
+                BindCurrentDataVaultCold();
             return _dataVault;
         }
 
         private void BindCurrentDataVaultCold()
         {
             IDataVault currentVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(currentVault, null);
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault currentVault, IDataVault releaseVaultFallback)
+        {
             if (ReferenceEquals(_dataVault, currentVault))
                 return;
 
-            ReleaseVaultBuffers(_dataVault);
+            ReleaseVaultBuffers(releaseVaultFallback ?? _dataVault);
             _dataVault = currentVault;
         }
 
@@ -915,15 +917,22 @@ namespace Hecton8.Construction
 
         private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)VaultOwnerSystemId)
+            {
                 vault.ReleaseBuffer(in handle);
+            }
 
             handle = default;
         }
 
         private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)VaultOwnerSystemId;
         }
 
     }

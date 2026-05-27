@@ -382,7 +382,6 @@ namespace Hecton8.Graphics.Scalability
             _drsState.CurrentRenderScale = _currentScale;
             _drsState.TargetRenderScale = _targetScale;
             _drsState.UpscalerTypeHash = _upscalerTypeHash;
-            _drsState._pad0 = 0u;
             RebindDataVault(GlobalRegistry.DataVault);
             TryEnsureDrsStateHandle(allowAllocation: true);
             TryEnsureTelemetryHandle(allowAllocation: true);
@@ -840,7 +839,6 @@ namespace Hecton8.Graphics.Scalability
             signal.GlobalQualityWeight = 0.2f;
             signal.FrameTimeMs = TargetFrameTimeMs;
             signal.Flags = 1u;
-            signal._pad0 = 0u;
             ConsumeMockQualityWeightSignal(in signal);
             // COLD SYNC JOB: editor/tuner proof path only; never called from Tick.
             RunMockQualityWeightDropJob();
@@ -1309,7 +1307,6 @@ namespace Hecton8.Graphics.Scalability
             _drsState.CurrentRenderScale = ClampRenderScale(_currentScale);
             _drsState.TargetRenderScale = ClampRenderScale(_targetScale);
             _drsState.UpscalerTypeHash = _upscalerTypeHash;
-            _drsState._pad0 = 0u;
 
             if (!TryLockDrsStatePointer(out DrsStateDTO* drsState, out int drsStateLength))
                 return;
@@ -1322,7 +1319,6 @@ namespace Hecton8.Graphics.Scalability
                     state.CurrentRenderScale = _drsState.CurrentRenderScale;
                     state.TargetRenderScale = _drsState.TargetRenderScale;
                     state.UpscalerTypeHash = _drsState.UpscalerTypeHash;
-                    state._pad0 = 0u;
                 }
             }
             finally

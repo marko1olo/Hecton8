@@ -141,6 +141,7 @@ namespace Hecton8.Physics
         private SimulationPhaseSystem _simulationSystem;
         private PostSimulationPhaseSystem _postSimulationSystem;
         private VisualSyncPhaseSystem _visualSyncSystem;
+        private JobHandle _simulationHandle;
         private uint _frameIndex;
         private float _globalQualityWeight = 1f;
         private float _timeSeconds;
@@ -162,6 +163,7 @@ namespace Hecton8.Physics
         private bool _dumpRequested;
         private bool _dumpedFault;
         private bool _coreBlackboxWarmed;
+        private bool _simulationScheduled;
         private bool _kernelResolved;
         private bool _hotSwapRegistered;
         private bool _registeredOriginShiftListener;
@@ -329,6 +331,7 @@ namespace Hecton8.Physics
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             TryUnregisterDispatcherSystems();
+            CompleteSimulationForLifecycle();
             ReleaseSimulationWriteLocks();
             ReleaseGpuBuffers();
             _coreBlackboxWarmed = false;
@@ -355,7 +358,13 @@ namespace Hecton8.Physics
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            _dataVault = currentService as IDataVault;
+            IDataVault nextVault = currentService as IDataVault;
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            CompleteSimulationForLifecycle();
+            ReleaseSimulationWriteLocks();
+            _dataVault = nextVault;
             _coldBootCompleted = false;
             _coreBlackboxWarmed = false;
             if (EnsureRuntimeReady())
@@ -396,6 +405,15 @@ namespace Hecton8.Physics
 
         private JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
         {
+            if (_simulationScheduled)
+            {
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                    return JobHandle.CombineDependencies(dependsOn, _simulationHandle);
+
+                _simulationScheduled = false;
+                ReleaseSimulationWriteLocks();
+            }
+
             if (!IsRuntimeReady())
                 return dependsOn;
 
@@ -437,6 +455,7 @@ namespace Hecton8.Physics
             if (activeStateCount <= 0)
             {
                 _lastApplyMicros = 0u;
+                RetainSimulationHandleIfLocked(handle);
                 return handle;
             }
 
@@ -447,6 +466,7 @@ namespace Hecton8.Physics
                     out NativeArray<AsyncReadbackCounterDTO> countersForApply))
             {
                 _lastApplyMicros = 0u;
+                RetainSimulationHandleIfLocked(handle);
                 return handle;
             }
 
@@ -467,13 +487,25 @@ namespace Hecton8.Physics
                 FrameIndex = _frameIndex
             }.Schedule(stateCount, 64, handle);
             _lastApplyMicros = ElapsedMicroseconds(applyStart);
+            RetainSimulationHandleIfLocked(handle);
             return handle;
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
         {
+            if (_simulationScheduled)
+            {
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                    return;
+
+                _simulationScheduled = false;
+            }
+
             if (!IsRuntimeReady())
+            {
+                ReleaseSimulationWriteLocks();
                 return;
+            }
 
             ReleaseSimulationWriteLocks();
             WriteTuningSnapshot(ResolveSimulationFixedDelta(in timing));
@@ -481,6 +513,26 @@ namespace Hecton8.Physics
             WriteTelemetryDirect();
             if (_dumpRequested || _lastLatencyFrames > 4)
                 _dumpRequested = true;
+        }
+
+        private void CompleteSimulationForLifecycle()
+        {
+            if (!_simulationScheduled)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+            _simulationScheduled = false;
+            ReleaseSimulationWriteLocks();
+        }
+
+        private void RetainSimulationHandleIfLocked(JobHandle handle)
+        {
+            if (!HasSimulationWriteLocks())
+                return;
+
+            _simulationHandle = handle;
+            _simulationScheduled = true;
+            H8Memory.RegisterActiveJob(SystemID.Physics, handle);
         }
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
@@ -1745,6 +1797,15 @@ namespace Hecton8.Physics
             states = default;
             counters = default;
             return false;
+        }
+
+        private bool HasSimulationWriteLocks()
+        {
+            return _counterWriteLocked ||
+                   _resultStatesWriteLocked ||
+                   _resolvedHeightsWriteLocked ||
+                   _completedRequestsWriteLocked ||
+                   _mockRingWriteLocked;
         }
 
         private void ReleaseSimulationWriteLocks()

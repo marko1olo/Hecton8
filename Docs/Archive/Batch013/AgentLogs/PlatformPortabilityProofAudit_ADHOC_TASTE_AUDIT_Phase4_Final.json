@@ -1,0 +1,709 @@
+{
+  "artifacts": {
+    "addressables": {
+      "exists": true,
+      "fileCount": 0,
+      "path": "Assets/AddressableAssetsData",
+      "sampleFiles": []
+    },
+    "addressablesRoute": {
+      "addressablesTierGroupGatePresent": true,
+      "assetLifecycleGovernorPath": "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs",
+      "bootstrapDependencyPrewarmPath": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "bootstrapDependencyPrewarmPresent": true,
+      "contentAuthorityPrebuildGatePresent": true,
+      "contentAuthorityValidatorPath": "Assets/_Project/Scripts/Core/Content/Editor/ContentAuthorityBuildValidators.cs",
+      "contentAuthorityValidatorPresent": true,
+      "contentHashMapPath": "Assets/_Project/Scripts/Core/Content/ContentAssetHashMap.cs",
+      "contentHashMapRoutePresent": true,
+      "lifecycleAsyncLoadRoutePresent": true,
+      "lifecycleBlindFrameReleasePresent": true,
+      "lifecycleTelemetryDumpPresent": true,
+      "settingsFolderExists": true,
+      "settingsPath": "Assets/AddressableAssetsData",
+      "textureTierAuthoringPath": "Assets/_Project/Scripts/Editor/HectonTextureImportDictator.cs",
+      "textureTierAuthoringRoutePresent": true
+    },
+    "buildResultLogCount": 0,
+    "buildResultLogs": [],
+    "builds": {
+      "exists": false,
+      "fileCount": 0,
+      "path": "Builds",
+      "sampleFiles": []
+    },
+    "dataMonolith": {
+      "bytes": 1064384,
+      "exists": true,
+      "path": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin"
+    },
+    "dataMonolithBakeRoute": {
+      "atomicTempValidateWritePresent": true,
+      "balanceFileCount": 47,
+      "balanceFolderExists": true,
+      "balanceFolderPath": "Data/Balance",
+      "balanceFolderTokenPresent": true,
+      "commandLineBakePresent": true,
+      "compilerPath": "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs",
+      "compilerPresent": true,
+      "externalValidatorPath": "Tools/h8bin_validator.py",
+      "externalValidatorPresent": true,
+      "littleEndianGuardPresent": true,
+      "outputAssetPathTokenPresent": true,
+      "outputValidationPresent": true,
+      "prebuildGatePresent": true,
+      "productionCoverageGatePresent": true,
+      "sourceFileCount": 0,
+      "sourceFolderExists": true,
+      "sourceFolderPath": "Assets/_SourceData/DataMonolith",
+      "sourceFolderTokenPresent": true
+    }
+  },
+  "computeThreads": {
+    "computeFileCount": 71,
+    "dispatchCallCount": 127,
+    "dispatchCallerFileCount": 50,
+    "dispatchCallerFilesWithoutThreadGroupQueryCount": 14,
+    "dispatchCallersWithoutThreadGroupQuerySamples": [
+      {
+        "call": "context.cmd.DispatchCompute(payloadData.Compute, payloadData.ClearKernel, payloadData.ClearDispatchGroupsX, payloadData.ClearDispatchGroupsY, 1);",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 125,
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/HectonJacobianFoamRenderFeature.cs"
+      },
+      {
+        "call": "context.cmd.DispatchCompute(payloadData.Compute, payloadData.CalculateKernel, payloadData.CalculateDispatchGroupsX, payloadData.CalculateDispatchGroupsY, 1);",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 129,
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/HectonJacobianFoamRenderFeature.cs"
+      },
+      {
+        "call": "context.cmd.DispatchCompute(payloadData.Compute, payloadData.AdvectKernel, payloadData.AdvectDispatchGroupsX, payloadData.AdvectDispatchGroupsY, 1);",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 153,
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/HectonJacobianFoamRenderFeature.cs"
+      },
+      {
+        "call": "context.cmd.DispatchCompute(",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 91,
+        "path": "Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs"
+      },
+      {
+        "call": "_shaderProcessQueries.Dispatch(_kernelHandle, numGroups, 1, 1);",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 495,
+        "path": "Assets/Crest/Crest/Scripts/Collision/QueryBase.cs"
+      },
+      {
+        "call": "s_clearToBlackShader.Dispatch(",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 57,
+        "path": "Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs"
+      },
+      {
+        "call": "buf.DispatchCompute(_combineShader, selectedShaderKernel,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 411,
+        "path": "Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs"
+      },
+      {
+        "call": "buf.DispatchCompute(_shader, krnl_ShaderSim,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 175,
+        "path": "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs"
+      },
+      {
+        "call": "buf.DispatchCompute(waveCombineShader, kernel, bakedWaves.width / 8, bakedWaves.height / 8, 1);",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 109,
+        "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs"
+      },
+      {
+        "call": "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, _resolution / 8, _resolution / 8, CASCADE_COUNT);",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 408,
+        "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs"
+      },
+      {
+        "call": "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, _resolution / 8, _resolution / 8, CASCADE_COUNT);",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 426,
+        "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs"
+      },
+      {
+        "call": "buf.DispatchCompute(_shaderFFT, kernelOffset, 1, _resolution, CASCADE_COUNT);",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 443,
+        "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs"
+      },
+      {
+        "call": "buf.DispatchCompute(_shaderFFT, kernelOffset + 1, _resolution, 1, CASCADE_COUNT);",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 450,
+        "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs"
+      },
+      {
+        "call": "buf.DispatchCompute(_shaderGerstner, _krnlGerstner, _waveBuffers.width / LodDataMgr.THREAD_GROUP_SIZE_X, _waveBuffers.height / LodDataMgr.THREAD_GROUP_SIZE_Y, _",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 364,
+        "path": "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs"
+      },
+      {
+        "call": "farSphereCSTransform.Dispatch(0, dispatchWidth, dispatchWidth, 1);",
+        "executionSurface": "Editor",
+        "fileHasThreadGroupQuery": false,
+        "line": 3003,
+        "path": "Assets/Editor/x64/Bakery/scripts/ftBuildGraphics.cs"
+      },
+      {
+        "call": "farSphereCSCull.Dispatch(0, dispatchIndexGroups, 1, 1);",
+        "executionSurface": "Editor",
+        "fileHasThreadGroupQuery": false,
+        "line": 3017,
+        "path": "Assets/Editor/x64/Bakery/scripts/ftBuildGraphics.cs"
+      },
+      {
+        "call": "_argsBufferComputeShader.Dispatch(_argsBufferDoubleInstanceCountComputeKernelID, Mathf.CeilToInt(count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, ",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 637,
+        "path": "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs"
+      },
+      {
+        "call": "cameraComputeShader.Dispatch(instanceVisibilityComputeKernelId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 573,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "visibilityComputeShader.Dispatch(instanceVisibilityComputeKernelId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 611,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, Mathf.CeilToInt(runtimeData.bufferSize / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 706,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, Mathf.CeilToInt(runtimeData.bufferSize / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 717,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "bufferToTextureComputeShader.Dispatch(bufferToTextureCrossFadeKernelID, Mathf.CeilToInt(runtimeData.bufferSize / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COU",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 727,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "dilationCompute.Dispatch(dilationKernel, Mathf.CeilToInt(billboardTexture.width / (GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D * frameCount)),",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 2086,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataSingleKernelId, 1, 1, 1);",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3319,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, Mathf.CeilToInt(count / GPUInstancerConsta",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3350,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, Mathf.CeilToInt(count / GPUInstancerConsta",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3362,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, Mathf.CeilToInt(computeBuffer.count / GPUI",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3375,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, Mathf.CeilToInt(bufferToMerge.count / GPUI",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3382,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3424,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferMatrixOffsetId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3460,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideBoundsId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3481,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideBoxId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3507,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideSphereId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3527,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideCapsuleId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3568,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsCopyTextureId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3703,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(2,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3719,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(1, Mathf.CeilToInt(destinationW / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D),",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3750,
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs"
+      },
+      {
+        "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 378,
+        "path": "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs"
+      },
+      {
+        "call": "grassComputeShader.Dispatch(grassInstantiationComputeKernelId,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 584,
+        "path": "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs"
+      },
+      {
+        "call": "_treeInstantiationComputeShader.Dispatch(0,",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 264,
+        "path": "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs"
+      }
+    ],
+    "dispatchCallsWithoutThreadGroupQueryByExecutionSurface": {
+      "Editor": 2,
+      "Runtime": 38
+    },
+    "dispatchCallsWithoutThreadGroupQueryCount": 40,
+    "numthreadsDeclarations": 156,
+    "referenceFileMaxBytes": 2000000,
+    "referenceFilesScanned": 9558,
+    "riskyThreadGroupCount": 4,
+    "riskyThreadGroupCountByExecutionSurface": {
+      "Editor": 2,
+      "Runtime": 2
+    },
+    "riskyThreadGroupCountByRuntimeReachability": {
+      "EditorOrTestOnly": 4
+    },
+    "riskyThreadGroupThreshold": 64,
+    "riskyThreadGroups": [
+      {
+        "args": "128, 1, 1",
+        "executionSurface": "Runtime",
+        "line": 113,
+        "path": "Assets/_Project/Art/Shaders/Hecton_SonarRaymarch.compute",
+        "referenceSamples": [
+          {
+            "executionSurface": "Editor",
+            "kind": "sourcePath",
+            "line": 108,
+            "path": "Assets/_Project/Tests/Editor/TopographicalSonar/TopographicalSonarLayoutEditTests.cs"
+          }
+        ],
+        "runtimeReachability": "EditorOrTestOnly",
+        "runtimeReferenceCount": 0,
+        "runtimeSerializedReferenceCount": 0,
+        "runtimeSourceReferenceCount": 0,
+        "threadGroupSize": 128
+      },
+      {
+        "args": "128, 1, 1",
+        "executionSurface": "Runtime",
+        "line": 186,
+        "path": "Assets/_Project/Art/Shaders/Hecton_SonarRaymarch.compute",
+        "referenceSamples": [
+          {
+            "executionSurface": "Editor",
+            "kind": "sourcePath",
+            "line": 108,
+            "path": "Assets/_Project/Tests/Editor/TopographicalSonar/TopographicalSonarLayoutEditTests.cs"
+          }
+        ],
+        "runtimeReachability": "EditorOrTestOnly",
+        "runtimeReferenceCount": 0,
+        "runtimeSerializedReferenceCount": 0,
+        "runtimeSourceReferenceCount": 0,
+        "threadGroupSize": 128
+      },
+      {
+        "args": "256, 1, 1",
+        "executionSurface": "Editor",
+        "line": 20,
+        "path": "Assets/Editor/x64/Bakery/shaderSrc/ftCullFarSphere.compute",
+        "referenceSamples": [
+          {
+            "executionSurface": "Editor",
+            "kind": "sourcePath",
+            "line": 2858,
+            "path": "Assets/Editor/x64/Bakery/scripts/ftBuildGraphics.cs"
+          }
+        ],
+        "runtimeReachability": "EditorOrTestOnly",
+        "runtimeReferenceCount": 0,
+        "runtimeSerializedReferenceCount": 0,
+        "runtimeSourceReferenceCount": 0,
+        "threadGroupSize": 256
+      },
+      {
+        "args": "16, 16, 1",
+        "executionSurface": "Editor",
+        "line": 30,
+        "path": "Assets/Editor/x64/Bakery/shaderSrc/ftTransformFarSphere.compute",
+        "referenceSamples": [
+          {
+            "executionSurface": "Editor",
+            "kind": "sourcePath",
+            "line": 2848,
+            "path": "Assets/Editor/x64/Bakery/scripts/ftBuildGraphics.cs"
+          }
+        ],
+        "runtimeReachability": "EditorOrTestOnly",
+        "runtimeReferenceCount": 0,
+        "runtimeSerializedReferenceCount": 0,
+        "runtimeSourceReferenceCount": 0,
+        "threadGroupSize": 256
+      }
+    ],
+    "runtimeAssetRiskyThreadGroupCount": 2,
+    "runtimeAssetRiskyThreadGroups": [
+      {
+        "args": "128, 1, 1",
+        "executionSurface": "Runtime",
+        "line": 113,
+        "path": "Assets/_Project/Art/Shaders/Hecton_SonarRaymarch.compute",
+        "referenceSamples": [
+          {
+            "executionSurface": "Editor",
+            "kind": "sourcePath",
+            "line": 108,
+            "path": "Assets/_Project/Tests/Editor/TopographicalSonar/TopographicalSonarLayoutEditTests.cs"
+          }
+        ],
+        "runtimeReachability": "EditorOrTestOnly",
+        "runtimeReferenceCount": 0,
+        "runtimeSerializedReferenceCount": 0,
+        "runtimeSourceReferenceCount": 0,
+        "threadGroupSize": 128
+      },
+      {
+        "args": "128, 1, 1",
+        "executionSurface": "Runtime",
+        "line": 186,
+        "path": "Assets/_Project/Art/Shaders/Hecton_SonarRaymarch.compute",
+        "referenceSamples": [
+          {
+            "executionSurface": "Editor",
+            "kind": "sourcePath",
+            "line": 108,
+            "path": "Assets/_Project/Tests/Editor/TopographicalSonar/TopographicalSonarLayoutEditTests.cs"
+          }
+        ],
+        "runtimeReachability": "EditorOrTestOnly",
+        "runtimeReferenceCount": 0,
+        "runtimeSerializedReferenceCount": 0,
+        "runtimeSourceReferenceCount": 0,
+        "threadGroupSize": 128
+      }
+    ],
+    "runtimeDispatchCallCount": 123,
+    "runtimeDispatchCallerFileCount": 48,
+    "runtimeDispatchCallerFilesWithoutThreadGroupQueryCount": 13,
+    "runtimeDispatchCallsWithoutThreadGroupQueryCount": 38,
+    "runtimeRiskyThreadGroupCount": 0,
+    "runtimeRiskyThreadGroups": [],
+    "skippedReferenceBytes": 346161212,
+    "skippedReferenceFileCount": 39,
+    "skippedReferenceSamples": [
+      "Assets/_Project/Art/Materials/Fonts/NotoSans-Regular SDF.asset",
+      "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Prime SDF.asset",
+      "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Regular SDF.asset",
+      "Assets/_Project/Art/Materials/Fonts/NotoSansCJKjp-Regular SDF.asset",
+      "Assets/_Project/Art/Materials/Fonts/NotoSansCJKsc-Regular SDF.asset",
+      "Assets/_Project/Art/Materials/Fonts/tekst_SDF.asset",
+      "Assets/_Project/Art/Materials/Fonts/tsifry_SDF.asset",
+      "Assets/_Project/Art/Meshes/Cleaned/ENV_arka1_GEO_LOD0_cleaned.asset",
+      "Assets/_Project/Art/Meshes/Cleaned/ENV_arka2_geo_LOD0_cleaned.asset",
+      "Assets/_Project/Art/Meshes/Cleaned/ENV_bolshaya_gorizontalnaya_geo_LOD0_cleaned.asset",
+      "Assets/_Project/Art/Meshes/Cleaned/ENV_Ogromennaya_skala_LOD0_cleaned.asset",
+      "Assets/_Project/Art/Meshes/Cleaned/ENV_pillar2_geo_LOD0_cleaned.asset"
+    ],
+    "target50ComputeFileCount": 5,
+    "target50ComputeFiles": [
+      "Assets/_Project/Art/Shaders/Hecton_SonarRaymarch.compute",
+      "Assets/_Project/Art/Shaders/Hecton_VolumetricFog.compute",
+      "Assets/_Project/Art/Shaders/Hecton_VolumetricLight.compute",
+      "Assets/_Project/Art/Shaders/HectonHudFogLuminance.compute",
+      "Assets/_Project/Art/Shaders/ParticleUpdate.compute"
+    ],
+    "unknownThreadGroupDeclarations": 99
+  },
+  "nativePlugins": {
+    "byClass": {
+      "editorOrManagedDll": 8,
+      "managedOrUnknownDll": 14,
+      "windowsNativeOrManagedDll": 2
+    },
+    "byExtension": {
+      ".dll": 24
+    },
+    "firstPartyOrRuntimeCritical": [
+      "Assets/_Project/Plugins/Windows/x86_64/liblz4.dll",
+      "Assets/Plugins/x86_64/HectonAudioKernel.dll"
+    ],
+    "pluginFileCount": 24,
+    "sampleFiles": [
+      "Assets/_Project/Plugins/Windows/x86_64/liblz4.dll",
+      "Assets/Plugins/Demigiant/DemiLib/Core/DemiLib.dll",
+      "Assets/Plugins/Demigiant/DemiLib/Core/Editor/DemiEditor.dll",
+      "Assets/Plugins/Demigiant/DOTween/DOTween.dll",
+      "Assets/Plugins/Demigiant/DOTween/Editor/DOTweenEditor.dll",
+      "Assets/Plugins/Demigiant/DOTweenPro/DOTweenPro.dll",
+      "Assets/Plugins/Demigiant/DOTweenPro/Editor/DOTweenProEditor.dll",
+      "Assets/Plugins/Editor/RelationsInspector/RelationsInspector.dll",
+      "Assets/Plugins/Roslyn/Microsoft.CodeAnalysis.CSharp.dll",
+      "Assets/Plugins/Roslyn/Microsoft.CodeAnalysis.dll",
+      "Assets/Plugins/Roslyn/System.Collections.Immutable.dll",
+      "Assets/Plugins/Roslyn/System.Reflection.Metadata.dll",
+      "Assets/Plugins/Sirenix/Assemblies/NoEditor/Sirenix.Serialization.dll",
+      "Assets/Plugins/Sirenix/Assemblies/NoEditor/Sirenix.Utilities.dll",
+      "Assets/Plugins/Sirenix/Assemblies/NoEmitAndNoEditor/Sirenix.Serialization.dll",
+      "Assets/Plugins/Sirenix/Assemblies/NoEmitAndNoEditor/Sirenix.Utilities.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.OdinInspector.Attributes.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.OdinInspector.Editor.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.Reflection.Editor.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.Serialization.Config.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.Serialization.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.Utilities.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.Utilities.Editor.dll",
+      "Assets/Plugins/x86_64/HectonAudioKernel.dll"
+    ]
+  },
+  "packages": {
+    "addressablesPackage": {
+      "lock": true,
+      "lockVersion": "2.7.6",
+      "manifest": true,
+      "manifestVersion": "2.7.6"
+    },
+    "addressablesPackageInLock": true,
+    "addressablesPackageInManifest": true,
+    "allRequiredXrPackagesInLock": true,
+    "allRequiredXrPackagesInManifest": true,
+    "lockDependencyCount": 73,
+    "manifestDependencyCount": 50,
+    "picoPackageCandidates": [],
+    "xrPackages": {
+      "com.unity.xr.management": {
+        "lock": true,
+        "lockVersion": "4.6.0",
+        "manifest": true,
+        "manifestVersion": "4.6.0"
+      },
+      "com.unity.xr.meta-openxr": {
+        "lock": true,
+        "lockVersion": "2.5.0",
+        "manifest": true,
+        "manifestVersion": "2.5.0"
+      },
+      "com.unity.xr.openxr": {
+        "lock": true,
+        "lockVersion": "1.17.0",
+        "manifest": true,
+        "manifestVersion": "1.17.0"
+      }
+    }
+  },
+  "projectSettings": {
+    "androidApplicationIdentifier": "com.danatgames.hecton8",
+    "androidArm64OnlySerialized": true,
+    "androidGraphicsApisRaw": "15000000",
+    "androidGraphicsAutomatic": 0,
+    "androidIl2CppSerialized": true,
+    "androidMinSdkVersion": 25,
+    "androidQuestXrRouteRepairerPresent": true,
+    "androidScriptingBackend": 1,
+    "androidSustainedPerformanceEnabled": true,
+    "androidSustainedPerformanceMode": 1,
+    "androidTargetArchitectures": 2,
+    "androidTargetSdkVersion": 35,
+    "androidVulkanOnlySerialized": true,
+    "buildTargetVrSettingsEmpty": true,
+    "projectSettingsPresent": true,
+    "xrLegacyDisabledFalse": true,
+    "xrProviderRouteFixerPresent": true,
+    "xrProviderRouteValidatorPresent": true,
+    "xrProviderSerializedProof": false,
+    "xrReadinessValidatorPresent": true,
+    "xrSettingsPresent": true
+  },
+  "qualityPipeline": {
+    "androidDefaultQualityIndex": 3,
+    "androidDefaultQualityRenderPipelineGuid": "d9c4cd6a763fec04a913c6a149663003",
+    "androidDefaultQualityUsesQuestUrp": true,
+    "qualityRows": [
+      {
+        "index": 0,
+        "name": "Surface (Medium)",
+        "renderPipelineGuid": "4b83569d67af61e458304325a23e5dfd"
+      },
+      {
+        "index": 1,
+        "name": "Abyss (Low)",
+        "renderPipelineGuid": "0a1617ac2a1aa74409dd0f7176dffe42"
+      },
+      {
+        "index": 2,
+        "name": "Orbit (High)",
+        "renderPipelineGuid": "2e3974257b633de4eb91983ff83d83e5"
+      },
+      {
+        "index": 3,
+        "name": "Quest (VR)",
+        "renderPipelineGuid": "d9c4cd6a763fec04a913c6a149663003"
+      }
+    ],
+    "qualitySettingCount": 4,
+    "questConfiguratorPresent": true,
+    "questConfiguratorQualityRouteAuditPresent": true,
+    "questConfiguratorQualityRouteFixerPresent": true,
+    "questUrpAssetPath": "Assets/_Project/Data/URP_Quest_VR.asset",
+    "questUrpAssetPresent": true,
+    "questUrpGuid": "d9c4cd6a763fec04a913c6a149663003",
+    "questUrpReferencedInGraphicsSettings": false,
+    "questUrpReferencedInProjectSettings": false,
+    "questUrpReferencedInQualitySettings": true
+  },
+  "readiness": {
+    "addressablesContentPresent": false,
+    "addressablesContentRoutePresent": true,
+    "addressablesPackagePresent": true,
+    "addressablesRuntimeLifecycleRoutePresent": true,
+    "androidQuestScaffold": true,
+    "androidQuestXrRouteRepairerPresent": true,
+    "androidSustainedPerformanceEnabled": true,
+    "androidVulkanOnlySerialized": true,
+    "bootstrapExplicitShaderWarmup": true,
+    "buildArtifactPresent": false,
+    "dataMonolithBakeRoutePresent": true,
+    "dataMonolithPresent": true,
+    "dataMonolithValidationRoutePresent": true,
+    "noHighRiskComputeThreadGroups": true,
+    "noRuntimeAssetHighRiskComputeThreadGroups": false,
+    "noRuntimeComputeDispatchWithoutThreadGroupQuery": false,
+    "noRuntimeHighRiskComputeThreadGroups": true,
+    "noRuntimeReferencedHighRiskComputeThreadGroups": true,
+    "picoPackagePresent": false,
+    "questUrpAssetPresent": true,
+    "questUrpWiredToAndroidQuality": true,
+    "shaderVariantCollectionsPresent": true,
+    "shaderWarmupPreloaded": false,
+    "xrProviderRouteFixerPresent": true,
+    "xrProviderRouteValidatorPresent": true,
+    "xrProviderSerializedProof": false
+  },
+  "root": ".",
+  "schema": "hecton8.platform_portability_proof_audit.v11",
+  "shaderWarmup": {
+    "bootstrapExplicitWarmUpCallCount": 0,
+    "bootstrapGraphicsStateWarmUpProgressivelyCallCount": 1,
+    "bootstrapIsWarmedUpReadCount": 3,
+    "bootstrapShaderCollectionFieldPresent": true,
+    "bootstrapShaderWarmupFromCollectionCallCount": 1,
+    "preloadedShaderEntries": 0,
+    "shaderFeaturePragmaCount": 886,
+    "shaderSourceFiles": 613,
+    "shaderTarget45OrHigherPragmas": 110,
+    "shaderTarget50OrHigherPragmas": 5,
+    "shaderVariantCollectionFiles": 10,
+    "shaderVariantCollectionSamples": [
+      "Assets/_Project/Art/Shaders/Variants/Hecton8_UberNoir_RadiationWarmup.shadervariants",
+      "Assets/_Project/Art/Shaders/Variants/Hecton8MasterVariants.shadervariants",
+      "Assets/_Project/Art/Shaders/Variants/Hecton_FoundationPylon.shadervariants",
+      "Assets/_Project/Art/Shaders/Variants/Hecton_LeviathanProceduralWarmup.shadervariants",
+      "Assets/_Project/Art/Shaders/Variants/Hecton_PdaScreen_Warmup.shadervariants",
+      "Assets/_Project/Art/Shaders/Variants/Hecton_VisorAR_Stencil.shadervariants",
+      "Assets/_Project/Art/Shaders/Variants/HectonDeferredCaustics.shadervariants",
+      "Assets/_Project/Art/Shaders/Variants/SuitVisor_HUDPhosphor.shadervariants",
+      "Assets/GPUInstancer/Resources/Settings/GPUInstancerSettings.asset",
+      "Assets/GPUInstancer/Resources/Settings/GPUIShaderVariantCollection.shadervariants"
+    ],
+    "warmupAllShadersCallSites": 0
+  }
+}

@@ -14,7 +14,7 @@ namespace Hecton8.Graphics.Culling
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-84)]
-    public sealed unsafe class AbyssalShadowCullingRuntime : MonoBehaviour, IDisposable
+    public sealed unsafe class AbyssalShadowCullingRuntime : MonoBehaviour, IDisposable, IGlobalRegistryHotSwapListener
     {
         private const uint SystemHash = 0x53313434u; // S134
         private const uint TelemetryFlagExternalProducer = 1u << 22;
@@ -83,6 +83,7 @@ namespace Hecton8.Graphics.Culling
         private uint _lastTelemetryExtraFlags;
         private bool _registeredSimulationPhase;
         private bool _registeredVisualSyncPhase;
+        private bool _registeredHotSwapListener;
         private bool _initialized;
         private bool _jobPending;
         private bool _mockSeeded;
@@ -126,9 +127,10 @@ namespace Hecton8.Graphics.Culling
             }
 
             s_active = this;
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
             if (_dataVault != null)
                 EnsureInitialized(_dataVault);
+            TryRegisterHotSwapListener();
 
             if (_simulationPhaseSystem == null)
                 _simulationPhaseSystem = new SimulationPhaseSystem(this);
@@ -158,6 +160,7 @@ namespace Hecton8.Graphics.Culling
             IDataVault vault = ResolveVault();
             uint frame = vault != null ? ResolveDeterministicFrame(vault, 0u, false) : (_scheduledFrame == 0u ? 1u : _scheduledFrame);
             CompletePendingJobForBarrier(frame);
+            TryUnregisterHotSwapListener();
             if (_registeredVisualSyncPhase)
             {
                 GlobalRegistry.UnregisterDispatcherSystem(_visualSyncPhaseSystem);
@@ -171,7 +174,9 @@ namespace Hecton8.Graphics.Culling
             }
 
             ReleaseGpuBuffers();
+            ReleaseVaultHandles(vault);
             ResetVaultHandles();
+            _dataVault = null;
             _initialized = false;
         }
 
@@ -502,10 +507,8 @@ namespace Hecton8.Graphics.Culling
 
         private IDataVault ResolveVault()
         {
-            if (_dataVault != null)
-                return _dataVault;
-
-            _dataVault = GlobalRegistry.DataVault;
+            if (_dataVault == null)
+                RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
             return _dataVault;
         }
 
@@ -640,6 +643,91 @@ namespace Hecton8.Graphics.Culling
             _csvScratchHandle = default;
             _hzbTileHandle = default;
             _indirectArgsHandle = default;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _instanceHandle);
+            ReleaseVaultHandle(vault, ref _stateHandle);
+            ReleaseVaultHandle(vault, ref _illuminationHandle);
+            ReleaseVaultHandle(vault, ref _frustumHandle);
+            ReleaseVaultHandle(vault, ref _counterHandle);
+            ReleaseVaultHandle(vault, ref _telemetryHandle);
+            ReleaseVaultHandle(vault, ref _runtimeHandle);
+            ReleaseVaultHandle(vault, ref _profileRuleHandle);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseVaultHandle(vault, ref _hzbTileHandle);
+            ReleaseVaultHandle(vault, ref _indirectArgsHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)OwnerSystemId)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault releaseVaultFallback)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            IDataVault releaseVault = _dataVault ?? releaseVaultFallback;
+            uint frame = releaseVault != null ? ResolveDeterministicFrame(releaseVault, 0u, false) : (_scheduledFrame == 0u ? 1u : _scheduledFrame);
+            CompletePendingJobForBarrier(frame);
+            ReleaseVaultHandles(releaseVault);
+            ResetVaultHandles();
+            _dataVault = nextVault;
+            _initialized = false;
+            _jobPending = false;
+            _mockSeeded = false;
+            _hzbSeeded = false;
+            _runtimeDefaultsWritten = false;
+            _frustumDefaultsWritten = false;
+            _profileDefaultsWritten = false;
+            _requestMockRegenerate = true;
+            _scheduledInstanceCount = 0;
+            _externalActiveInstanceCount = 0;
+            _externalHzbTileCount = 0;
+            _registeredProducerDependency = default;
+            _registeredProducerFlags = 0u;
+            _lastTelemetryExtraFlags = 0u;
+            _lastCounters = default;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void EnsureGpuBuffers(int capacity)

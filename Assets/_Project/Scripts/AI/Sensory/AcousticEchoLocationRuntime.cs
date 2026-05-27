@@ -201,6 +201,7 @@ namespace Hecton8.AI.Sensory
         private const float MovementVelocityToVolume = 0.025f;
         private const int MaxQueuedEchoTaps = MaxEchoTapsPerFrame;
 
+        private static readonly AcousticEchoHotSwapBridge s_hotSwapBridge = new AcousticEchoHotSwapBridge(); // COLD ALLOC: AcousticEchoHotSwapBridge[1] - static acoustic echo DataVault rebind listener - owner: AcousticEchoLocationRuntime
         private static IDataVault _dataVault;
         private static VaultGenerationHandle<EchoTap> _frameTapsHandle;
         private static VaultGenerationHandle<EchoTap> _pendingTapsHandle;
@@ -217,6 +218,7 @@ namespace Hecton8.AI.Sensory
         private static int _queuedEchoTapCount;
         private static int _pendingProducerFault;
         private static AbsoluteUniversePosition _pendingProducerFaultAup;
+        private static int _hotSwapRegistered;
         private static uint _sequence;
         private static byte _cachedQualityWeightByte;
 
@@ -224,6 +226,7 @@ namespace Hecton8.AI.Sensory
 
         public static void EnsureInitialized()
         {
+            TryRegisterHotSwapListener();
             if (_initialized != 0)
             {
                 EnsureVaultBuffers();
@@ -237,6 +240,7 @@ namespace Hecton8.AI.Sensory
 
         public static void Dispose()
         {
+            TryUnregisterHotSwapListener();
             if (_initialized == 0)
                 return;
 
@@ -299,14 +303,6 @@ namespace Hecton8.AI.Sensory
             if (vault == null)
                 return false;
 
-            if (!ReferenceEquals(_dataVault, vault))
-            {
-                CompleteTrackingFenceForVaultRelease();
-                ReleaseVaultHandles(_dataVault);
-                ClearVaultHandles();
-                _dataVault = vault;
-            }
-
             return EnsureVaultBuffer(
                        vault,
                        BufferID.AcousticEchoFrameTaps,
@@ -339,7 +335,62 @@ namespace Hecton8.AI.Sensory
                 return;
 
             // DataVault can be published after early sensory initialization; retry only while unbound.
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
+        }
+
+        private static void RebindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+            {
+                EnsureVaultBuffers();
+                return;
+            }
+
+            CompleteTrackingFenceForVaultRelease();
+            ReleaseVaultHandles(_dataVault);
+            ClearVaultHandles();
+            _dataVault = nextVault;
+            _trailState = default;
+            _lastRefreshFrame = int.MinValue;
+            _lastBlackBoxFrame = int.MinValue;
+            _blackBoxCursor = 0;
+            _blackBoxDumped = 0;
+            _queuedEchoTapCount = 0;
+            _pendingProducerFault = 0;
+            _pendingProducerFaultAup = default;
+            _sequence = 0u;
+
+            if (_initialized != 0 && _dataVault != null)
+                EnsureVaultBuffers();
+        }
+
+        private static void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered != 0 || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(s_hotSwapBridge) ? 1 : 0;
+        }
+
+        private static void TryUnregisterHotSwapListener()
+        {
+            if (_hotSwapRegistered == 0)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(s_hotSwapBridge);
+            _hotSwapRegistered = 0;
+        }
+
+        private sealed class AcousticEchoHotSwapBridge : IGlobalRegistryHotSwapListener
+        {
+            public void OnGlobalRegistryServiceReplaced(
+                GlobalRegistryServiceSlot serviceSlot,
+                object previousService,
+                object currentService)
+            {
+                if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+                    RebindDataVaultForLifecycle(currentService as IDataVault);
+            }
         }
 
         private static void ClearVaultHandles()
@@ -389,7 +440,7 @@ namespace Hecton8.AI.Sensory
             if (vault == null)
                 return false;
 
-            if (IsVaultHandleCreated(in handle) &&
+            if (IsOwnedVaultHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -427,11 +478,22 @@ namespace Hecton8.AI.Sensory
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (!IsVaultHandleCreated(in handle))
-                return;
+            if (IsOwnedVaultHandle(in handle))
+                vault.ReleaseBuffer(in handle);
 
-            vault.ReleaseBuffer(in handle);
             handle = default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return IsVaultHandleCreated(in handle) &&
+                   handle.SystemID == (uint)SystemID.AISensory;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return IsOwnedVaultHandle(in handle) &&
+                   handle.BufferID == (uint)expectedBufferId;
         }
 
         private static bool EnsureFrameViews(

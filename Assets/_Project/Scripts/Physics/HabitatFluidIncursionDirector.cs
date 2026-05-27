@@ -716,8 +716,12 @@ namespace Hecton8.Physics
         private static void ReleaseFluidVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
             where T : struct
         {
-            if (handle.BufferID != 0u)
+            if (handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)OwnerSystem)
+            {
                 vault.ReleaseBuffer(in handle);
+            }
 
             handle = default;
         }
@@ -772,12 +776,14 @@ namespace Hecton8.Physics
 
             if (_vault.IsAllocationLocked)
             {
-                if (!_vault.TryGetGenerationHandle(bufferId, out handle))
+                if (!_vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existingHandle) ||
+                    !IsFluidVaultHandle(in existingHandle, bufferId))
                 {
                     buffer = default;
                     return false;
                 }
 
+                handle = existingHandle;
                 return TryOpenFluidVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
             }
 

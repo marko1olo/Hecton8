@@ -89,7 +89,7 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             TryRegisterHotSwapListener();
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             if (!EnsureVaultState())
                 return;
@@ -114,16 +114,7 @@ namespace Hecton8.AI.Ecosystem
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                IDataVault oldVault = previousService as IDataVault ?? _dataVault;
-                CompleteScheduledJobForTeardown();
-                ReleaseOwnedVaultHandles(oldVault);
-                _dataVault = currentService as IDataVault;
-                ResetVaultHandles();
-                _coefficientsLoaded = false;
-                _sectorCount = 0;
-                _telemetryCursor = 0;
-                _simulationFrameCounter = 0u;
-                _dumpedFault = false;
+                RebindDataVaultForLifecycle(currentService as IDataVault);
 
                 if (_dataVault == null)
                 {
@@ -620,17 +611,20 @@ namespace Hecton8.AI.Ecosystem
             catch (InvalidOperationException)
             {
                 UnlockJobBuffers();
+                _balancerHandle = default;
                 GlobalTelemetryBus.PublishPerformanceWarning(0x45504A53u, EcologySourceHash, 0f);
+                return;
             }
             catch (ArgumentException)
             {
                 UnlockJobBuffers();
+                _balancerHandle = default;
                 GlobalTelemetryBus.PublishPerformanceWarning(0x45504A53u, EcologySourceHash, 0f);
+                return;
             }
 
             H8Memory.RegisterActiveJob(SystemID.AIEcology, _balancerHandle);
             _jobScheduled = true;
-            _jobLocksHeld = true;
         }
 
         private void RecordEmptyTelemetry(IDataVault vault, uint frame, int totalActiveEntities)
@@ -881,9 +875,28 @@ namespace Hecton8.AI.Ecosystem
 
         private void ClearCachedDependencies()
         {
-            ReleaseOwnedVaultHandles(_dataVault);
-            _dataVault = null;
+            RebindDataVaultForLifecycle(null);
             _ecosystemDirector = null;
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+            {
+                if (currentVault == null)
+                    ResetVaultRuntimeState();
+                return;
+            }
+
+            CompleteScheduledJobForTeardown();
+            UnlockJobBuffers();
+            ReleaseOwnedVaultHandles(_dataVault);
+            _dataVault = currentVault;
+            ResetVaultRuntimeState();
+        }
+
+        private void ResetVaultRuntimeState()
+        {
             _coefficientsLoaded = false;
             _sectorCount = 0;
             _telemetryCursor = 0;
@@ -917,12 +930,17 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (TryOpenVaultView(vault, in handle, requiredLength, out buffer))
-                return true;
-
-            if (vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
+            if (IsOwnedVaultHandle(in handle, bufferId) &&
                 TryOpenVaultView(vault, in handle, requiredLength, out buffer))
             {
+                return true;
+            }
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle) &&
+                IsOwnedVaultHandle(in existingHandle, bufferId) &&
+                TryOpenVaultView(vault, in existingHandle, requiredLength, out buffer))
+            {
+                handle = existingHandle;
                 return true;
             }
 
@@ -1004,10 +1022,27 @@ namespace Hecton8.AI.Ecosystem
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
             where T : struct
         {
-            if (handle.BufferID != 0u)
+            if (IsOwnedVaultHandle(in handle))
+            {
                 vault.ReleaseBuffer(in handle);
+            }
 
             handle = default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.AIEcology;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
+            where T : struct
+        {
+            return IsOwnedVaultHandle(in handle) &&
+                   handle.BufferID == (uint)expectedBufferId;
         }
 
         private static int EnsureSectorSlot(

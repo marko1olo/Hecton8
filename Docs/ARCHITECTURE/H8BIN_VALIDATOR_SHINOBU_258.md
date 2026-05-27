@@ -2,9 +2,9 @@
 
 
 
-Date: 2026-05-21
+Date: 2026-05-28
 
-Status: ACTIVE TOOLING; CURRENT STREAMINGASSETS GATE FAILS
+Status: ACTIVE TOOLING; CURRENT PAYLOAD PRESENT; SCOPED PAYLOAD VALIDATOR PASS; FULL DEFAULT RERUN PENDING
 
 
 
@@ -271,7 +271,7 @@ This command was not run during the SHINOBU_258 source-only pass.
 
 
 
-Command run:
+Historical 2026-05-21 command:
 
 
 
@@ -285,15 +285,28 @@ python Tools\h8bin_validator.py --target-dir Assets\StreamingAssets --report-jso
 
 
 
-Result: `FAIL`.
+Historical result: `FAIL`.
 
 
 
-Fatal findings:
+Historical fatal finding:
 
 
 
-- `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists in the current X_012 scan; route-specific boot proof remains pending.
+- `STATIC_DATA_MISSING` for `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` in the old capture.
+- Current 2026-05-28 filesystem state is different: `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists and is `1,064,384` bytes. Route-specific Unity boot proof remains pending.
+
+Current 2026-05-28 scoped payload/schema recheck:
+
+Command: scoped `h8bin_validator.py` over `Assets\StreamingAssets` plus `Assets\_Project\Scripts\Data\Monolith`.
+
+Report: `Docs\Reports\DOC_ROOT_ARCH_AUDIT_h8bin_validator_narrow_20260528.json`.
+
+Result: `PASS`, `files=2`, `structs=32`, `mb=1.0495`, `seconds=0.491846`.
+
+Scope: Python schema/payload validation for current `.h8bin` files and Data Monolith source roots.
+
+Non-claim: no Unity import, Play Mode, player boot, profiler, GC, platform, or audio proof.
 
 
 
@@ -366,9 +379,10 @@ PROJECT_AUDIT symbolic-loader addendum:
 
 - PROJECT_AUDIT route cleanup addendum: those five runtime CSV `StreamingAssets` fallbacks are now removed from player runtime source.
 - The affected CSV bridges resolve only editor/development source-data paths (`Assets/_SourceData/...`, `Data/...`, or project-root legacy dev files) and fail closed to deterministic defaults/binary payload absence in production.
-- Current sidecar validation writes `Docs/Reports/PROJECT_AUDIT_h8bin_validator_after_csv_routes.json` and passes with only `H8VB_SCHEMA_VALIDATED`.
-- Mandatory validation writes `Docs/Reports/PROJECT_AUDIT_h8bin_validator_after_csv_routes_required.json` and still fails on `STATIC_DATA_MISSING` for `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
-- These are payload/owner route failures, not H8DM parser failures.
+- Historical sidecar validation wrote `Docs/Reports/PROJECT_AUDIT_h8bin_validator_after_csv_routes.json` and passed with only `H8VB_SCHEMA_VALIDATED`.
+- Historical mandatory validation wrote `Docs/Reports/PROJECT_AUDIT_h8bin_validator_after_csv_routes_required.json` and failed on `STATIC_DATA_MISSING` before the current payload appeared.
+- Current scoped recheck validates the present static payload.
+- Remaining production status is gated by full default validator rerun, Unity import, player boot, checksum, profiler, GC, and owner-route proof.
 
 
 

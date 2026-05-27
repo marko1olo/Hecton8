@@ -1,0 +1,40 @@
+{
+  "actions": [
+    {
+      "path": "Logs/codex_core_build_r1.log",
+      "reason": "root_logs_zero_byte_stale_log",
+      "size_bytes": 0,
+      "status": "OK",
+      "type": "DELETE_FILE"
+    },
+    {
+      "path": "Logs/codex_playmode_build_r5.log",
+      "reason": "root_logs_zero_byte_stale_log",
+      "size_bytes": 0,
+      "status": "OK",
+      "type": "DELETE_FILE"
+    },
+    {
+      "path": "Logs/codex_polish_core_build_r5.log",
+      "reason": "root_logs_zero_byte_stale_log",
+      "size_bytes": 0,
+      "status": "OK",
+      "type": "DELETE_FILE"
+    },
+    {
+      "path": "Logs/codex_polish_restore_r1.log",
+      "reason": "root_logs_zero_byte_stale_log",
+      "size_bytes": 0,
+      "status": "OK",
+      "type": "DELETE_FILE"
+    },
+    {
+      "path": "Logs/hecton8_core_full_build.log",
+      "reason": "root_logs_zero_byte_stale_log",
+      "size_bytes": 0,
+      "status": "OK",
+      "type": "DELETE_FILE"
+    }
+  ],
+  "agent_id": "1331"
+}

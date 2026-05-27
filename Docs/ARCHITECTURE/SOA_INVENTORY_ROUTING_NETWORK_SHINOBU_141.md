@@ -8,7 +8,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 
 - `Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs`
 
-- `Assets/_Project/Scripts/Inventory/Routing/Hecton8.Inventory.Routing.Runtime.asmdef`
+- Prior runtime asmdef anchor `Assets/_Project/Scripts/Inventory/Routing/Hecton8.Inventory.Routing.Runtime.asmdef` is absent in the current checkout; do not cite runtime-asmdef isolation until it exists.
 
 - `Assets/_Project/Scripts/Editor/InventoryRouting/InventoryRoutingNetworkTunerWindow.cs`
 
@@ -24,13 +24,9 @@ Object inventories remain compatibility/user-facing surfaces only; hot routing, 
 
 snapshotting, and transaction mutation must use the SOA buffers.
 
-Compile-wall boundary: the runtime source is isolated under `Hecton8.Inventory.Routing.Runtime`. Inventory routing edits do
+Compile-wall boundary: no current runtime asmdef was found for `Inventory/Routing`.
 
-not force the root `Hecton8.Core` assembly to recompile. The runtime asmdef references `Hecton8.Core`,
-
-`Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, and Unity packages only; it does not reference scene-facing construction,
-
-power, logistics, storage, AI, physics, world, or rendering sibling runtime assemblies.
+The source anchor is visible, but assembly isolation must be re-proven before using this document as compile-boundary proof.
 
 ## First 20 Minutes Route Impact
 

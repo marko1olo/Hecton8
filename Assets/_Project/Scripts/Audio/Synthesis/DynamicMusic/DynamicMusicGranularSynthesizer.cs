@@ -670,14 +670,7 @@ namespace Hecton8.Audio.Synthesis
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            IDataVault replacementVault = currentService as IDataVault;
-            if (!ReferenceEquals(_dataVault, replacementVault))
-            {
-                ForceFlushSynthJobForShutdown();
-                DisposeVaultStorage();
-                _dataVault = replacementVault;
-            }
-
+            RebindDataVaultCold(currentService as IDataVault);
             EnsureVaultStorage();
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
@@ -753,8 +746,19 @@ namespace Hecton8.Audio.Synthesis
 
         private void CacheDataVaultCold()
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultCold(GlobalRegistry.DataVault);
+        }
+
+        private void RebindDataVaultCold(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            ForceFlushSynthJobForShutdown();
+            if (_dataVault != null)
+                DisposeVaultStorage();
+
+            _dataVault = nextVault;
         }
 
         private void EnsureVaultStorage()

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hecton8.local/schemas/settings_table.schema.json",
+  "title": "HECTON-8 settings table draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Schema", "Rows"],
+  "properties": {
+    "Schema": { "const": "hecton8.settings_table.draft.v1" },
+    "Rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "Id": { "type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" },
+          "Kind": { "type": "string" },
+          "Default": {}
+        }
+      }
+    }
+  }
+}

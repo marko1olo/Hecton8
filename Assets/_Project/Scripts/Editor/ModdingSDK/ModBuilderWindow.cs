@@ -25,6 +25,9 @@ namespace Hecton8.Editor.ModdingSDK
         private const string ReservedAssemblyNameSystem = "System";
         private const string ReservedAssemblyNameMscorlib = "mscorlib";
         private const string ReservedAssemblyNameNetstandard = "netstandard";
+        private const int MaxManagedAssemblyInputCount = 32;
+        private const int MaxBundleBuildAssetCount = 512;
+        private const int MaxStaleAssemblyCleanupScanCount = 128;
 
         [Serializable]
         private struct ModManifestData
@@ -50,9 +53,9 @@ namespace Hecton8.Editor.ModdingSDK
         private BuildTarget _buildTarget = BuildTarget.StandaloneWindows64;
         private Vector2 _scrollPosition;
 
-        // COLD ALLOC: List<string>[4] — managed assembly copy list for SDK builder UI — owner: ModBuilderWindow
+        // COLD ALLOC: List<string>[4] - managed assembly copy list for SDK builder UI - owner: ModBuilderWindow
         private readonly List<string> _dllPaths = new List<string>(4);
-        // COLD ALLOC: List<string>[4] — dependency ID list for SDK builder UI — owner: ModBuilderWindow
+        // COLD ALLOC: List<string>[4] - dependency ID list for SDK builder UI - owner: ModBuilderWindow
         private readonly List<string> _dependencyIds = new List<string>(4);
 
         /// <summary>
@@ -156,8 +159,18 @@ namespace Hecton8.Editor.ModdingSDK
                 }
             }
 
-            if (GUILayout.Button("Add DLL", GUILayout.Width(100f)))
-                _dllPaths.Add(string.Empty);
+            using (new EditorGUI.DisabledScope(_dllPaths.Count >= MaxManagedAssemblyInputCount))
+            {
+                if (GUILayout.Button("Add DLL", GUILayout.Width(100f)))
+                    _dllPaths.Add(string.Empty);
+            }
+
+            if (_dllPaths.Count >= MaxManagedAssemblyInputCount)
+            {
+                EditorGUILayout.HelpBox(
+                    "Managed assembly selection is capped at 32 files to match the runtime package DLL cap.",
+                    MessageType.Warning);
+            }
 
             if (HasNonEmptyEntry(_dllPaths))
                 EditorGUILayout.HelpBox(EnvelopeOnlyRuntimeWarning, MessageType.Warning);
@@ -188,15 +201,17 @@ namespace Hecton8.Editor.ModdingSDK
 
         private void DrawValidationSection()
         {
-            if (!TryValidateConfiguration(out string validationError))
+            if (!TryValidateConfiguration(false, out string validationError))
                 EditorGUILayout.HelpBox(validationError, MessageType.Error);
             else
-                EditorGUILayout.HelpBox("Manifest and file selections are valid.", MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    "Manifest and file paths are valid. Build Mod performs the deep asset and DLL identity scan.",
+                    MessageType.Info);
         }
 
         private void DrawBuildActions()
         {
-            using (new EditorGUI.DisabledScope(!TryValidateConfiguration(out _)))
+            using (new EditorGUI.DisabledScope(!TryValidateConfiguration(false, out _)))
             {
                 if (GUILayout.Button("Build Mod", GUILayout.Height(34f)))
                     BuildModPackage();
@@ -236,7 +251,7 @@ namespace Hecton8.Editor.ModdingSDK
 
         private void BuildModPackage()
         {
-            if (!TryValidateConfiguration(out string validationError))
+            if (!TryValidateConfiguration(true, out string validationError))
             {
                 EditorUtility.DisplayDialog("Invalid Mod Configuration", validationError, "OK");
                 return;
@@ -295,7 +310,10 @@ namespace Hecton8.Editor.ModdingSDK
 
             string[] assetPaths = CollectBundleAssetPaths(assetFolderPath);
             if (assetPaths == null || assetPaths.Length == 0)
-                return null;
+            {
+                throw new InvalidOperationException(
+                    "Asset folder does not contain any bundle-eligible assets. Leave Asset Folder empty for manifest-only packages.");
+            }
 
             string tempOutputDirectory = Path.GetFullPath(Path.Combine("Temp", "ModBuilder", modId, buildTarget.ToString()));
             Directory.CreateDirectory(tempOutputDirectory);
@@ -325,30 +343,46 @@ namespace Hecton8.Editor.ModdingSDK
 
         private string[] CollectBundleAssetPaths(string assetFolderPath)
         {
-            string[] guids = AssetDatabase.FindAssets(string.Empty, new[] { assetFolderPath });
-            if (guids == null || guids.Length == 0)
+            if (string.IsNullOrWhiteSpace(assetFolderPath) || !AssetDatabase.IsValidFolder(assetFolderPath))
                 return Array.Empty<string>();
 
-            // COLD ALLOC: List<string>[guid count] — AssetBundle asset path collection for mod build — owner: ModBuilderWindow
-            List<string> assetPaths = new List<string>(guids.Length);
+            string assetFolderAbsolutePath = ResolveAssetFolderAbsolutePath(assetFolderPath);
+            if (!Directory.Exists(assetFolderAbsolutePath))
+                return Array.Empty<string>();
 
-            for (int i = 0; i < guids.Length; i++)
+            // COLD ALLOC: List<string>[512] - bounded AssetBundle asset path collection for mod build - owner: ModBuilderWindow
+            List<string> assetPaths = new List<string>(MaxBundleBuildAssetCount);
+
+            try
             {
-                string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
-                if (string.IsNullOrWhiteSpace(assetPath) || AssetDatabase.IsValidFolder(assetPath))
-                    continue;
+                foreach (string filePath in Directory.EnumerateFiles(assetFolderAbsolutePath, "*", SearchOption.AllDirectories))
+                {
+                    string extension = Path.GetExtension(filePath);
+                    if (IsEditorOnlyAssetExtension(extension))
+                        continue;
 
-                string extension = Path.GetExtension(assetPath);
-                if (IsEditorOnlyAssetExtension(extension))
-                    continue;
+                    if (!TryConvertAbsolutePathToAssetPath(filePath, out string assetPath))
+                        continue;
 
-                UnityEngine.Object mainAsset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-                if (mainAsset == null)
-                    continue;
+                    UnityEngine.Object mainAsset = AssetDatabase.LoadMainAssetAtPath(assetPath);
+                    if (mainAsset == null)
+                        continue;
 
-                assetPaths.Add(assetPath);
+                    if (assetPaths.Count >= MaxBundleBuildAssetCount)
+                    {
+                        throw new InvalidOperationException(
+                            $"Asset folder exceeds {MaxBundleBuildAssetCount} bundle-eligible assets. Narrow the folder or split the mod package.");
+                    }
+
+                    assetPaths.Add(assetPath);
+                }
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                throw new InvalidOperationException($"Failed to enumerate mod asset folder '{assetFolderPath}'.", exception);
             }
 
+            assetPaths.Sort(StringComparer.OrdinalIgnoreCase);
             return assetPaths.ToArray();
         }
 
@@ -358,7 +392,13 @@ namespace Hecton8.Editor.ModdingSDK
             if (assemblyPaths.Length == 0)
                 return Array.Empty<string>();
 
-            // COLD ALLOC: List<string>[dll count] — manifest assembly filename list — owner: ModBuilderWindow
+            if (assemblyPaths.Length > MaxManagedAssemblyInputCount)
+            {
+                throw new InvalidOperationException(
+                    $"Managed assembly selection exceeds {MaxManagedAssemblyInputCount} files.");
+            }
+
+            // COLD ALLOC: string[][dll count] - manifest assembly filename list - owner: ModBuilderWindow
             string[] copiedFileNames = new string[assemblyPaths.Length];
             int copiedCount = 0;
 
@@ -394,12 +434,26 @@ namespace Hecton8.Editor.ModdingSDK
                 }
             }
 
-            string[] existingDlls = Directory.GetFiles(outputDirectory, "*.dll", SearchOption.TopDirectoryOnly);
-            for (int i = 0; i < existingDlls.Length; i++)
+            int scannedCount = 0;
+            try
             {
-                string fileName = Path.GetFileName(existingDlls[i]);
-                if (!currentAssemblies.Contains(fileName))
-                    File.Delete(existingDlls[i]);
+                foreach (string dllPath in Directory.EnumerateFiles(outputDirectory, "*.dll", SearchOption.TopDirectoryOnly))
+                {
+                    if (scannedCount >= MaxStaleAssemblyCleanupScanCount)
+                    {
+                        throw new InvalidOperationException(
+                            $"Output directory contains more than {MaxStaleAssemblyCleanupScanCount} top-level DLL files. Clean the package directory before rebuilding.");
+                    }
+
+                    scannedCount++;
+                    string fileName = Path.GetFileName(dllPath);
+                    if (!currentAssemblies.Contains(fileName))
+                        File.Delete(dllPath);
+                }
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                throw new InvalidOperationException($"Failed to clean stale managed assemblies under '{outputDirectory}'.", exception);
             }
         }
 
@@ -410,7 +464,7 @@ namespace Hecton8.Editor.ModdingSDK
             File.WriteAllText(manifestPath, json);
         }
 
-        private bool TryValidateConfiguration(out string validationError)
+        private bool TryValidateConfiguration(bool includeExpensiveFileContentValidation, out string validationError)
         {
             if (!TryValidateModId(_modId, out validationError))
                 return false;
@@ -435,16 +489,15 @@ namespace Hecton8.Editor.ModdingSDK
                     return false;
                 }
 
-                if (!HasBundleEligibleAssets(_assetFolderPath))
-                {
-                    validationError =
-                        "Asset folder does not contain any bundle-eligible assets. " +
-                        "Leave it empty for code-only mods or point it to a populated Assets/ subtree.";
-                    return false;
-                }
             }
 
             string[] assemblyPaths = CollectNonEmptyEntries(_dllPaths);
+            if (assemblyPaths.Length > MaxManagedAssemblyInputCount)
+            {
+                validationError = $"Managed assembly selection exceeds {MaxManagedAssemblyInputCount} files.";
+                return false;
+            }
+
             for (int i = 0; i < assemblyPaths.Length; i++)
             {
                 string path = assemblyPaths[i];
@@ -460,7 +513,20 @@ namespace Hecton8.Editor.ModdingSDK
                     return false;
                 }
 
-                if (!TryValidateManagedAssemblyIdentity(path, out string assemblyValidationError))
+                for (int duplicateIndex = i + 1; duplicateIndex < assemblyPaths.Length; duplicateIndex++)
+                {
+                    if (string.Equals(
+                        Path.GetFileName(path),
+                        Path.GetFileName(assemblyPaths[duplicateIndex]),
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+                        validationError = $"Managed assembly file name is selected more than once: {Path.GetFileName(path)}";
+                        return false;
+                    }
+                }
+
+                if (includeExpensiveFileContentValidation &&
+                    !TryValidateManagedAssemblyIdentity(path, out string assemblyValidationError))
                 {
                     validationError = assemblyValidationError;
                     return false;
@@ -621,12 +687,6 @@ namespace Hecton8.Editor.ModdingSDK
                    segment[3] <= '9';
         }
 
-        private bool HasBundleEligibleAssets(string assetFolderPath)
-        {
-            string[] assetPaths = CollectBundleAssetPaths(assetFolderPath);
-            return assetPaths != null && assetPaths.Length > 0;
-        }
-
         private static bool TryConvertAbsolutePathToAssetPath(string absolutePath, out string assetPath)
         {
             assetPath = string.Empty;
@@ -640,6 +700,14 @@ namespace Hecton8.Editor.ModdingSDK
 
             assetPath = "Assets" + normalizedPath.Substring(normalizedAssetsRoot.Length);
             return true;
+        }
+
+        private static string ResolveAssetFolderAbsolutePath(string assetFolderPath)
+        {
+            string normalizedAssetPath = assetFolderPath
+                .Replace('/', Path.DirectorySeparatorChar)
+                .Replace('\\', Path.DirectorySeparatorChar);
+            return Path.GetFullPath(Path.Combine(GetProjectRootPath(), normalizedAssetPath));
         }
 
         private static bool IsEditorOnlyAssetExtension(string extension)
@@ -659,7 +727,7 @@ namespace Hecton8.Editor.ModdingSDK
             if (values == null || values.Count == 0)
                 return Array.Empty<string>();
 
-            // COLD ALLOC: List<string>[input count] — filtered manifest/build entries — owner: ModBuilderWindow
+            // COLD ALLOC: string[][input count] - filtered manifest/build entries - owner: ModBuilderWindow
             int validCount = 0;
             for (int i = 0; i < values.Count; i++)
             {

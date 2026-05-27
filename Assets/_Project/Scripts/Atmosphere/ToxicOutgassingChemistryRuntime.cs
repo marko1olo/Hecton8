@@ -223,6 +223,7 @@ namespace Hecton8.Atmosphere
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
+            ReleaseNativeStateForLifecycle();
             if (Instance == this)
             {
                 Instance = null;
@@ -240,12 +241,7 @@ namespace Hecton8.Atmosphere
             if (ReferenceEquals(_vault, currentService))
                 return;
 
-            if (_hasScheduledWork)
-                CompleteScheduledWorkForTeardown();
-
-            ClearNativeHandleDescriptors();
-            _vault = currentService as IDataVault;
-            _nativeReady = false;
+            RebindDataVaultForLifecycle(currentService as IDataVault);
 
             if (isActiveAndEnabled && _vault != null)
                 EnsureNativeState();
@@ -623,6 +619,10 @@ namespace Hecton8.Atmosphere
 
         private bool EnsureNativeState()
         {
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_vault, currentVault))
+                RebindDataVaultForLifecycle(currentVault);
+
             if (_nativeReady)
             {
                 return true;
@@ -719,19 +719,11 @@ namespace Hecton8.Atmosphere
 
         private IDataVault EnsureVault()
         {
-            if (_vault != null)
-            {
-                return _vault;
-            }
-
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault != null)
-            {
-                _vault = vault;
-                return _vault;
-            }
+            if (!ReferenceEquals(_vault, vault))
+                RebindDataVaultForLifecycle(vault);
 
-            return null;
+            return _vault;
         }
 
         private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID id, int length) where T : struct
@@ -757,6 +749,26 @@ namespace Hecton8.Atmosphere
             return handle.BufferID != 0u;
         }
 
+        private void RebindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            ReleaseNativeStateForLifecycle();
+            _vault = nextVault;
+        }
+
+        private void ReleaseNativeStateForLifecycle()
+        {
+            if (_hasScheduledWork)
+                CompleteScheduledWorkForTeardown();
+
+            ReleaseNativeHandleDescriptors(_vault);
+            ResetNativeRuntimeState();
+            _vault = null;
+            _nativeReady = false;
+        }
+
         private bool TryOpenBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
@@ -773,6 +785,50 @@ namespace Hecton8.Atmosphere
             return TryOpenBuffer(in handle, out NativeArray<T> buffer)
                 ? buffer
                 : default;
+        }
+
+        private void ReleaseNativeHandleDescriptors(IDataVault vault)
+        {
+            ReleaseNativeHandle(vault, ref _densityFront);
+            ReleaseNativeHandle(vault, ref _densityBack);
+            ReleaseNativeHandle(vault, ref _densityMirror);
+            ReleaseNativeHandle(vault, ref _flowField);
+            ReleaseNativeHandle(vault, ref _worldSampler);
+            ReleaseNativeHandle(vault, ref _sources);
+            ReleaseNativeHandle(vault, ref _sourceIds);
+            ReleaseNativeHandle(vault, ref _entityAups);
+            ReleaseNativeHandle(vault, ref _entityIds);
+            ReleaseNativeHandle(vault, ref _entityCorrosionTimers);
+            ReleaseNativeHandle(vault, ref _entityExposureAccumulators);
+            ReleaseNativeHandle(vault, ref _exposureSignals);
+            ReleaseNativeHandle(vault, ref _statusSignals);
+            ReleaseNativeHandle(vault, ref _biolumSignals);
+            ReleaseNativeHandle(vault, ref _signalCounters);
+            ReleaseNativeHandle(vault, ref _telemetryRing);
+            ReleaseNativeHandle(vault, ref _telemetryScratch);
+            ReleaseNativeHandle(vault, ref _constants);
+#if UNITY_EDITOR
+            ReleaseNativeHandle(vault, ref _csvBytes);
+#endif
+            ReleaseNativeHandle(vault, ref _binaryProbeBytes);
+            ReleaseNativeHandle(vault, ref _nanFlags);
+            ReleaseNativeHandle(vault, ref _gridHeader);
+            ReleaseNativeHandle(vault, ref _cellStatesFront);
+            ReleaseNativeHandle(vault, ref _cellStatesBack);
+        }
+
+        private static void ReleaseNativeHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.External)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private void ClearNativeHandleDescriptors()
@@ -803,6 +859,29 @@ namespace Hecton8.Atmosphere
             _gridHeader = default;
             _cellStatesFront = default;
             _cellStatesBack = default;
+        }
+
+        private void ResetNativeRuntimeState()
+        {
+            ClearNativeHandleDescriptors();
+            _activeResolution = 0;
+            _activeCellCount = 0;
+            _sourceCount = 0;
+            _entityCount = 0;
+            _telemetryCursor = 0;
+            _densityVersion = 0;
+            _simulationFrameCounter = 0u;
+            _cellSizeMeters = 0f;
+            _simulationAccumulator = 0f;
+            _corrosionAccumulator = 0f;
+            _lastQualityWeight = 0f;
+            _lastCompleteMs = 0f;
+            _pendingFailureFlags = 0;
+            _scheduledStartTicks = 0L;
+            _gridOriginAup = double3.zero;
+            _pendingRebaseCells = int3.zero;
+            _hasPendingRebase = false;
+            _mockChemistry = false;
         }
 
         private void TryRegisterHotSwapListener()

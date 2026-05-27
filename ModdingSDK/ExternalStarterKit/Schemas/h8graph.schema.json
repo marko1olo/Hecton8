@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hecton8.local/schemas/h8graph.schema.json",
+  "title": "HECTON-8 command graph draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Schema", "GraphName", "Runtime", "MaxEnvelopesPerFrame", "Nodes"],
+  "properties": {
+    "Schema": { "const": "hecton8.h8graph.draft.v1" },
+    "GraphName": { "type": "string", "minLength": 1 },
+    "Runtime": { "const": "envelope-only" },
+    "MaxEnvelopesPerFrame": { "type": "integer", "minimum": 0 },
+    "Nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["Id", "Opcode"],
+        "properties": {
+          "Id": { "type": "string", "minLength": 1 },
+          "Opcode": { "type": "string", "pattern": "^(0x[0-9A-Fa-f]{1,8}|[A-Za-z][A-Za-z0-9_]*)$" }
+        }
+      }
+    },
+    "Notes": { "type": "string" }
+  }
+}

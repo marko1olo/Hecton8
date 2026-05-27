@@ -169,8 +169,7 @@ namespace Hecton8.Modding
 
             SaveEvents.Register(_saveEventListener);
             ModCommandDispatcher.Initialize();
-            ModCommandDispatcher.BindRegistryServicesCold();
-            HectonAPI.BindRegistryServicesCold();
+            BindModRegistryServicesCold();
             if (!ShouldForceFutureCommandEnvelopeOnly())
             {
                 ModEventProjectionBridge.InstallGlobal();
@@ -1285,8 +1284,7 @@ namespace Hecton8.Modding
             if (ShouldForceFutureCommandEnvelopeOnly())
                 return;
 
-            ModCommandDispatcher.BindRegistryServicesCold();
-            HectonAPI.BindRegistryServicesCold();
+            BindModRegistryServicesCold();
             ModEventProjectionBridge.InstallGlobal();
             ModItemRegistry.FlushPendingRegistrations();
             ModBuildableRegistry.FlushPendingRegistrations();
@@ -1307,6 +1305,15 @@ namespace Hecton8.Modding
 
             if (hasPlayer)
                 HectonEventBus.Publish(new PlayerSpawnedEvent(playerEntityId, playerPosition));
+        }
+
+        private static void BindModRegistryServicesCold()
+        {
+            ModCommandDispatcher.BindRegistryServicesCold();
+            HectonAPI.BindRegistryServicesCold();
+            ModSettingsRegistry.BindRegistryServicesCold();
+            ModItemRegistry.BindRegistryServicesCold();
+            ModBuildableRegistry.BindRegistryServicesCold();
         }
 
         private static void HandleApplicationQuitting()

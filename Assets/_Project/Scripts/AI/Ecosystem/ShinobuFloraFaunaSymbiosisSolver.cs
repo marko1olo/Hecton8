@@ -114,6 +114,8 @@ namespace Hecton8.AI.Ecosystem
         private VaultGenerationHandle<AmbientEntityDTO> _ambientEntityHandle;
         private VaultGenerationHandle<AmbientEntityAupDTO> _ambientAupHandle;
         private VaultGenerationHandle<SymbiosisAnomalyFieldMirror> _anomalyFieldHandle;
+        private bool _ownsAmbientEntityHandle;
+        private bool _ownsAmbientAupHandle;
 
         private IDataVault _dataVault;
         private JobHandle _activeJobHandle;
@@ -177,7 +179,7 @@ namespace Hecton8.AI.Ecosystem
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
             UnlockJobBuffers();
-            ClearCachedState();
+            ReleaseVaultStateForLifecycle();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -190,11 +192,7 @@ namespace Hecton8.AI.Ecosystem
 
             CompleteFrameJobForTeardown();
             UnlockJobBuffers();
-            _dataVault = currentService as IDataVault;
-            ResetVaultHandles();
-            _telemetryCursor = 0;
-            _simulationFrameCounter = 0u;
-            _dumpedFault = false;
+            RebindDataVaultForLifecycle(currentService as IDataVault);
 
             if (_dataVault == null || !EnsureVaultState())
             {
@@ -430,6 +428,10 @@ namespace Hecton8.AI.Ecosystem
         private bool EnsureVaultState()
         {
             SymbiosisLayoutManifest.VerifyColdBoot();
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, currentVault))
+                RebindDataVaultForLifecycle(currentVault);
+
             if (_vaultStateReady && _dataVault != null && AreVaultHandlesReady())
                 return true;
 
@@ -531,6 +533,7 @@ namespace Hecton8.AI.Ecosystem
                 NativeArrayOptions.ClearMemory);
 
             _ambientEntityHandle = BorrowGenerationHandle<AmbientEntityDTO>(vault, BufferID.ShinobuAmbientEntities);
+            _ownsAmbientEntityHandle = false;
             if (!IsHandleCreated(in _ambientEntityHandle))
             {
                 _ambientEntityHandle = ClaimGenerationHandle<AmbientEntityDTO>(
@@ -538,9 +541,11 @@ namespace Hecton8.AI.Ecosystem
                     BufferID.ShinobuAmbientEntities,
                     _ambientFishCapacity,
                     NativeArrayOptions.ClearMemory);
+                _ownsAmbientEntityHandle = IsHandleCreated(in _ambientEntityHandle);
             }
 
             _ambientAupHandle = BorrowGenerationHandle<AmbientEntityAupDTO>(vault, BufferID.ShinobuAmbientAups);
+            _ownsAmbientAupHandle = false;
             if (!IsHandleCreated(in _ambientAupHandle))
             {
                 _ambientAupHandle = ClaimGenerationHandle<AmbientEntityAupDTO>(
@@ -548,6 +553,7 @@ namespace Hecton8.AI.Ecosystem
                     BufferID.ShinobuAmbientAups,
                     _ambientFishCapacity,
                     NativeArrayOptions.ClearMemory);
+                _ownsAmbientAupHandle = IsHandleCreated(in _ambientAupHandle);
             }
 
             _anomalyFieldHandle = BorrowGenerationHandle<SymbiosisAnomalyFieldMirror>(vault, BufferID.ShinobuSeedShipAnomalyField);
@@ -563,10 +569,10 @@ namespace Hecton8.AI.Ecosystem
 
         private IDataVault AcquireDataVaultCold()
         {
-            if (_dataVault != null)
-                return _dataVault;
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, currentVault))
+                RebindDataVaultForLifecycle(currentVault);
 
-            _dataVault = GlobalRegistry.DataVault;
             return _dataVault;
         }
 
@@ -1158,6 +1164,77 @@ namespace Hecton8.AI.Ecosystem
             _ambientEntityHandle = default;
             _ambientAupHandle = default;
             _anomalyFieldHandle = default;
+            _ownsAmbientEntityHandle = false;
+            _ownsAmbientAupHandle = false;
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            ReleaseVaultStateForLifecycle();
+            _dataVault = nextVault;
+        }
+
+        private void ReleaseVaultStateForLifecycle()
+        {
+            CompleteFrameJobForTeardown();
+            UnlockJobBuffers();
+            ReleaseOwnedVaultHandles(_dataVault);
+            ClearCachedState();
+        }
+
+        private void ReleaseOwnedVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedVaultHandle(vault, ref _floraHandle);
+            ReleaseOwnedVaultHandle(vault, ref _floraAupHandle);
+            ReleaseOwnedVaultHandle(vault, ref _linkHandle);
+            ReleaseOwnedVaultHandle(vault, ref _exchangeHandle);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle);
+            ReleaseOwnedVaultHandle(vault, ref _counterHandle);
+#if UNITY_EDITOR
+            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle);
+#endif
+            ReleaseOwnedVaultHandle(vault, ref _scannerVfxHandle);
+            ReleaseOwnedVaultHandle(vault, ref _oxygenEmitterHandle);
+            ReleaseOwnedVaultHandle(vault, ref _adherenceHandle);
+            ReleaseOwnedVaultHandle(vault, ref _seedHandle);
+            ReleaseOwnedVaultHandle(vault, ref _acousticTapHandle);
+            ReleaseOwnedVaultHandle(vault, ref _tuningHandle);
+            ReleaseOwnedVaultHandle(vault, ref _floraBucketHeadHandle);
+            ReleaseOwnedVaultHandle(vault, ref _floraBucketNextHandle);
+            ReleaseOwnedVaultHandle(vault, ref _mockBoidHandle);
+            ReleaseOwnedVaultHandle(vault, ref _legacyScratchHandle);
+            ReleaseOwnedVaultHandle(vault, ref _mockFishHandle);
+
+            if (_ownsAmbientEntityHandle)
+                ReleaseOwnedVaultHandle(vault, ref _ambientEntityHandle);
+            else
+                _ambientEntityHandle = default;
+
+            if (_ownsAmbientAupHandle)
+                ReleaseOwnedVaultHandle(vault, ref _ambientAupHandle);
+            else
+                _ambientAupHandle = default;
+
+            _anomalyFieldHandle = default;
+            _ownsAmbientEntityHandle = false;
+            _ownsAmbientAupHandle = false;
+        }
+
+        private static void ReleaseOwnedVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.AIEcology)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private void ClearCachedState()

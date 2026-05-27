@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hecton8.local/schemas/runtime.mod.schema.json",
+  "title": "HECTON-8 runtime compatibility manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Id", "Name", "Version", "Author", "Description", "Dependencies", "EntryAssembly", "EntryType", "RequiredAPIVersion", "ModPriority"],
+  "properties": {
+    "Id": { "type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" },
+    "Name": { "type": "string", "minLength": 1 },
+    "Version": { "type": "string", "minLength": 1 },
+    "Author": { "type": "string", "minLength": 1 },
+    "Description": { "type": "string" },
+    "Dependencies": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" }
+    },
+    "EntryAssembly": { "const": "" },
+    "EntryType": { "const": "" },
+    "RequiredAPIVersion": { "type": "integer", "minimum": 2 },
+    "ModPriority": { "type": "integer" }
+  }
+}

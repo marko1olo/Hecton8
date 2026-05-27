@@ -727,8 +727,957 @@ Cinematic Cheats used:
 Verification:
 - `rg "MockUIBuffer" Assets/_Project/Scripts -g "*.cs"` returns no source hits.
 - Scoped `git diff --check` reports only existing LF/CRLF warnings.
-- Fresh scanner/build/import proof after this deletion is blocked by external `MapMagic.csproj` dotnet build PID `7236` and CPU `88%`.
+- Fresh scanner/build/import proof after this deletion and the final `TryAdd` hardening is blocked by external `MapMagic.Editor.csproj` dotnet build PID `50860` and `VBCSCompiler` PID `5276`.
 
 Exact Microseconds saved:
 - Runtime: 0 us measured, 0 us claimed.
 - Static risk reduction: one dead raw pointer DTO removed.
+
+## 2026-05-27 - Runtime Manual GC Collection Removed
+
+What was wrong:
+- Two live runtime routes still requested managed garbage collection: `SystemDispatcher.DispatchCriticalMemoryPressure` and `SaveManager.Tick()` post-save VRAM GC drain.
+- This violated the Zero-GC mandate and contradicted project docs claiming no live `GC.Collect()` in scripts.
+
+What was done:
+- Removed the manual `GC.Collect(0, Optimized, false)` calls.
+- Removed the post-save GC pending flag, frame-budget constants, and dead SaveManager VRAM-GC request path.
+- Kept pressure signaling, pool flush, crash telemetry, and DataVault defrag request routes intact.
+
+Cinematic Cheats used:
+- None. This is stability cleanup, not visual simulation.
+
+Verification:
+- `rg "System\\.GC\\.Collect\\s*\\(|\\bGC\\.Collect\\s*\\(" Assets/_Project/Scripts -g "*.cs"` returns no hits.
+- Scoped `git diff --check` on `SystemDispatcher.cs` and `SaveManager.cs` reports only existing LF/CRLF warnings.
+- `VAULT_NATIVE_ALIAS_LEDGER_AUDIT_NATIVE_STATE_AFTER_RUNTIME_GC_12.json` reports `2443` scanned files, `0` parse failures, `0` forbidden MonoBehaviour candidates, `352` forbidden persistent candidates, and `783` stack-only ref-struct fields.
+- Guarded `dotnet build .\Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /nr:false /p:UseSharedCompilation=false` passed with `0` errors and `927` warnings in `00:01:06.63`.
+- No Unity import, Play Mode, profiler, or GC allocation capture was run.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Expected benefit: fewer forced/queued managed collection hitches on save completion and critical memory events, especially on low-end devices.
+
+## 2026-05-27 - Dispose Fence Recheck Completed
+
+What was wrong:
+- `FaunaSimulationMemory.Dispose(JobHandle)` accepted a resident LOD job dependency but released DataVault handles without completing it.
+- `SargassumMicroFaunaBoids.ClearVaultHandles` accepted a cancelled leviathan node-build dependency but cleared Vault generation handles and ring aliases without completing it.
+- Both paths made teardown/rebind state look clean while a job could still be touching the same native memory.
+
+What was done:
+- Added forced `DispatcherJobFence.TryComplete` before fauna residency Vault alias release.
+- Added forced `DispatcherJobSwap.TryComplete` before sargassum Vault handle clearing.
+- Left steady-frame completion behavior unchanged.
+
+Cinematic Cheats used:
+- None. This is native lifetime correctness.
+
+Verification:
+- Scoped diff contains only two dependency completion calls in `FaunaSimulationEngine.cs` and `SargassumMicroFaunaBoids.cs`.
+- Scoped `git diff --check` reports only existing LF/CRLF warnings.
+- Hidden-alias heuristic over MonoBehaviour files found no new direct MonoBehaviour native field tail; remaining hits are job writer structs, owner wrappers, or pointer out-params already classified.
+- Fresh scanner/build/import/profiler proof was not run: external `dotnet build Hecton8.slnx` PID `21868` is active and CPU sampled `54-60%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame cost: 0 us expected; new completions are teardown/rebind only.
+- Risk reduction: prevents native/DataVault alias invalidation before scheduled fauna/sargassum jobs are fenced.
+
+## 2026-05-27 - Quest DAG Dispose Closure
+
+What was wrong:
+- `QuestDagResolverService.Dispose(JobHandle)` could skip `QuestDagVault.ReleaseBuffers` permanently when called while resolver work was scheduled.
+- The stale gate was computed before `_hasScheduled` was folded into the teardown dependency, then `_disposed=true` blocked any later release.
+
+What was done:
+- Removed the conditional release gate.
+- Combined the active resolver handle into `disposeDependency`.
+- Forced the teardown fence before releasing Quest DAG Vault handles.
+- Left quest scheduling, SignalBus publication, tick dilation, and state math unchanged.
+
+Cinematic Cheats used:
+- None. This is native lifetime correctness, not presentation work.
+
+Verification:
+- Scoped source diff contains only the Quest DAG fence/release correction.
+- `git diff --check -- Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs` reports only the existing LF/CRLF warning.
+- No fresh scanner/build/import/profiler proof: external `dotnet build Hecton8.Editor.csproj` PID `14740` is active.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame cost: 0 us; new blocking point is dispose/rebind only.
+- Risk reduction: Quest DAG Vault descriptors cannot remain retained after scheduled resolver teardown through the dependency overload.
+
+## 2026-05-27 - Fauna/Sargassum Teardown Fence Closure
+
+What was wrong:
+- `ProceduralCrabLegIKRuntime` could leave `_pendingHandle` alive after `OnDisable` removed the owner from dispatcher callbacks, then clear Vault handles on destroy or DataVault hot-swap without a guaranteed fence.
+- `SargassumMicroFaunaBoids.DisposeFoveatedSimulationBuffers` had a scheduled cleanup branch that cleared `_foveatedSimulationHandle` without completing or retaining it.
+
+What was done:
+- Added crab teardown completion before `OnDisable` unregister and before DataVault handle rebind.
+- Changed crab `DisposeBuffers(JobHandle)` to combine caller dependency with the active pending handle before clearing handles.
+- Changed sargassum foveated buffer disposal to combine and force-complete the active foveated handle before clearing handles.
+
+Cinematic Cheats used:
+- None. This is native/job ownership closure only; no visual simulation behavior changed.
+
+Verification:
+- Scoped `git diff --check` on the two edited source files reports only existing LF/CRLF warnings.
+- Source grep confirms `CompletePendingPipelineForTeardown`, crab dependency combination, and sargassum foveated dependency combination are present.
+- No build/import/profiler proof: external `dotnet.exe` PID `57212` is active.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame cost: 0 us. Disable/rebind can wait for scheduled fauna/foveated jobs; that is required lifetime safety, not claimed performance gain.
+
+## 2026-05-27 - Leviathan Tentacle Solver Lifecycle Fence
+
+What was wrong:
+- `LeviathanTentacleVerletSolver.OnDisable` could unregister update/late-frame callbacks while `_solverScheduled` stayed true.
+- `DisposePersistentBuffers` cleared Vault handles and dropped `_pendingSolverHandle` without always fencing the scheduled solver.
+- DataVault hot-swap was ignored despite the solver owning DataVault generation handles.
+
+What was done:
+- Force-complete pending tentacle solver work before `OnDisable` unregister.
+- Force-complete pending solver work before clearing persistent Vault handles.
+- Added DataVault hot-swap rebind: fence active solver, clear stale handles, cache new vault, ensure buffers, reseed socket state.
+
+Cinematic Cheats used:
+- None. This is native/job lifecycle correctness only.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs` reports only existing LF/CRLF warning.
+- Source grep confirms the force-complete routes and DataVault rebind branch.
+- No build/import/profiler proof: CPU sampled `98.44%` and external `dotnet.exe` PID `18704` is active.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame cost: 0 us. Disable/rebind can block on scheduled tentacle solve; that is required lifetime safety.
+
+## 2026-05-27 - Stress Spawn Director Lock Release On Vault Swap
+
+What was wrong:
+- `StressDrivenSpawnDirector` could switch `_vault` and clear handles during DataVault hot-swap while a scheduled spawn job still held write locks on the old vault.
+- `Dispose()` had similar lifecycle cleanup duplicated locally instead of one consistent fence/unlock route.
+
+What was done:
+- Added a lifecycle helper that force-completes `_activeHandle`, releases `_lockedVault` write locks, and clears scheduled/lock state.
+- Called that helper before DataVault hot-swap changes `_vault`.
+- Reused the helper from `Dispose()`.
+
+Cinematic Cheats used:
+- None. This is lock/job lifecycle correctness only.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs` reports only existing LF/CRLF warning.
+- Source grep confirms the helper is called from DataVault rebind and `Dispose`.
+- Targeted compile proof passed after CPU dropped: `dotnet build .\Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /nr:false /p:UseSharedCompilation=false` completed with `0` errors and `927` warnings in `00:01:24.60`.
+- Unity import, Play Mode, profiler, and GC allocation capture were not run.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame cost: 0 us. DataVault service replacement may wait for the scheduled spawn job so write locks are released deterministically.
+
+## 2026-05-27 - Terrain Pager DataVault Rebind Fence
+
+What was wrong:
+- `TerrainChunkPagerRuntime` ignored active `DataVault` replacement.
+- It kept old Vault handles, worker queues, staging buffers, and pending residency/eviction jobs while the registry service route changed.
+
+What was done:
+- Added active DataVault rebind handling.
+- The pager now stops scheduling phases, force-completes pending pager jobs, stops the worker thread, releases old Vault handles through the old Vault, binds the new Vault, reacquires native state, reloads cold streaming profile data, restarts the worker, and re-registers dispatcher phases.
+- Added `_pendingLifecycleRebindVault` so deferred worker shutdown does not overwrite `_vault` before old handles are released.
+
+Cinematic Cheats used:
+- None. This is world-streaming ownership and lifecycle safety, not simulation or rendering approximation.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `RebindDataVaultForLifecycle` and `CompletePendingPagerJobsForLifecycle`.
+- Build/import/profiler proof not run: external `dotnet` PID `46776` was active and CPU sampled up to `64.36%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame cost: 0 us expected. DataVault service replacement can wait for active pager work and worker shutdown because releasing old Vault handles first is mandatory.
+
+## 2026-05-27 - Material Response Job Lock Fence
+
+What was wrong:
+- `ShinobuMaterialResponseRuntime` scheduled a material response job but did not retain the returned `JobHandle`.
+- `PostSimulationTick`, shutdown, and DataVault hot-swap released DataVault locks from `_simulationScheduled` alone, so locks/handles could be reset while the job still owned the buffers.
+
+What was done:
+- Added `_simulationHandle`.
+- Scheduling stores the handle and refuses a new material response job until the previous one finalizes.
+- `PostSimulationTick` finalizes the retained handle before unlocking.
+- Shutdown and DataVault hot-swap force-complete the retained handle through `CompleteSimulationForLifecycle` before lock release and handle reset.
+
+Cinematic Cheats used:
+- None. This is DataVault lock/job lifecycle correctness.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/Graphics/Materials/ShinobuMaterialResponseRuntime.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `_simulationHandle`, `TryFinalizeCompleted(ref _simulationHandle)`, and `CompleteSimulationForLifecycle`.
+- Build/import/profiler proof not run because the compiler lane was already blocked by external `dotnet` PID `46776` and CPU had sampled up to `64.36%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame cost: 0 us expected when jobs complete in the normal post-simulation window. Delayed completion now skips overlap instead of unlocking unsafe buffers.
+
+## 2026-05-28 - Fabrication Dispatcher Job Handle Fence
+
+What was wrong:
+- `FabricationAssemblerRuntime` scheduled fabrication progress/signal jobs over Vault-backed native arrays and returned the handle to the master dispatcher, but retained no local handle.
+- Shutdown/DataVault hot-swap could release Vault handles outside the dispatcher post-simulation completion window.
+
+What was done:
+- Added `_simulationHandle` and `_simulationScheduled`.
+- Scheduling now retires completed prior work, or returns a dependency combined with the still-active handle instead of overlapping jobs.
+- `PostSimulationTick` finalizes the retained handle before native reads.
+- Shutdown and DataVault hot-swap force-complete the retained handle before releasing Vault handles.
+
+Cinematic Cheats used:
+- None. This is native lifetime correctness, not simulation fidelity.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/FabricationAssemblerRuntime.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `_simulationHandle`, `_simulationScheduled`, and `CompleteSimulationForLifecycle`.
+- Build/import/profiler proof was not run: external compiler lane is active (`dotnet` PID `47780`) while CPU sampled `36%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame expected cost: one completed-handle poll when fabrication work was scheduled. Lifecycle force-complete runs only on shutdown/DataVault replacement.
+
+## 2026-05-28 - Visual Pressure Aging Retained Handle And DataVault Rebind
+
+What was wrong:
+- `VisualPressureAgingRuntime` kept `_scheduledSimulationHandle` but post-simulation only checked `IsCompleted`.
+- If `_simulationScheduled` was still true at the next simulation phase, it returned raw `dependsOn`, detaching the old job from the master dispatcher fence.
+- Shutdown unlocked/released Vault state and then dropped the handle without completing it.
+- The runtime cached DataVault once and did not subscribe to service replacement while holding owned Vault handles.
+
+What was done:
+- Replaced `IsCompleted` handling with `DispatcherJobFence.TryFinalizeCompleted`.
+- Active stale work is now returned as a combined dispatcher dependency instead of detached.
+- Added lifecycle force-complete before shutdown unlock/release.
+- Added `IGlobalRegistryHotSwapListener` route: close editor leases, complete active work, unlock old locks, release old Vault handles, bind new Vault, reacquire state, refresh external handles.
+
+Cinematic Cheats used:
+- None. This is native lifetime and global-service route correctness.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs` reports only existing LF/CRLF warning.
+- Source grep confirms hot-swap listener registration, retained-handle finalization, dependency combine, and lifecycle completion routes.
+- Build/import/profiler proof was not run because the compiler lane is already active (`dotnet` PID `47780`) and CPU sampled `36%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame expected cost: one completed-handle poll when visual aging work was scheduled. DataVault replacement/shutdown may wait for active aging work before releasing Vault handles.
+
+## 2026-05-28 - Atmosphere And Plasma Dispatcher Handle Fences
+
+What was wrong:
+- `BaseAtmosphereLogisticsRuntime` and `ShinobuPlasmaBeamRuntime` locked Vault buffers and scheduled jobs but tracked lifetime only with `_simulationScheduled`.
+- Post-simulation assumed the master dispatcher had completed the work, but the owner had no retained handle for shutdown, stale scheduled state, or service-rebind windows.
+- Plasma DataVault hot-swap returned early while scheduled and dropped the replacement request.
+
+What was done:
+- Added local `_simulationHandle` in both runtimes.
+- Active stale work is now combined back into dispatcher dependencies instead of detached.
+- Post-simulation finalizes retained handles through `DispatcherJobFence.TryFinalizeCompleted` before native reads/unlocks.
+- Shutdown force-completes retained handles; plasma DataVault hot-swap force-completes before changing `_vault`.
+
+Cinematic Cheats used:
+- None. This is job/native lifetime and service-route correctness.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs` reports only existing LF/CRLF warnings.
+- Source grep confirms retained handle/finalize/combine/force-complete routes in both files.
+- Build/import/profiler proof was not run because external `dotnet` PID `47780` is active and CPU sampled `36%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame expected cost: one completed-handle poll in post-simulation per scheduled atmosphere/plasma job. Lifecycle force-complete is shutdown/service-rebind only.
+
+## 2026-05-28 - Async Buoyancy Readback Write-Lock Fence
+
+What was wrong:
+- `AsyncBuoyancyReadbackRuntime` acquired DataVault write locks for mock/apply jobs and released them in post-simulation, disable, or DataVault replacement without retaining the job handle locally.
+- If disable/service replacement happened before the dispatcher post-simulation window, write locks could be released while jobs still wrote mock ring, completed requests, resolved heights, result states, or counters.
+
+What was done:
+- Added `_simulationHandle` and `_simulationScheduled`.
+- Retain the scheduled handle whenever simulation write locks are active, including early-return paths after mock scheduling.
+- Reattach still-active work to the dispatcher dependency chain.
+- Finalize before post-simulation lock release and force-complete before disable/DataVault hot-swap.
+
+Cinematic Cheats used:
+- None. This is native write-lock and job lifetime correctness.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `_simulationHandle`, `_simulationScheduled`, `RetainSimulationHandleIfLocked`, `HasSimulationWriteLocks`, and lifecycle completion routes.
+- Build/import/profiler proof was not run because external `dotnet` PID `47780` is active and CPU sampled `36%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame expected cost: one completed-handle poll only when async buoyancy write locks were acquired. Lifecycle force-complete is disable/service-rebind only.
+
+## 2026-05-28 - Trade Marauder Lifecycle Fence Pass
+
+What was wrong:
+- `TradeMarauderDirector.OnDisable` could unregister Slow/Frost tick lanes while `_activeJobHandle` was still running, then return through `deferHandleClear` without releasing owned DataVault handles.
+- After disable there was no guaranteed owner phase left to finalize the job, publish completed signals, or clear the twenty-two Vault handles.
+- Public/editor routes could read or write faction standing, tuning, route views, economy weights, and counters while the scheduled economy job chain was still using those native arrays.
+
+What was done:
+- `OnDisable` now force-completes active marauder work through `CompleteActiveJobForLifecycle()` before unregistering and releasing native handles.
+- DataVault hot-swap now uses the same lifecycle fence before releasing old handles and binding the new service.
+- Faction reputation mutation, tuning editor read/write, editor view exposure, and CSV override now fail closed while `_jobScheduled` is true.
+
+Cinematic Cheats used:
+- None. This was native lifetime and owner-phase correctness. Marauder economy math, route solving, theft, acoustic signal, and visual proxy hydration are unchanged.
+
+Verification:
+- Static source grep confirms `CompleteActiveJobForLifecycle()` in `OnDisable` and DataVault rebind.
+- Static source grep confirms no remaining `deferHandleClear` route.
+- Scoped `git diff --check -- Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler proof blocked: external `dotnet` PID `47780`, CPU sampled `77%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; lifecycle force-complete runs only on disable/service rebind. Public/editor active-job guards are branch-only cold/editor routes.
+
+## 2026-05-28 - Parasite Swarm DataVault Rebind Fence
+
+What was wrong:
+- `ParasiteSwarmGpuRuntime` cached `_vault = GlobalRegistry.DataVault` and registered as a hot-swap listener, but ignored `GlobalRegistryServiceSlot.DataVault`.
+- Pending target extraction jobs and target write locks could remain tied to old Vault-backed target/candidate/count buffers during service replacement.
+- Generation descriptors could stay pointed at the old Vault route after replacement.
+
+What was done:
+- Added DataVault branch in `OnGlobalRegistryServiceReplaced`.
+- Added `RebindDataVaultForLifecycle()`: force-complete pending target extraction, release old target write locks against the old Vault, clear descriptors, bind the new Vault, ensure shared parasite buffers, rebind descriptors, and reseed tuning.
+- Reused `CompleteTargetSelectionForLifecycle()` from `OnDisable`.
+
+Cinematic Cheats used:
+- None. This is native/Vault lifecycle correctness. Parasite compute, target selection scoring, particle budget, and visual phase are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmGpuRuntime.cs` reports only existing LF/CRLF warning.
+- Source grep confirms DataVault hot-swap branch, `RebindDataVaultForLifecycle`, `CompleteTargetSelectionForLifecycle`, and `ClearVaultDescriptors`.
+- Build/import/profiler/GPU proof blocked: external `dotnet` PID `47780`, CPU sampled `71%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; rebind fence runs only on DataVault service replacement or disable.
+
+## 2026-05-28 - Diegetic Gyro Compass DataVault Rebind Fence
+
+What was wrong:
+- `DiegeticGyroCompassRuntime` handled `GlobalRegistryServiceSlot.DataVault` by assigning `_vault` directly, resolving new buffers, and resetting presentation while a scheduled `GyroDriftJob` could still own slices from the old Vault.
+- Disabled instances could miss DataVault replacement because OnEnable did not re-resolve cold dependencies after the first Start.
+- `TryReadCompassState` was a read route that sanitized and wrote back to DataVault; recalibration methods could also write native state while `_jobPending` was active.
+
+What was done:
+- Added `RebindDataVaultForLifecycle()` and `ClearVaultLanes()`: complete pending drift work, clear stale generation lanes, bind the new Vault, reset fast cadence counters, re-resolve buffers, and mark presentation dirty.
+- OnEnable now rechecks cold dependencies before service/tick registration.
+- Snapshot reads fail closed while `_jobPending` is active.
+- Recalibration requests/hold progress during active jobs are deferred in owner-local scalar fields and consumed during the next drift integration.
+- `TryReadCompassState` now sanitizes the returned copy only, not the DataVault source.
+
+Cinematic Cheats used:
+- None. This is native ownership and global-route correctness. Drift math, indirect dial rendering, particle bursts, and quality-weight cadence remain unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `RebindDataVaultForLifecycle`, `ClearVaultLanes`, `ApplyQueuedManualRecalibration`, and no direct `_vault = currentService` hot-swap assignment.
+- Build/import/profiler proof blocked: external `dotnet` PID `14348`, CPU sampled `100%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: branch-only read/write guards; lifecycle force-complete runs only on DataVault service replacement or cold rebind.
+
+## 2026-05-28 - Acoustic Echo Static DataVault Rebind Fence
+
+What was wrong:
+- `AcousticEchoLocationRuntime` is static and cached `_dataVault` plus Vault generation handles, but only retried `GlobalRegistry.DataVault` while unbound.
+- After DataVault service replacement, initialized acoustic echo could keep old Vault-backed trail, target, fault, and black-box buffers alive through stale descriptors.
+- `EnsureVaultBuffers()` had unreachable same-reference rebind code because its local `vault` value was copied from `_dataVault`.
+
+What was done:
+- Added a single cold static `AcousticEchoHotSwapBridge` implementing `IGlobalRegistryHotSwapListener`.
+- Initialization registers the bridge once; disposal unregisters it.
+- DataVault replacement now completes the tracking fence, releases old handles through the old Vault service, clears descriptors and transient state, binds the new service, and reacquires buffers when initialized.
+- Removed the dead same-reference rebind branch from `EnsureVaultBuffers()`.
+
+Cinematic Cheats used:
+- None. This is native lifecycle correctness. Echo scoring, acoustic trail policy, target sampling, black-box cadence, and quality-weight behavior are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `AcousticEchoHotSwapBridge`, register/unregister routes, `RebindDataVaultForLifecycle`, `CompleteTrackingFenceForVaultRelease`, and old-vault handle release.
+- Build/import/profiler proof blocked: external `dotnet` PID `14348`, CPU sampled `83%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; bridge registration is static lifecycle work and rebind runs only on DataVault replacement/dispose.
+
+## 2026-05-28 - Ecosystem Population Failed Schedule State Fix
+
+What was wrong:
+- `EcosystemPopulationBalancer.ScheduleBalancerJob` unlocked Vault buffers when `job.Schedule()` threw, but then continued as if scheduling succeeded.
+- The failed path registered a default `_balancerHandle`, set `_jobScheduled=true`, and set `_jobLocksHeld=true`.
+- Late-frame cleanup could then publish cull signals and unlock buffers for a job that never ran.
+
+What was done:
+- Failed `InvalidOperationException` and `ArgumentException` paths now clear `_balancerHandle` and return immediately after unlock/telemetry.
+- `H8Memory.RegisterActiveJob` and `_jobScheduled=true` now happen only after successful scheduling.
+- Removed redundant `_jobLocksHeld=true` after schedule; lock ownership remains inside `TryLockJobBuffers` and `UnlockJobBuffers`.
+
+Cinematic Cheats used:
+- None. This is native owner-state correctness. Population balancing math, cull policy, coefficients, and telemetry layout are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs` reports only existing LF/CRLF warning.
+- Source diff confirms failed schedule paths return before active-job registration and scheduled-state mutation.
+- Build/import/profiler proof blocked: external `dotnet` PID `14348`, CPU sampled `97%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; success path removes one redundant assignment, failure path exits earlier.
+
+## 2026-05-28 - Audio Log Disabled DataVault Rebind Fix
+
+What was wrong:
+- `AudioLogSystem` kept DataVault handles while disabled, but disabled instances are not hot-swap listeners.
+- If DataVault changed while disabled, the next `OnEnable` directly assigned `_dataVault = GlobalRegistry.DataVault`.
+- That overwrote the old service route before old audio-log Vault handles were released.
+
+What was done:
+- Added `RebindDataVaultCold(IDataVault nextVault, bool ensureBuffers)`.
+- DataVault hot-swap and OnEnable service refresh now share that helper.
+- The helper releases handles through the cached old `_dataVault` before binding the new service.
+- Direct `_dataVault = GlobalRegistry.DataVault` and direct DataVault hot-swap assignment were removed.
+
+Cinematic Cheats used:
+- None. This is native ownership cleanup. Playback, encrypted fragments, save data, and telemetry behavior are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs` reports only existing LF/CRLF warning.
+- Source grep confirms DataVault routes use `RebindDataVaultCold` and the direct assignment routes are gone.
+- Build/import/profiler proof blocked: external `dotnet` PID `14348` still active, CPU sampled `34%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; fix runs only during enable/service replacement.
+
+## 2026-05-28 - Vocal Bank Disabled DataVault Rebind Fix
+
+What was wrong:
+- `VocalBankPlaybackRuntime` kept vocal bank DataVault handles across disable while unregistering its hot-swap listener.
+- `CacheDataVaultCold()` only assigned `GlobalRegistry.DataVault` when `_dataVault` was null.
+- If DataVault changed while disabled, re-enable could keep stale old Vault handles and the audio callback could keep reading old buffers.
+
+What was done:
+- Added `RebindDataVaultCold(IDataVault nextVault)`.
+- `CacheDataVaultCold()` and DataVault hot-swap now use the same helper.
+- The helper calls `DisposeVaultStorage()` before switching services; that path already fences `OnAudioFilterRead` through `BeginBankMutationCold()`.
+
+Cinematic Cheats used:
+- None. This is native/audio callback ownership. Vocal decode, mock bank, waveform telemetry, and quality-weight behavior are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `RebindDataVaultCold`, no direct `_dataVault = GlobalRegistry.DataVault`, and no direct `_dataVault = currentService as IDataVault` route.
+- Build/import/profiler/audio proof blocked: external `dotnet` PID `14348` still active, CPU sampled `35%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; service rebind may wait for an in-flight audio callback, only on cold/service replacement path.
+
+## 2026-05-28 - Dynamic Music Disabled DataVault Rebind Fix
+
+What was wrong:
+- `DynamicMusicGranularSynthesizer` kept DataVault synth storage across disable while unregistering its hot-swap listener.
+- `CacheDataVaultCold()` only rebound when `_dataVault` was null.
+- If DataVault changed while disabled, re-enable could keep stale old synth handles; pending synth job/lock cleanup existed only on active hot-swap.
+
+What was done:
+- Added `RebindDataVaultCold(IDataVault nextVault)`.
+- DataVault hot-swap and cold service refresh now share the helper.
+- The helper force-completes pending synth jobs, releases old Vault storage through the old service, then assigns the new service.
+
+Cinematic Cheats used:
+- None. This is native/DSP ownership. Granular synthesis, tension/depth scalars, preset rules, grain bank, and quality-weight behavior are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `RebindDataVaultCold`, no direct `_dataVault = GlobalRegistry.DataVault`, and no direct `_dataVault = currentService as IDataVault` route.
+- Build/import/profiler/audio proof blocked: no compiler process active, but CPU sampled `82%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; service rebind may wait for pending synth work only on cold/service replacement path.
+
+## 2026-05-28 - Adaptive Stem Disabled DataVault Rebind Fix
+
+What was wrong:
+- `AdaptiveStemAudioMixer` kept DataVault stem mixer storage across disable while unregistering its hot-swap listener.
+- `CacheDataVaultCold()` only rebound when `_dataVault` was null.
+- If DataVault changed while disabled, re-enable could keep stale old stem/rule/telemetry handles.
+
+What was done:
+- Added `RebindDataVaultCold(IDataVault nextVault)`.
+- DataVault hot-swap and cold service refresh now share the helper.
+- The helper releases old Vault storage through the cached old service before assigning the new service.
+
+Cinematic Cheats used:
+- None. This is native/audio ownership. Streaming stems, fake depth filters, beat/biome rules, telemetry, CSV tuning, and quality-weight behavior are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `RebindDataVaultCold`, no direct `_dataVault = GlobalRegistry.DataVault`, no direct `_dataVault = currentService`, and no direct `_dataVault = replacementVault` route.
+- Build/import/profiler/audio proof blocked: no compiler process active, but CPU sampled `98.3%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; service rebind runs only on cold enable/service replacement path.
+
+## 2026-05-28 - Chemical Influence Vault Release Fix
+
+What was wrong:
+- `ChemicalInfluenceGrid` acquired 19 AISensory DataVault generation handles.
+- Disable/DataVault rebind completed scheduled work, then `ResetVaultStateForRebind()` cleared those handles without `ReleaseBuffer`.
+- The descriptor loss could leave chemical grid/emitter/telemetry/profile allocations resident in DataVault with no owner-side release route.
+
+What was done:
+- Added `ReleaseVaultHandles(IDataVault vault)` and `ReleaseVaultHandle<T>()`.
+- `ResetVaultStateForRebind()` now releases owned AISensory buffers against the cached old `_dataVault` before clearing descriptors.
+- The release helper refuses null/zero/stale non-AISensory handles and resets each descriptor after release.
+
+Cinematic Cheats used:
+- None. Chemical diffusion, scent channels, defoliant behavior, profile CSV, telemetry, and quality-weight scaling are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `ReleaseVaultHandles`, `ReleaseVaultHandle`, and `ReleaseBuffer(in handle)` are wired before `ClearVaultHandles`.
+- Build/import/profiler proof blocked: no compiler process active, but CPU sampled `81.16%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; release runs only on disable/DataVault service replacement.
+
+## 2026-05-28 - Volcanic Updraft DataVault Rebind/Release Fix
+
+What was wrong:
+- `VolcanicUpdraftDirector` kept owned Fluid DataVault handles across disable while unregistering from hot-swap.
+- Cold enable overwrote `_dataVault` directly from `GlobalRegistry.DataVault`, so disabled DataVault replacement could strand old handles.
+- Active DataVault replacement and object destruction had no owned-buffer release route before handles were cleared or lost.
+
+What was done:
+- Cold dependency refresh now calls `RebindDataVault(GlobalRegistry.DataVault)`.
+- DataVault rebind releases owned updraft handles before clearing descriptors and assigning the new service.
+- Added `OnDestroy()` cleanup for resident handles.
+- Release is filtered to `OwnerSystem`; external player/leviathan handles are only cleared, not released.
+
+Cinematic Cheats used:
+- None. Updraft physics, mock wakes, thermal service reads, CSV tuning, telemetry, and quality-weight scaling are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs` reports only existing LF/CRLF warning.
+- Source grep confirms `ReleaseOwnVaultHandles`, `ReleaseOwnVaultHandle`, owner-filtered `ReleaseBuffer(in handle)`, and `RebindDataVault(GlobalRegistry.DataVault)`.
+- Build/import/profiler proof blocked: external `dotnet` PID `34204`, `csc` PID `4764`, CPU `100%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; release runs only on DataVault replacement/destroy.
+
+## 2026-05-28 - Ambient/Vehicle/Submarine DataVault Release Fixes
+
+What was wrong:
+- `AmbientBiotaDirector` cleared six owned AmbientBiota Vault handles on disable/DataVault replacement without `ReleaseBuffer`.
+- `VehicleComponentDamageRuntime` kept damage Vault handles while disabled, missed DataVault hot-swap, and active hot-swap assigned the new Vault before release. Its external submarine config handle had to remain non-owned.
+- `SubmarineDynamicsRuntime` had the same disabled stale DataVault route for main vehicle physics buffers, and its gyro partial owned additional Vault handles that were not cleared/released by the main lifecycle.
+
+What was done:
+- Added owner-filtered release-before-clear to `AmbientBiotaDirector`.
+- Added lifecycle DataVault rebind and destroy release to `VehicleComponentDamageRuntime`.
+- Added lifecycle DataVault rebind, destroy release, main handle release, gyro handle release, and gyro descriptor clearing to `SubmarineDynamicsRuntime`.
+- External handles remain clear-only: vehicle damage does not release submarine config; submarine dynamics does not release vehicle damage read state.
+
+Cinematic Cheats used:
+- None. Biota drift/indirect draw, vehicle damage grid, submarine kinematics, added mass, gyro stabilization, CSV tuning, telemetry, and quality-weight behavior are unchanged.
+
+Verification:
+- Scoped `git diff --check` on all touched runtime files reports only existing LF/CRLF warnings.
+- Source grep confirms release/rebind helpers in `AmbientBiotaDirector`, `VehicleComponentDamageRuntime`, `SubmarineDynamicsRuntime`, and `SubmarineDynamicsRuntime_Gyroscopes`.
+- Build/import/profiler proof blocked: external `dotnet` PID `17744` active and CPU sampled `62%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; new work is limited to disable, destroy, cold service refresh, or DataVault replacement.
+
+## 2026-05-28 - Abyssal Thermodynamics DataVault Release Fix
+
+What was wrong:
+- `AbyssalThermodynamicsSolver` owned main thermal Vault handles and reactor thermal Vault handles through `Acquire(... SystemID.Thermodynamics)`.
+- Active DataVault replacement assigned the new Vault before releasing old handles.
+- Disabled re-enable could keep a stale cached `_vault`.
+- Reactor bridge descriptors were outside the main `ClearVaultHandles()` route.
+
+What was done:
+- Added `CompleteThermalJobsForLifecycle()` for solver/sample job fences and reactor shared lock release.
+- Added lifecycle DataVault rebind for active hot-swap and cold `EnsureVault()`.
+- Added owner-filtered release for main thermal handles and reactor thermal handles.
+- Added reactor descriptor clearing and `OnDestroy()` release of resident handles.
+- External optional power/fluid/airlock lanes remain lock-only inputs and are not released as owned buffers.
+
+Cinematic Cheats used:
+- None. Thermal grid, reactor heat injection, convergence telemetry, black-box dumps, visuals, and quality-weight behavior are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.cs Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.ReactorBridge.cs` reports only existing LF/CRLF warnings.
+- Source grep confirms `RebindDataVaultForLifecycle`, `ReleaseOwnedVaultHandles`, `ReleaseReactorThermalVaultHandles`, and `ClearReactorThermalVaultHandles`.
+- Build/import/profiler proof blocked: external `dotnet` PID `17744` active and CPU sampled `54%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; new work is limited to destroy, cold service refresh, or DataVault replacement.
+
+## 2026-05-28 - Terminal OS DataVault Release Fix
+
+What was wrong:
+- `TerminalOsRuntime.DisposeNativeResources()` ran on disable, destroy, DataVault hot-swap, and failed native init.
+- It cleared terminal/decryption/projection Vault handles without `ReleaseBuffer`.
+- Terminal projection partial handles were opened by the same native lifecycle but were also only cleared.
+
+What was done:
+- Added owner-filtered release for main terminal UI Vault handles.
+- Added owner-filtered release for terminal projection Vault handles.
+- `DisposeNativeResources()` now releases old `_vault` handles before `ClearVaultHandles()` and `_vault = null`.
+
+Cinematic Cheats used:
+- None. Terminal rendering, terminal input projection, decryption puzzle state, telemetry, and quality-weight behavior are unchanged.
+
+Verification:
+- Scoped `git diff --check -- Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime_TerminalProjection.cs` reports only existing LF/CRLF warnings.
+- Source grep confirms `ReleaseVaultHandles`, `ReleaseTerminalProjectionVaultHandles`, and `ReleaseBuffer(in handle)` before `ClearVaultHandles()`.
+- Build/import/profiler proof blocked: external `dotnet` PID `17744`, `csc` PID `50392`, CPU sampled `100%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Steady-frame delta: 0 us expected; release runs only inside existing dispose paths.
+## 2026-05-28 - Content Authority Disabled DataVault Rebind
+
+What was wrong:
+- `ContentAuthorityRuntime` kept DataVault-backed content telemetry, pending-load, and bundle-ref counters resident while disabled, but disabled instances miss `GlobalRegistry.DataVault` hot-swap callbacks.
+- `CacheDependencies()` only assigned `GlobalRegistry.DataVault` when `_dataVault == null`, so a re-enabled content authority could keep stale handles from the old Vault service.
+
+What was done:
+- Added `RebindDataVaultCold(...)` and routed cold dependency refresh plus active DataVault hot-swap through it.
+- Rebound `ContentBundleReferenceCounter` through its own cached old Vault so bundle-ref handles release before the new Vault is assigned.
+- Hardened content authority and bundle-ref release helpers to release descriptor-local `SystemID.ContentAuthority` generation handles only.
+
+Cinematic Cheats used:
+- None. This was native lifecycle ownership only; no content presentation, VRAM policy, Addressables route, or VFX prewarm behavior changed.
+
+Exact Microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+- Lifecycle win: prevents stale content Vault descriptors and DataVault memory growth after disabled service rebound.
+
+## 2026-05-28 - GI Relay Disabled DataVault Rebind
+
+What was wrong:
+- `HectonGIRelaySystem` kept GI relay/DayNight Vault descriptors resident while disabled, but the disabled runtime unregisters its hot-swap listener.
+- `CacheDataVaultCold()` used null-only `_vault` caching, so disabled DataVault replacement could resume lighting with stale old Vault descriptors.
+
+What was done:
+- Routed `CacheDataVaultCold()` through existing `RebindDataVault(GlobalRegistry.DataVault)`.
+- Reused existing teardown: complete pending SH job, `DisposeNativeStorage()`, release GI relay and DayNight Vault descriptors, then bind the current Vault and hydrate when active.
+
+Cinematic Cheats used:
+- None. SH profile math, lightning overlay, ambient probe upload, DayNight gradient relay, and quality-weight policy are unchanged.
+
+Exact Microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+- Lifecycle win: prevents stale lighting Vault descriptors after disabled DataVault service rebound.
+
+## 2026-05-28 - Toxic Outgassing Vault Release And Counter Reset
+
+What was wrong:
+- `ToxicOutgassingChemistryRuntime` cleared native handle descriptors on DataVault replacement without releasing its toxic-grid Vault buffers.
+- `OnDestroy()` did not release resident toxic-grid handles.
+- Disabled instances could miss DataVault replacement, and `_nativeReady` could return before comparing the cached Vault against `GlobalRegistry.DataVault`.
+- Managed counters could survive after native buffers were rebound and cleared.
+
+What was done:
+- Added lifecycle rebind/release path for destroy and DataVault replacement.
+- Added descriptor-local release for the toxic density/state/source/entity/signal/constants/telemetry/probe/header handles.
+- Added top-of-`EnsureNativeState()` DataVault comparison to catch disabled service replacement before returning ready.
+- Reset source/entity counts, telemetry cursor, density version, frame counter, accumulators, origin/rebase state, pending failure flags, and mock flag during native release/rebind.
+
+Cinematic Cheats used:
+- None. Toxic diffusion, mock flow/world sampling, toxicity signals, black-box layout, CSV/probe behavior, and quality scaling are unchanged.
+
+Exact Microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+- Lifecycle win: prevents toxic-grid DataVault leaks and stale managed counters after service rebound.
+
+## 2026-05-28 - Flora/Fauna Symbiosis Vault Release
+
+What was wrong:
+- `ShinobuFloraFaunaSymbiosisSolver` cleared symbiosis Vault handles on DataVault replacement and dispose without releasing the owned buffers.
+- The solver mixes owned symbiosis buffers with borrowed ambient/anomaly lanes, so a naive broad release would break other owners.
+
+What was done:
+- Added lifecycle rebind/release for dispose, DataVault hot-swap, and cold vault acquisition.
+- Released descriptor-local owned `SystemID.AIEcology` symbiosis handles through the old Vault.
+- Added ownership bits for fallback-created ambient entity/AUP buffers; borrowed ambient handles are only cleared.
+- Left anomaly field borrowed-only.
+
+Cinematic Cheats used:
+- None. Symbiosis exchange math, scanner VFX, oxygen/adherence/seed/acoustic outputs, CSV/legacy paths, and quality behavior are unchanged.
+
+Exact Microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+- Lifecycle win: prevents symbiosis Vault leaks without releasing borrowed ecology lanes.
+
+## 2026-05-28 - Shinobu Ecosystem Balancer Vault Release
+
+What was wrong:
+- `ShinobuEcosystemBalancer` owned ambient, flocking, spatial-grid, render, telemetry, CSV/legacy, dump, and species profile Vault handles but cleared descriptors on DataVault replacement/dispose without `ReleaseBuffer`.
+- Cold activation used null-only `_dataVault` cache, so stale service references could survive outside the hot-swap path.
+
+What was done:
+- Added lifecycle rebind/release for dispose, DataVault hot-swap, and cold vault acquisition.
+- Shutdown path now completes jobs, unlocks job buffers, stops the spatial-grid dump worker, releases descriptor-local owned `SystemID.AIEcology` handles, and clears cached state.
+- DataVault service rebind preserves procedural render material/bounds/layer state; only hard dispose clears render state.
+- `EnsureVaultState()` now checks `GlobalRegistry.DataVault` before trusting `_vaultBuffersReady`.
+
+Cinematic Cheats used:
+- None. Boid simulation, flocking, macro pass, render upload, spatial-grid forensics, CSV/legacy loading, and quality policy are unchanged.
+
+Exact Microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+- Lifecycle win: prevents ecology/spatial-grid Vault leaks and stale handles after service rebound.
+## 2026-05-28 - Material/Fauna/Shadow Native Lifecycle Pass
+
+What was wrong:
+- `ShinobuMaterialResponseRuntime` cleared owned GraphicsMaterials Vault descriptors on shutdown/rebind without releasing buffers.
+- `ProceduralCrabLegIKRuntime` and `LeviathanTentacleVerletSolver` could miss DataVault replacement while disabled, then clear old AnimationFauna descriptors during cold refresh.
+- `AbyssalShadowCullingRuntime` had no DataVault hot-swap listener, so active shadow culling could keep a stale `_dataVault` after service replacement.
+
+What was done:
+- Added owner-filtered `ReleaseBuffer(in handle)` routes for `SystemID.GraphicsMaterials`, `SystemID.AnimationFauna`, and `SystemID.GraphicsScalability` descriptor sets.
+- Routed cold startup/dependency refresh and active hot-swap through lifecycle rebind helpers instead of direct `_dataVault/_vault = GlobalRegistry.DataVault/currentService`.
+- Completed pending material/fauna/shadow jobs before release, reset stale managed counters and dirty flags, and kept GraphicsBuffers on their existing hard-teardown lifetime.
+
+Cinematic cheats used:
+- No new simulation. The pass preserves existing visual fake/Math LOD behavior and spends no extra frame budget.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Risk removed is lifecycle memory growth/stale-handle writes, not a measured hot-path optimization.
+
+Verification:
+- Scoped `git diff --check` on four touched files reports only existing LF/CRLF warnings.
+- Scoped grep for direct `_dataVault/_vault = GlobalRegistry.DataVault/currentService` in the touched files returns no hits.
+- Scoped grep confirms owner-filtered `ReleaseBuffer(in handle)` routes.
+- Build/import/profiler/GC proof blocked: no compiler processes active, but CPU sampled `97.31%`, above the project guard.
+## 2026-05-28 - Macro Ecosystem Native Lifecycle Pass
+
+What was wrong:
+- `MacroEcosystemMathematicianRuntime` reset macro ecosystem DataVault descriptors on dispose/rebind without releasing owned AIEcology buffers.
+- A failed resolve/reacquire path could overwrite a stale owned handle without first releasing it.
+
+What was done:
+- Added lifecycle rebind with existing job-completion and lock-unlock barriers.
+- Added owner-filtered release for all macro ecosystem AIEcology handles.
+- Released stale owned descriptors before reacquiring buffers.
+- Reset telemetry, simulation tick, and CSV timestamp counters after replacement Vault binding.
+
+Cinematic cheats used:
+- No new simulation or fidelity cost. Existing FrostTick/quality-weight math remains unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle leak/stale-handle risk only.
+
+Verification:
+- Scoped `git diff --check -- MacroEcosystemMathematicianRuntime.cs` reports only existing LF/CRLF warning.
+- Scoped grep confirms `RebindDataVaultForLifecycle`, owner-filtered `ReleaseOwnedVaultHandle`, and no direct `_vault = GlobalRegistry.DataVault/currentService` route.
+- Build/import/profiler/GC proof blocked: external `dotnet` PID `50920` active and CPU sampled `86.47%`.
+
+## 2026-05-28 - Laser/WFC/Habitat Native Lifecycle Pass
+
+What was wrong:
+- `LaserCutter` listened to many service replacements but not `DataVault`, leaving static `LaserCutterDodRuntime` and `WfcLaserCutRuntime` stale until a later equip/spawn initialization route.
+- `WfcLaserCutRuntime` rebound native buffers without resetting managed grid/cursor/door/shader state.
+- WFC/DOD/Habitat release helpers could delete a buffer from a descriptor without owner proof; Habitat could cache a non-Fluid generation handle during allocation-locked fallback.
+
+What was done:
+- Added `DataVault` hot-swap rebind in `LaserCutter` using the existing DOD/WFC initialization route and the replacement service.
+- Added WFC managed-state reset on Vault null/replacement.
+- Added owner-filtered `ReleaseBuffer` guards for `SystemID.GameplayTools` and `SystemID.Fluid`.
+- Habitat allocation-locked fallback now rejects generation handles that do not match `BufferID` and `SystemID.Fluid` before caching them.
+
+Cinematic cheats used:
+- None. Cutter evaluation, WFC door feedback, Habitat flood math, signals, and quality-weight scaling are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed stale service and cross-owner release risk only.
+
+Verification:
+- Scoped `git diff --check` on `LaserCutter.cs`, `WfcLaserCutRuntime.cs`, `LaserCutterDodRuntime.cs`, and `HabitatFluidIncursionDirector.cs` reports only existing LF/CRLF warnings.
+- Scoped grep confirms DataVault hot-swap trigger, WFC rebind reset, owner-filtered release guards, and Habitat borrowed-handle rejection.
+- Build/import/profiler/GC proof blocked: external `dotnet` PID `56752`, `csc` PID `45932`, CPU sampled `98.52%`.
+
+## 2026-05-28 - Sump Pump Drainage Native Lifecycle Pass
+
+What was wrong:
+- `SumpPumpPipeGridRuntime` released construction drainage Vault handles by descriptor alone.
+- OnEnable and DataVault replacement assigned `_vault` directly instead of using a single lifecycle route.
+- Managed drainage epoch state could survive after native buffers were released and rebound.
+
+What was done:
+- Added `BindDataVaultForLifecycle` for cold enable and DataVault service replacement.
+- Replaced direct `ReleaseBuffer(in _handle)` calls with owner-filtered `ReleaseOwnedHandle`.
+- Added `ResetRuntimeStateForVaultRelease` for frame index, topology/pressure state, flow dirty state, black-box flag, scheduled handles, locks, and debug counters.
+
+Cinematic cheats used:
+- None. CSR topology solve, two-pass pressure approximation, mock drainage generation, shader flow upload, and quality cadence are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle stale-state/cross-owner release risk only.
+
+Verification:
+- Scoped `git diff --check -- SumpPumpPipeGridRuntime.cs` reports only existing LF/CRLF warning.
+- Scoped grep confirms lifecycle bind helper, owner-filtered release, no direct `_vault = GlobalRegistry.DataVault/currentService`, and runtime state reset.
+- Build/import/profiler/GC proof blocked by active compiler lane and CPU guard.
+
+## 2026-05-28 - Autonomous Extractor Native Lifecycle Pass
+
+What was wrong:
+- `AutonomousExtractorSystem` still had direct DataVault assignment in active replacement/cold bind routes.
+- Extractor SOA Vault release used nonzero descriptors without owner proof.
+- Exact-handle validation matched buffer id and generation but not `SystemID.Construction`.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` and routed active DataVault replacement plus cold bind through it.
+- Owner-filtered extractor Vault releases.
+- Made exact handle validation require `SystemID.Construction`.
+- Removed direct `_dataVault = GlobalRegistry.DataVault/currentService` routes.
+
+Cinematic cheats used:
+- None. Extraction cadence, Burst SOA job, buffered item handling, and persistent drop commit behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle ownership risk only.
+
+Verification:
+- Scoped `git diff --check -- AutonomousExtractorSystem.cs` reports only existing LF/CRLF warning.
+- Scoped grep confirms lifecycle rebind, owner-filtered release, owner-aware exact handles, and no direct DataVault assignment route.
+- Build/import/profiler/GC proof blocked by external compiler lane and CPU guard.
+
+## 2026-05-28 - Bulkhead Containment Native Lifecycle Pass
+
+What was wrong:
+- `BulkheadContainmentRuntime.OnEnable` assigned `_vault` directly from `GlobalRegistry.DataVault`, bypassing the same lifecycle route used for active DataVault replacement.
+- The shared bulkhead/hatch release helper called `ReleaseBuffer` for any nonzero descriptor.
+
+What was done:
+- Routed cold enable through `RequestDataVaultRebind(GlobalRegistry.DataVault)`.
+- Hardened `ReleaseVaultHandle` so it releases only `SystemID.Construction` generation handles and always clears the local descriptor.
+- Left hatch fluid/structural external handles as borrowed clear-only descriptors.
+
+Cinematic cheats used:
+- None. Bulkhead authority math, hatch pressure logic, shader upload, telemetry, CSV/profile load, and quality cadence are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle ownership risk only.
+
+Verification:
+- Scoped `git diff --check` reports only existing LF/CRLF warnings.
+- Scoped grep confirms cold enable uses `RequestDataVaultRebind(GlobalRegistry.DataVault)`, no direct `_vault = GlobalRegistry.DataVault/currentService`, and owner-filtered `ReleaseBuffer(in handle)`.
+- Build/import/profiler/GC proof blocked by external `dotnet` PID `43436`, `csc` PID `10328`, CPU sampled `77.7%`.
+
+## 2026-05-28 - Ecosystem Population Native Lifecycle Pass
+
+What was wrong:
+- `EcosystemPopulationBalancer` assigned `_dataVault` directly on cold enable and active DataVault replacement.
+- Owned population buffers could be released by nonzero descriptor without `SystemID.AIEcology` proof.
+- Existing owned generation handles could be cached without owner validation.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` for enable, DataVault replacement, and teardown.
+- Reset population managed epoch state when the native Vault changes.
+- Owner-filtered releases and owned-handle reuse; borrowed entity AUP/flag handles remain clear-only.
+
+Cinematic cheats used:
+- None. Cold tick cadence, Burst population job, death signal lane, free-ring behavior, coefficient loading, and quality behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle ownership risk only.
+
+Verification:
+- Scoped `git diff --check -- EcosystemPopulationBalancer.cs` reports only existing LF/CRLF warning.
+- Scoped grep confirms lifecycle rebind route, owner checks, and no direct DataVault assignment route.
+- Build/import/profiler/GC proof blocked by external `dotnet` PID `43436`, CPU sampled `64.33%`.
+
+## 2026-05-28 - Acoustic Echo Native Lifecycle Pass
+
+What was wrong:
+- `AcousticEchoLocationRuntime` cold bootstrap assigned `_dataVault` directly from `GlobalRegistry.DataVault`.
+- Sensory-owned buffers could be released by any created descriptor without `SystemID.AISensory` proof.
+- Cached sensory handles could be reused without expected buffer id/owner validation.
+
+What was done:
+- Routed bootstrap through existing `RebindDataVaultForLifecycle`.
+- Added AISensory owner checks for buffer reuse and release.
+- Kept echo enqueue, tracking job, read contracts, and black-box dump format unchanged.
+
+Cinematic cheats used:
+- None. Echo tap capacity, tracking behavior, black-box ring, and quality byte behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle ownership risk only.
+
+Verification:
+- Scoped `git diff --check -- AcousticEchoLocationRuntime.cs` reports only existing LF/CRLF warning.
+- Scoped grep confirms rebind bootstrap, AISensory owner checks, and no direct DataVault assignment route.
+- Build/import/profiler/GC proof blocked by external `dotnet` PID `43436`, `csc` PID `50892`, CPU sampled `100%`.
+
+## 2026-05-28 - Procedural Bone Blender Native Lifecycle Pass
+
+What was wrong:
+- `ProceduralBoneBlenderRuntime` directly assigned `_dataVault` in cold refresh and active DataVault replacement.
+- AnimationFauna Vault handles could be released without owner proof.
+- Cached owned handles could be reused without expected buffer id/owner validation.
+
+What was done:
+- Added `BindDataVaultForLifecycle` for cold refresh and DataVault replacement.
+- Owner-filtered AnimationFauna handle reuse and release.
+- Kept GPU buffer lifetime separate; service replacement only marks upload/shader state dirty.
+
+Cinematic cheats used:
+- None. Solve job, matrix upload, emergency mock rig, shader globals, and quality behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle ownership risk only.
+
+Verification:
+- Scoped `git diff --check -- ProceduralBoneBlenderRuntime.cs` reports only existing LF/CRLF warning.
+- Scoped grep confirms lifecycle bind route, AnimationFauna owner checks, and no direct DataVault assignment route.
+- Build/import/profiler/GC proof blocked by external `dotnet` PID `43436`, CPU sampled `68.08%`.
+
+Combined current-pass verification:
+- `git diff --check` over `BulkheadContainmentRuntime.cs`, `EcosystemPopulationBalancer.cs`, `AcousticEchoLocationRuntime.cs`, `ProceduralBoneBlenderRuntime.cs`, and audit docs reports only LF/CRLF warnings.
+- Direct `_dataVault/_vault = GlobalRegistry.DataVault/currentService` grep on the four source files returns no hits.
+- Build/import/profiler/GC proof remains blocked by external `dotnet` PID `43436`, CPU sampled `99.42%`.

@@ -81,7 +81,7 @@ namespace Hecton8.Physics
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct OceanSurfaceTelemetryEntry
+    public struct FluidOceanSurfaceTelemetryEntry
     {
         [FieldOffset(0)]
         public uint FrameIndex;
@@ -1639,7 +1639,7 @@ namespace Hecton8.Physics
         private FluidVaultBuffer<float>          _gpuBuoyancyForcesY;
         private FluidVaultBuffer<float3>         _resultForces;
         private FluidVaultBuffer<float3>         _resultTorques;
-        private FluidVaultBuffer<OceanSurfaceTelemetryEntry> _oceanSurfaceTelemetry;
+        private FluidVaultBuffer<FluidOceanSurfaceTelemetryEntry> _oceanSurfaceTelemetry;
         private FluidVaultBuffer<FluidImpactEvent> _impactEventScratch;
         private FluidVaultBuffer<int> _impactEventFlags;
         private FluidVaultBuffer<GpuBuoyancyObjectData> _gpuBuoyancyObjectDataUpload;
@@ -3011,7 +3011,7 @@ namespace Hecton8.Physics
             int writeIndex = _oceanSurfaceTelemetryWriteIndex;
             _oceanSurfaceTelemetryWriteIndex = (writeIndex + 1) % _oceanSurfaceTelemetry.Length;
             Vector3 observerPosition = lodObserver != null ? lodObserver.position : Vector3.zero;
-            _oceanSurfaceTelemetry[writeIndex] = new OceanSurfaceTelemetryEntry
+            _oceanSurfaceTelemetry[writeIndex] = new FluidOceanSurfaceTelemetryEntry
             {
                 FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 OriginShiftSequence = _lastOriginShiftSequence,
@@ -3049,7 +3049,7 @@ namespace Hecton8.Physics
                 writer.Write(_oceanSurfaceTelemetry.Length);
                 for (int i = 0; i < _oceanSurfaceTelemetry.Length; i++)
                 {
-                    OceanSurfaceTelemetryEntry entry = _oceanSurfaceTelemetry[i];
+                    FluidOceanSurfaceTelemetryEntry entry = _oceanSurfaceTelemetry[i];
                     writer.Write(entry.FrameIndex);
                     writer.Write(entry.OriginShiftSequence);
                     writer.Write(entry.ActiveFloaters);
@@ -3219,7 +3219,7 @@ namespace Hecton8.Physics
             failureMask |= OffsetOf<FluidTelemetryEntry>(nameof(FluidTelemetryEntry.GpuMicroseconds)) == 56 ? 0 : 1 << 13;
             failureMask |= OffsetOf<FluidTelemetryEntry>(nameof(FluidTelemetryEntry.ActiveFlowRate)) == 60 ? 0 : 1 << 14;
             failureMask |= UnsafeUtility.SizeOf<FluidImpactEvent>() == 32 ? 0 : 1 << 15;
-            failureMask |= UnsafeUtility.SizeOf<OceanSurfaceTelemetryEntry>() == 64 ? 0 : 1 << 16;
+            failureMask |= UnsafeUtility.SizeOf<FluidOceanSurfaceTelemetryEntry>() == 64 ? 0 : 1 << 16;
             failureMask |= UnsafeUtility.SizeOf<FluidAdvectionTelemetryEntry>() == 64 ? 0 : 1 << 17;
             failureMask |= UnsafeUtility.SizeOf<BuoyancyParams>() == BuoyancyParams.StrideBytes ? 0 : 1 << 18;
             return failureMask == 0;

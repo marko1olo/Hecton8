@@ -324,6 +324,7 @@ namespace Hecton8.Core
         public static void DisposeAllQueues()
         {
             SignalBusRegistry.DisposeAll();
+            SignalTuningTable.ReleaseHandlesOnly();
             SignalTelemetryRingBuffer.ReleaseHandlesOnly();
             SignalThreadLocalScratchpad.ReleaseHandlesOnly();
             ClearLatestSignals();

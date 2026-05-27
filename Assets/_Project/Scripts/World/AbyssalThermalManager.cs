@@ -121,7 +121,7 @@ namespace Hecton8.World
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
-        private struct ThermalTelemetryEntry
+        private struct AbyssalThermalManagerTelemetryEntry
         {
             [FieldOffset(0)] public double3 PositionAup;
             [FieldOffset(24)] public long Frame;
@@ -703,7 +703,7 @@ namespace Hecton8.World
         private VaultGenerationHandle<float> _thermalMapInsulation01Handle;
         private float[] _thermalMapVisualCelsius;
         private SaveBinaryStorage.ThermalGridRleRun[] _thermalGridRleRuns;
-        private VaultGenerationHandle<ThermalTelemetryEntry> _thermalTelemetryRingHandle;
+        private VaultGenerationHandle<AbyssalThermalManagerTelemetryEntry> _thermalTelemetryRingHandle;
         private IDataVault _dataVault;
         private JobHandle _thermalMapJobHandle;
         private bool _thermalMapJobActive;
@@ -2099,7 +2099,7 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!vault.TryAcquireWriteLock(in _thermalTelemetryRingHandle, ThermalVaultOwnerSystem, out NativeArray<ThermalTelemetryEntry> ring))
+            if (!vault.TryAcquireWriteLock(in _thermalTelemetryRingHandle, ThermalVaultOwnerSystem, out NativeArray<AbyssalThermalManagerTelemetryEntry> ring))
                 return;
 
             try
@@ -2108,7 +2108,7 @@ namespace Hecton8.World
                     return;
 
                 int index = _thermalTelemetryIndex % ThermalTelemetryCapacity;
-                ring[index] = new ThermalTelemetryEntry
+                ring[index] = new AbyssalThermalManagerTelemetryEntry
                 {
                     PositionAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(positionWS),
                     Frame = unchecked((long)Hecton8.Core.SystemDispatcher.CurrentFrameId),
@@ -2133,7 +2133,7 @@ namespace Hecton8.World
             if (_thermalTelemetryDumped ||
                 vault == null ||
                 !IsThermalVaultHandle(in _thermalTelemetryRingHandle, BufferID.AbyssalThermalManagerTelemetryRing) ||
-                !vault.TryReadOnlyHandle(in _thermalTelemetryRingHandle, out NativeArray<ThermalTelemetryEntry>.ReadOnly ring) ||
+                !vault.TryReadOnlyHandle(in _thermalTelemetryRingHandle, out NativeArray<AbyssalThermalManagerTelemetryEntry>.ReadOnly ring) ||
                 !ring.IsCreated)
             {
                 return;
@@ -2155,7 +2155,7 @@ namespace Hecton8.World
                     writer.Write(_thermalTelemetryIndex);
                     for (int i = 0; i < ring.Length; i++)
                     {
-                        ThermalTelemetryEntry entry = ring[i];
+                        AbyssalThermalManagerTelemetryEntry entry = ring[i];
                         writer.Write(entry.PositionAup.x);
                         writer.Write(entry.PositionAup.y);
                         writer.Write(entry.PositionAup.z);
@@ -3124,7 +3124,7 @@ namespace Hecton8.World
                 return true;
 
             ReleaseThermalTelemetry(vault);
-            _thermalTelemetryRingHandle = vault.EnsureGenerationHandle<ThermalTelemetryEntry>(
+            _thermalTelemetryRingHandle = vault.EnsureGenerationHandle<AbyssalThermalManagerTelemetryEntry>(
                 BufferID.AbyssalThermalManagerTelemetryRing,
                 ThermalTelemetryCapacity,
                 ThermalVaultOwnerSystem,

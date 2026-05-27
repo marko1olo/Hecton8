@@ -26,7 +26,8 @@ Historical 2026-05-04 boundary:
 
 - Runtime terrain/voxel mutation, MapMagic terrain interaction, and vent/sediment coupling still require source re-open plus Unity verification before surgery.
 
-- For broader current system ownership, read `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- For broader current ownership, read `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, `PROJECT_RUNTIME_TOPOLOGY.md`, and `DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`.
+- Older dated report names are historical only and are not active contract anchors.
 
 ## Source Anchors
 

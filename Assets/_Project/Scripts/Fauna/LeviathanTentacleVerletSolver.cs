@@ -597,17 +597,10 @@ namespace Hecton8.AI
             if (_disposed || !Application.isPlaying)
                 return;
 
+            CompletePendingJob(force: true);
             TryUnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
             TryUnregister();
-            if (_solverScheduled && DispatcherJobSwap.TryFinalizeCompleted(ref _pendingSolverHandle))
-            {
-                _solverScheduled = false;
-                WriteTelemetryFrame();
-                return;
-            }
-
-            _solverScheduled = !_pendingSolverHandle.IsCompleted;
         }
 
         private void OnDestroy()
@@ -875,7 +868,7 @@ namespace Hecton8.AI
 
         private void RefreshColdDependencies()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
             _fluidRuntime = GlobalRegistry.AbyssalFlowGpu;
         }
 
@@ -884,10 +877,17 @@ namespace Hecton8.AI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.FluidRuntime)
-                return;
-
-            _fluidRuntime = currentService as IAbyssalFlowGpuReadModel;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+                    EnsurePersistentBuffers();
+                    SeedAllTentaclesFromSockets();
+                    break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _fluidRuntime = currentService as IAbyssalFlowGpuReadModel;
+                    break;
+            }
         }
 
         private void EnsurePersistentBuffers()
@@ -898,6 +898,7 @@ namespace Hecton8.AI
             if (TryResolvePersistentBuffers(out _))
                 return;
 
+            ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
             IDataVault vault = _dataVault;
             if (vault == null)
@@ -918,11 +919,16 @@ namespace Hecton8.AI
             _telemetryRingHandle = vault.EnsureGenerationHandle<LeviathanTentacleTelemetryEntry>(BufferID.LeviathanTentacleTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
 
             if (!TryResolvePersistentBuffers(out _))
+            {
+                ReleaseVaultHandles(_dataVault);
                 ClearVaultHandles();
+            }
         }
 
         private void DisposePersistentBuffers()
         {
+            CompletePendingJob(force: true);
+            ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
             _pendingSolverHandle = default;
             _solverScheduled = false;
@@ -943,6 +949,53 @@ namespace Hecton8.AI
             _targetAupsHandle = default;
             _tentacleStatesHandle = default;
             _telemetryRingHandle = default;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _positionsHandle);
+            ReleaseVaultHandle(vault, ref _previousPositionsHandle);
+            ReleaseVaultHandle(vault, ref _radiusHandle);
+            ReleaseVaultHandle(vault, ref _segmentMatricesHandle);
+            ReleaseVaultHandle(vault, ref _stretchFractionsHandle);
+            ReleaseVaultHandle(vault, ref _constraintCorrectionsHandle);
+            ReleaseVaultHandle(vault, ref _constraintCorrectionCountsHandle);
+            ReleaseVaultHandle(vault, ref _rootPositionsHandle);
+            ReleaseVaultHandle(vault, ref _targetPositionsHandle);
+            ReleaseVaultHandle(vault, ref _rootAupsHandle);
+            ReleaseVaultHandle(vault, ref _targetAupsHandle);
+            ReleaseVaultHandle(vault, ref _tentacleStatesHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.AnimationFauna)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault releaseVaultFallback)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            CompletePendingJob(force: true);
+            ReleaseVaultHandles(_dataVault ?? releaseVaultFallback);
+            ClearVaultHandles();
+            _dataVault = nextVault;
+            _pendingOriginShiftOffset = float3.zero;
+            _pendingOriginShiftRebase = false;
+            _telemetryCursor = 0;
+            _frameIndex = 0;
+            _telemetryDumped = false;
         }
 
         private bool HasPersistentBuffers()

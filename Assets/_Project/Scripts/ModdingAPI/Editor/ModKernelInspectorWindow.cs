@@ -43,7 +43,6 @@ namespace Hecton8.EditorTools
             toolbar.Add(new Button(() => FutureCommandSandboxValidator.RunSelfAudit()) { text = "Self Audit" });
             toolbar.Add(new Button(() => Inject(FutureCommandOpcodes.SurvivalOverride)) { text = "Inject Survival" });
             toolbar.Add(new Button(() => Inject(FutureCommandOpcodes.HapticPulse)) { text = "Inject Haptic" });
-            toolbar.Add(new Button(() => Inject(FutureCommandOpcodes.SubtitleCue)) { text = "Inject Subtitle" });
             rootVisualElement.Add(toolbar);
 
             _intensitySlider = new Slider("Intensity", 0f, 1f) { value = 0.65f };
@@ -138,7 +137,7 @@ namespace Hecton8.EditorTools
             }
             else
             {
-                envelope.PayloadData = new float4(math.asfloat(0x53554231u), math.max(0.05f, _durationField.value), 4f, 0f);
+                return;
             }
 
             envelope.IntegrityHash = FutureCommandSandboxValidator.ComputeIntegrityHash(in envelope);

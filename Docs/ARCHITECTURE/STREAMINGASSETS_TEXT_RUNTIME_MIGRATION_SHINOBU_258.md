@@ -36,9 +36,9 @@ Remediated in the 2026-05-21 pass:
 
 - Ocean surface weather and Beaufort CSV probes now resolve only to `Assets/_SourceData/Atmosphere` in editor.
 
-- TerminalOS layout source moved to `Assets/_SourceData/UI/TerminalOS`; the runtime `StreamingAssets` route is gone.
+- TerminalOS runtime `StreamingAssets` route is gone. The older `Assets/_SourceData/UI/TerminalOS` source path is absent in the current checkout; do not cite it as current source data.
 
-- Core/Origin, Fauna, Power, Thermodynamics, Auxiliary, and Hadal Forge text sources moved/guarded to `Assets/_SourceData/...`; player builds do not read those CSVs from `StreamingAssets`.
+- Current checked source-data roots include Core/Scheduling, Biota, Equipment/Auxiliary, Thermodynamics, HadalGraphs, VFX/Propwash, and Physics/KCC. Older Core/Origin, Fauna, and Power source paths are not current path proof.
 - Propwash wake profile source moved to `Assets/_SourceData/VFX/Propwash`; CSV staging/reader/file IO compile only under `UNITY_EDITOR`.
 - Player builds use deterministic default wake rows until binary hydration exists.
 - KCC locomotion environment profile source moved to `Assets/_SourceData/Physics/KCC`; no runtime `StreamingAssets` text artifact remains for that route.
@@ -51,19 +51,19 @@ Remediated in the 2026-05-21 pass:
 
 | --- | --- |
 
-| `Assets/_SourceData/Core/Origin` | Core bootstrap binary constants loaded before AUP runtime activation. |
+| `Assets/_SourceData/Core/Scheduling` | Core scheduling constants require binary owner route before player/runtime use. |
 
 | `Assets/_SourceData/Equipment/Auxiliary` | Equipment-domain `.h8bin` or Data Monolith equipment section loaded into Vault at boot. |
 
-| `Assets/_SourceData/Fauna` | Fauna-domain `.h8bin` or Data Monolith creature/rig section loaded into Vault. |
-
-| `Assets/_SourceData/Power` | Power-domain `.h8bin` loaded into logistics Vault buffers at boot. |
+| `Assets/_SourceData/Biota` | Biota/fauna-domain `.h8bin` or Data Monolith creature/rig section loaded into Vault. |
 
 | `Assets/_SourceData/Thermodynamics` | Thermodynamics-domain `.h8bin` loaded into thermal/hazard Vault buffers. |
 
 | `Assets/_SourceData/HadalGraphs` | Baked hadal graph/mesh binary artifact, never runtime CSV. |
 | `Assets/_SourceData/VFX/Propwash` | VFX-domain `.h8bin` or Data Monolith presentation section loaded into `PropwashGpuWakeProfiles` at boot. |
 | `Assets/_SourceData/Physics/KCC` | Physics-domain `.h8bin` or Data Monolith locomotion section loaded into KCC Vault buffers. |
+
+Historical roots absent in the current checkout: `Assets/_SourceData/UI/TerminalOS`, `Assets/_SourceData/Core/Origin`, `Assets/_SourceData/Fauna`, and `Assets/_SourceData/Power`.
 
 - Current non-text sidecar: `Assets/StreamingAssets/Hecton8/Audio/vocal_banks.h8bin`.
 - Type: `H8VB` Audio/VocalBank payload, not Data Monolith `H8DM`.

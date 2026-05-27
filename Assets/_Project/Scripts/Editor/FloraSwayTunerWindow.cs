@@ -79,7 +79,11 @@ namespace Hecton8.EditorTools
         private void OnEnable()
         {
             bool dtoValid = FloraInteractionManager.ValidateFloraDisplacementDtoLayout(out int dtoSize, out int forceOffset, out int decayOffset);
-            bool telemetryValid = FloraInteractionManager.ValidateFloraSwayTelemetryLayout(out int telemetrySize);
+            bool telemetryValid = FloraInteractionManager.ValidateFloraSwayTelemetryLayout(
+                out int telemetrySize,
+                out int fieldCenterOffset,
+                out int telemetryCpuOffset,
+                out int telemetryResolutionOffset);
             bool wakeSourceValid = FloraInteractionManager.ValidateConsumedWakeSourceLayout(
                 out int wakeSourceSize,
                 out int wakeAupOffset,
@@ -95,6 +99,9 @@ namespace Hecton8.EditorTools
                     " forceOffset=" + forceOffset +
                     " decayOffset=" + decayOffset +
                     " telemetrySize=" + telemetrySize +
+                    " fieldCenterOffset=" + fieldCenterOffset +
+                    " telemetryCpuOffset=" + telemetryCpuOffset +
+                    " telemetryResolutionOffset=" + telemetryResolutionOffset +
                     " wakeSourceSize=" + wakeSourceSize +
                     " wakeAupOffset=" + wakeAupOffset +
                     " wakeVelocityOffset=" + wakeVelocityOffset +

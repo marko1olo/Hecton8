@@ -1,0 +1,12 @@
+# opcode
+# Authoritative editor-reload source for FutureCommandSandboxValidator.TryReloadAllowedOpcodesCsvFromDisk.
+# Hex values are used instead of names so the file is independent of casing or FNV token drift.
+0x3A3DA9C4 # SpawnItem
+0xE75AADC0 # AlterHealth
+0x3B73D070 # AlterGravity
+0xF7023ACD # AssetReference
+0xBBFBD0A6 # ModMemoryRead
+0xE9C540EF # ModMemoryWrite
+0xCC5BAC8D # FaunaAcousticStimulus
+0x1B7770D3 # FaunaDamageStimulus
+

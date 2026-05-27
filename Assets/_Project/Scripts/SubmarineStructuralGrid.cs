@@ -399,7 +399,7 @@ namespace Hecton8.Physics
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
-        private struct StructuralTelemetryEntry
+        private struct SubmarineStructuralTelemetryEntry
         {
             [FieldOffset(0)]
             public float4 FirstBreachLocalSeverity;
@@ -581,7 +581,7 @@ namespace Hecton8.Physics
         private MaterialPropertyBlock _leakPlumeDrawProperties;
         private IDataVault _dataVault;
         private VaultGenerationHandle<float4> _breachesHandle;
-        private VaultGenerationHandle<StructuralTelemetryEntry> _damageControlTelemetryHandle;
+        private VaultGenerationHandle<SubmarineStructuralTelemetryEntry> _damageControlTelemetryHandle;
         private bool _breachRepairJobRunning;
         private bool _pendingRepairQueued;
         private bool _breachGpuDirty;
@@ -608,7 +608,7 @@ namespace Hecton8.Physics
         private int _breachRepairJobLockMask;
         private uint _structuralTelemetrySequence;
         private uint _structuralTelemetryFailureCount;
-        private readonly StructuralTelemetryEntry[] _damageControlTelemetryDumpSnapshot = new StructuralTelemetryEntry[DamageControlTelemetryCapacity]; // COLD ALLOC: fixed black-box dump snapshot; hot path only copies into it.
+        private readonly SubmarineStructuralTelemetryEntry[] _damageControlTelemetryDumpSnapshot = new SubmarineStructuralTelemetryEntry[DamageControlTelemetryCapacity]; // COLD ALLOC: fixed black-box dump snapshot; hot path only copies into it.
         private readonly AutoResetEvent _damageControlTelemetryDumpSignal = new AutoResetEvent(false); // COLD ALLOC: persistent dump-worker wake signal.
         private Thread _damageControlTelemetryDumpThread;
         private string _damageControlTelemetryDumpPath;
@@ -1932,7 +1932,7 @@ namespace Hecton8.Physics
 
         private void WriteDamageControlTelemetry(uint reasonFlags, bool allowNativeBreachRead, ushort failureCode)
         {
-            if (!TryAcquireStructuralWriteBuffer(in _damageControlTelemetryHandle, DamageControlTelemetryCapacity, out NativeArray<StructuralTelemetryEntry> telemetry) ||
+            if (!TryAcquireStructuralWriteBuffer(in _damageControlTelemetryHandle, DamageControlTelemetryCapacity, out NativeArray<SubmarineStructuralTelemetryEntry> telemetry) ||
                 telemetry.Length <= 0)
             {
                 if (_structuralTelemetryFailureCount < uint.MaxValue)
@@ -1960,7 +1960,7 @@ namespace Hecton8.Physics
                 if (resolvedFailureCode != FailureCodeNone && _structuralTelemetryFailureCount < uint.MaxValue)
                     _structuralTelemetryFailureCount++;
 
-                StructuralTelemetryEntry entry = new StructuralTelemetryEntry
+                SubmarineStructuralTelemetryEntry entry = new SubmarineStructuralTelemetryEntry
                 {
                     FirstBreachLocalSeverity = first,
                     SeveritySum = math.isfinite(_activeBreachSeveritySum) ? _activeBreachSeveritySum : 0f,
@@ -2010,7 +2010,7 @@ namespace Hecton8.Physics
 
         private void DumpDamageControlTelemetry()
         {
-            if (!TryReadVaultBuffer(_dataVault, in _damageControlTelemetryHandle, DamageControlTelemetryCapacity, out NativeArray<StructuralTelemetryEntry>.ReadOnly telemetry))
+            if (!TryReadVaultBuffer(_dataVault, in _damageControlTelemetryHandle, DamageControlTelemetryCapacity, out NativeArray<SubmarineStructuralTelemetryEntry>.ReadOnly telemetry))
                 return;
 
             if (_damageControlTelemetryDumpThread == null)
@@ -2099,7 +2099,7 @@ namespace Hecton8.Physics
             }
         }
 
-        private static void WriteDamageControlTelemetryDump(string path, int head, StructuralTelemetryEntry[] snapshot)
+        private static void WriteDamageControlTelemetryDump(string path, int head, SubmarineStructuralTelemetryEntry[] snapshot)
         {
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory))
@@ -2112,7 +2112,7 @@ namespace Hecton8.Physics
                 writer.Write(head);
                 for (int i = 0; i < snapshot.Length; i++)
                 {
-                    StructuralTelemetryEntry entry = snapshot[i];
+                    SubmarineStructuralTelemetryEntry entry = snapshot[i];
                     writer.Write(entry.FirstBreachLocalSeverity.x);
                     writer.Write(entry.FirstBreachLocalSeverity.y);
                     writer.Write(entry.FirstBreachLocalSeverity.z);
@@ -3447,14 +3447,14 @@ namespace Hecton8.Physics
                 OffsetOf<ImpactCommand>(nameof(ImpactCommand.RadiusMeters)) != 12 ||
                 OffsetOf<ImpactCommand>(nameof(ImpactCommand.SigmaMeters)) != 16 ||
                 OffsetOf<ImpactCommand>(nameof(ImpactCommand.DamageBytes)) != 20 ||
-                UnsafeUtility.SizeOf<StructuralTelemetryEntry>() != 64 ||
-                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.FirstBreachLocalSeverity)) != 0 ||
-                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.SeveritySum)) != 16 ||
-                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.Frame)) != 28 ||
-                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.BufferId)) != 40 ||
-                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.ActiveBreachCount)) != 56 ||
-                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.FailureCode)) != 60 ||
-                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.ConsecutiveFailureCount)) != 62)
+                UnsafeUtility.SizeOf<SubmarineStructuralTelemetryEntry>() != 64 ||
+                OffsetOf<SubmarineStructuralTelemetryEntry>(nameof(SubmarineStructuralTelemetryEntry.FirstBreachLocalSeverity)) != 0 ||
+                OffsetOf<SubmarineStructuralTelemetryEntry>(nameof(SubmarineStructuralTelemetryEntry.SeveritySum)) != 16 ||
+                OffsetOf<SubmarineStructuralTelemetryEntry>(nameof(SubmarineStructuralTelemetryEntry.Frame)) != 28 ||
+                OffsetOf<SubmarineStructuralTelemetryEntry>(nameof(SubmarineStructuralTelemetryEntry.BufferId)) != 40 ||
+                OffsetOf<SubmarineStructuralTelemetryEntry>(nameof(SubmarineStructuralTelemetryEntry.ActiveBreachCount)) != 56 ||
+                OffsetOf<SubmarineStructuralTelemetryEntry>(nameof(SubmarineStructuralTelemetryEntry.FailureCode)) != 60 ||
+                OffsetOf<SubmarineStructuralTelemetryEntry>(nameof(SubmarineStructuralTelemetryEntry.ConsecutiveFailureCount)) != 62)
             {
                 throw new System.InvalidOperationException("SubmarineStructuralGrid memory sovereignty validation failed: DTO stride or field offset changed.");
             }

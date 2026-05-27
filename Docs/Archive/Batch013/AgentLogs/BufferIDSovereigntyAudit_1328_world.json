@@ -1,0 +1,2544 @@
+{
+  "bufferEnumPath": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+  "bufferIdCount": 2077,
+  "duplicateEntries": [],
+  "duplicateValueCount": 0,
+  "localNumericCastCount": 333,
+  "localNumericCastFileCount": 16,
+  "localNumericCasts": [
+    {
+      "enumNames": [],
+      "line": 206,
+      "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "text": "private const BufferID ThermalMapReadCelsiusBufferId = (BufferID)70056;",
+      "value": 70056
+    },
+    {
+      "enumNames": [],
+      "line": 207,
+      "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "text": "private const BufferID ThermalMapWriteCelsiusBufferId = (BufferID)70057;",
+      "value": 70057
+    },
+    {
+      "enumNames": [],
+      "line": 208,
+      "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "text": "private const BufferID ThermalMapSourceCelsiusBufferId = (BufferID)70058;",
+      "value": 70058
+    },
+    {
+      "enumNames": [],
+      "line": 209,
+      "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "text": "private const BufferID ThermalMapInsulationBufferId = (BufferID)70059;",
+      "value": 70059
+    },
+    {
+      "enumNames": [],
+      "line": 210,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID GridFrontBufferId = (BufferID)71150;",
+      "value": 71150
+    },
+    {
+      "enumNames": [],
+      "line": 211,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID GridBackBufferId = (BufferID)71151;",
+      "value": 71151
+    },
+    {
+      "enumNames": [],
+      "line": 212,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID PublishedGridBufferId = (BufferID)71152;",
+      "value": 71152
+    },
+    {
+      "enumNames": [],
+      "line": 213,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID OverlayGridBufferId = (BufferID)71153;",
+      "value": 71153
+    },
+    {
+      "enumNames": [],
+      "line": 214,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID BreadcrumbBufferId = (BufferID)71154;",
+      "value": 71154
+    },
+    {
+      "enumNames": [],
+      "line": 215,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID PendingEmitterBufferId = (BufferID)71155;",
+      "value": 71155
+    },
+    {
+      "enumNames": [],
+      "line": 216,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID PendingEmitterCountBufferId = (BufferID)71156;",
+      "value": 71156
+    },
+    {
+      "enumNames": [],
+      "line": 217,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID ActiveEmitterBufferId = (BufferID)71157;",
+      "value": 71157
+    },
+    {
+      "enumNames": [],
+      "line": 218,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID ActiveEmitterCountBufferId = (BufferID)71158;",
+      "value": 71158
+    },
+    {
+      "enumNames": [],
+      "line": 219,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID MockEmitterBufferId = (BufferID)71159;",
+      "value": 71159
+    },
+    {
+      "enumNames": [],
+      "line": 220,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID MockEmitterCountBufferId = (BufferID)71160;",
+      "value": 71160
+    },
+    {
+      "enumNames": [],
+      "line": 221,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID TuningBufferId = (BufferID)71161;",
+      "value": 71161
+    },
+    {
+      "enumNames": [],
+      "line": 222,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID TelemetryRingBufferId = (BufferID)71162;",
+      "value": 71162
+    },
+    {
+      "enumNames": [],
+      "line": 223,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID TelemetryCursorBufferId = (BufferID)71163;",
+      "value": 71163
+    },
+    {
+      "enumNames": [],
+      "line": 224,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID AtomicCounterBufferId = (BufferID)71164;",
+      "value": 71164
+    },
+    {
+      "enumNames": [],
+      "line": 225,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID DefoliantZoneBufferId = (BufferID)71165;",
+      "value": 71165
+    },
+    {
+      "enumNames": [],
+      "line": 226,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID CsvScratchBufferId = (BufferID)71166;",
+      "value": 71166
+    },
+    {
+      "enumNames": [],
+      "line": 227,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID EmitterProfileTableBufferId = (BufferID)71167;",
+      "value": 71167
+    },
+    {
+      "enumNames": [],
+      "line": 228,
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "text": "private static readonly BufferID EmitterProfileCountBufferId = (BufferID)71168;",
+      "value": 71168
+    },
+    {
+      "enumNames": [],
+      "line": 171,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieSurfaceClaimsBufferId = (BufferID)72980;",
+      "value": 72980
+    },
+    {
+      "enumNames": [],
+      "line": 172,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieUnderwaterClaimsBufferId = (BufferID)72981;",
+      "value": 72981
+    },
+    {
+      "enumNames": [],
+      "line": 173,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieDamageEventsBufferId = (BufferID)72982;",
+      "value": 72982
+    },
+    {
+      "enumNames": [],
+      "line": 174,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieResultsBufferId = (BufferID)72983;",
+      "value": 72983
+    },
+    {
+      "enumNames": [],
+      "line": 175,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieCountersBufferId = (BufferID)72984;",
+      "value": 72984
+    },
+    {
+      "enumNames": [],
+      "line": 176,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieRegenRecordsBufferId = (BufferID)72985;",
+      "value": 72985
+    },
+    {
+      "enumNames": [],
+      "line": 177,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieTelemetryRingBufferId = (BufferID)72986;",
+      "value": 72986
+    },
+    {
+      "enumNames": [],
+      "line": 178,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieSurfaceBucketHeadsBufferId = (BufferID)72987;",
+      "value": 72987
+    },
+    {
+      "enumNames": [],
+      "line": 179,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieSurfaceBucketNextBufferId = (BufferID)72988;",
+      "value": 72988
+    },
+    {
+      "enumNames": [],
+      "line": 180,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieUnderwaterBucketHeadsBufferId = (BufferID)72989;",
+      "value": 72989
+    },
+    {
+      "enumNames": [],
+      "line": 181,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID DearLieUnderwaterBucketNextBufferId = (BufferID)72990;",
+      "value": 72990
+    },
+    {
+      "enumNames": [],
+      "line": 182,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicSurfaceInstanceUidsBufferId = (BufferID)72991;",
+      "value": 72991
+    },
+    {
+      "enumNames": [],
+      "line": 183,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicUnderwaterInstanceUidsBufferId = (BufferID)72992;",
+      "value": 72992
+    },
+    {
+      "enumNames": [],
+      "line": 184,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicSurfaceMaterialClassesBufferId = (BufferID)72993;",
+      "value": 72993
+    },
+    {
+      "enumNames": [],
+      "line": 185,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicUnderwaterMaterialClassesBufferId = (BufferID)72994;",
+      "value": 72994
+    },
+    {
+      "enumNames": [],
+      "line": 186,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicSurfaceHealthBufferId = (BufferID)72995;",
+      "value": 72995
+    },
+    {
+      "enumNames": [],
+      "line": 187,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicUnderwaterHealthBufferId = (BufferID)72996;",
+      "value": 72996
+    },
+    {
+      "enumNames": [],
+      "line": 188,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicHealthByUidBufferId = (BufferID)72997;",
+      "value": 72997
+    },
+    {
+      "enumNames": [],
+      "line": 189,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicDestroyedByUidBufferId = (BufferID)72998;",
+      "value": 72998
+    },
+    {
+      "enumNames": [],
+      "line": 190,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicPendingWiltEndTimeByUidBufferId = (BufferID)72999;",
+      "value": 72999
+    },
+    {
+      "enumNames": [],
+      "line": 191,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicDamageVisualProgressByUidBufferId = (BufferID)73000;",
+      "value": 73000
+    },
+    {
+      "enumNames": [],
+      "line": 192,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicDecompositionStartTimeByUidBufferId = (BufferID)73001;",
+      "value": 73001
+    },
+    {
+      "enumNames": [],
+      "line": 193,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicRegrowthProgressByUidBufferId = (BufferID)73002;",
+      "value": 73002
+    },
+    {
+      "enumNames": [],
+      "line": 194,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicRegrowthPositionByUidBufferId = (BufferID)73003;",
+      "value": 73003
+    },
+    {
+      "enumNames": [],
+      "line": 195,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicMaturationScaleByUidBufferId = (BufferID)73004;",
+      "value": 73004
+    },
+    {
+      "enumNames": [],
+      "line": 196,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicMaturationYieldByUidBufferId = (BufferID)73005;",
+      "value": 73005
+    },
+    {
+      "enumNames": [],
+      "line": 197,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicNextSporeAcousticTimeByUidBufferId = (BufferID)73006;",
+      "value": 73006
+    },
+    {
+      "enumNames": [],
+      "line": 198,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicBaseScaleByUidBufferId = (BufferID)73007;",
+      "value": 73007
+    },
+    {
+      "enumNames": [],
+      "line": 199,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicRuntimeFlagsByUidBufferId = (BufferID)73008;",
+      "value": 73008
+    },
+    {
+      "enumNames": [],
+      "line": 200,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicLastTouchTimeByUidBufferId = (BufferID)73009;",
+      "value": 73009
+    },
+    {
+      "enumNames": [],
+      "line": 201,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicOvergrownByUidBufferId = (BufferID)73010;",
+      "value": 73010
+    },
+    {
+      "enumNames": [],
+      "line": 202,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicRootMoundAppliedByUidBufferId = (BufferID)73011;",
+      "value": 73011
+    },
+    {
+      "enumNames": [],
+      "line": 203,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicDestroyedFloraScratchBufferId = (BufferID)73012;",
+      "value": 73012
+    },
+    {
+      "enumNames": [],
+      "line": 204,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicFloraStateOverrideScratchBufferId = (BufferID)73013;",
+      "value": 73013
+    },
+    {
+      "enumNames": [],
+      "line": 205,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicPersistedHealth01ByUidBufferId = (BufferID)73014;",
+      "value": 73014
+    },
+    {
+      "enumNames": [],
+      "line": 206,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicPersistedHeightScale01ByUidBufferId = (BufferID)73015;",
+      "value": 73015
+    },
+    {
+      "enumNames": [],
+      "line": 207,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicPendingYieldEventsBufferId = (BufferID)73016;",
+      "value": 73016
+    },
+    {
+      "enumNames": [],
+      "line": 208,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicYieldJobInputBufferId = (BufferID)73017;",
+      "value": 73017
+    },
+    {
+      "enumNames": [],
+      "line": 209,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicTemplateDescriptorsBufferId = (BufferID)73018;",
+      "value": 73018
+    },
+    {
+      "enumNames": [],
+      "line": 210,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicLootEntriesBufferId = (BufferID)73019;",
+      "value": 73019
+    },
+    {
+      "enumNames": [],
+      "line": 211,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicYieldMaterialLutBufferId = (BufferID)73020;",
+      "value": 73020
+    },
+    {
+      "enumNames": [],
+      "line": 212,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicDropDebugScratchBufferId = (BufferID)73021;",
+      "value": 73021
+    },
+    {
+      "enumNames": [],
+      "line": 213,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicDropOutputBufferId = (BufferID)73022;",
+      "value": 73022
+    },
+    {
+      "enumNames": [],
+      "line": 214,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "text": "private const BufferID OrganicDropBudgetBufferId = (BufferID)73023;",
+      "value": 73023
+    },
+    {
+      "enumNames": [],
+      "line": 214,
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "text": "private const BufferID FloraAmbientSwayParamsBufferId = (BufferID)72900;",
+      "value": 72900
+    },
+    {
+      "enumNames": [],
+      "line": 215,
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "text": "private const BufferID FloraAmbientSwayFlowStateBufferId = (BufferID)72901;",
+      "value": 72901
+    },
+    {
+      "enumNames": [],
+      "line": 216,
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "text": "private const BufferID FloraAmbientSwayTelemetryRingBufferId = (BufferID)72902;",
+      "value": 72902
+    },
+    {
+      "enumNames": [],
+      "line": 217,
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "text": "private const BufferID FloraAmbientSwayTelemetryCursorBufferId = (BufferID)72903;",
+      "value": 72903
+    },
+    {
+      "enumNames": [],
+      "line": 218,
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "text": "private const BufferID FloraAmbientSwayTuningBufferId = (BufferID)72904;",
+      "value": 72904
+    },
+    {
+      "enumNames": [],
+      "line": 219,
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "text": "private const BufferID FloraAmbientSwayBiomeProfilesBufferId = (BufferID)72905;",
+      "value": 72905
+    },
+    {
+      "enumNames": [],
+      "line": 220,
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "text": "private const BufferID FloraAmbientSwayCsvScratchBufferId = (BufferID)72906;",
+      "value": 72906
+    },
+    {
+      "enumNames": [],
+      "line": 820,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraSwayDisplacementFieldBufferId = (BufferID)71650;",
+      "value": 71650
+    },
+    {
+      "enumNames": [],
+      "line": 821,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraSwayFieldMetaBufferId = (BufferID)71651;",
+      "value": 71651
+    },
+    {
+      "enumNames": [],
+      "line": 822,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraSwayFieldBlackBoxBufferId = (BufferID)71652;",
+      "value": 71652
+    },
+    {
+      "enumNames": [],
+      "line": 823,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraStiffnessRulesBufferId = (BufferID)71653;",
+      "value": 71653
+    },
+    {
+      "enumNames": [],
+      "line": 824,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraStiffnessCsvScratchBufferId = (BufferID)71654;",
+      "value": 71654
+    },
+    {
+      "enumNames": [],
+      "line": 825,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraOceanFlowSamplePositionsBufferId = (BufferID)71655;",
+      "value": 71655
+    },
+    {
+      "enumNames": [],
+      "line": 826,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraOceanFlowSampleResultsBufferId = (BufferID)71656;",
+      "value": 71656
+    },
+    {
+      "enumNames": [],
+      "line": 827,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraParasiteNodesBufferId = (BufferID)71657;",
+      "value": 71657
+    },
+    {
+      "enumNames": [],
+      "line": 828,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraCascadeReactiveTemplateMaskBufferId = (BufferID)71658;",
+      "value": 71658
+    },
+    {
+      "enumNames": [],
+      "line": 829,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraDefensiveSporeTemplateMaskBufferId = (BufferID)71659;",
+      "value": 71659
+    },
+    {
+      "enumNames": [
+        "ShinobuSeaglideStates"
+      ],
+      "line": 830,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraBloodKelpTemplateMaskBufferId = (BufferID)71660;",
+      "value": 71660
+    },
+    {
+      "enumNames": [
+        "ShinobuSeaglideRequests"
+      ],
+      "line": 831,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraGhostWeedTemplateMaskBufferId = (BufferID)71661;",
+      "value": 71661
+    },
+    {
+      "enumNames": [
+        "ShinobuSeaglideForcePackets"
+      ],
+      "line": 832,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraSurfaceCascadePhaseSeedsBufferId = (BufferID)71662;",
+      "value": 71662
+    },
+    {
+      "enumNames": [
+        "ShinobuSeaglideFlowSamples"
+      ],
+      "line": 833,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraUnderwaterCascadePhaseSeedsBufferId = (BufferID)71663;",
+      "value": 71663
+    },
+    {
+      "enumNames": [
+        "ShinobuSeaglideTuning"
+      ],
+      "line": 834,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraSurfaceCascadeEventsBufferId = (BufferID)71664;",
+      "value": 71664
+    },
+    {
+      "enumNames": [
+        "ShinobuSeaglideTelemetryRing"
+      ],
+      "line": 835,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraUnderwaterCascadeEventsBufferId = (BufferID)71665;",
+      "value": 71665
+    },
+    {
+      "enumNames": [
+        "ShinobuSeaglideTelemetryCursor"
+      ],
+      "line": 836,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraSurfaceReactiveHandlesBufferId = (BufferID)71666;",
+      "value": 71666
+    },
+    {
+      "enumNames": [
+        "ShinobuSeaglideCounters"
+      ],
+      "line": 837,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraUnderwaterReactiveHandlesBufferId = (BufferID)71667;",
+      "value": 71667
+    },
+    {
+      "enumNames": [
+        "ShinobuSeaglideBodyBindings"
+      ],
+      "line": 838,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraReactiveQueryHandlesBufferId = (BufferID)71668;",
+      "value": 71668
+    },
+    {
+      "enumNames": [
+        "ShinobuSeaglideVisualStates"
+      ],
+      "line": 839,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "text": "private const BufferID FloraMemoryTelemetryBufferId = (BufferID)71669;",
+      "value": 71669
+    },
+    {
+      "enumNames": [],
+      "line": 2856,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeHeightSamplesBuffer = (BufferID)0x530401;",
+      "value": 5440513
+    },
+    {
+      "enumNames": [],
+      "line": 2857,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeHeightMaterialsBuffer = (BufferID)0x530402;",
+      "value": 5440514
+    },
+    {
+      "enumNames": [],
+      "line": 2858,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeEncodedSdfBuffer = (BufferID)0x530403;",
+      "value": 5440515
+    },
+    {
+      "enumNames": [],
+      "line": 2859,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeSdfMaterialsBuffer = (BufferID)0x530404;",
+      "value": 5440516
+    },
+    {
+      "enumNames": [],
+      "line": 2860,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeSectorMaskBuffer = (BufferID)0x530405;",
+      "value": 5440517
+    },
+    {
+      "enumNames": [],
+      "line": 2861,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeCountersBuffer = (BufferID)0x530406;",
+      "value": 5440518
+    },
+    {
+      "enumNames": [],
+      "line": 2862,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeTelemetryBuffer = (BufferID)0x530407;",
+      "value": 5440519
+    },
+    {
+      "enumNames": [],
+      "line": 2863,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeBiomeAtlasBuffer = (BufferID)0x530408;",
+      "value": 5440520
+    },
+    {
+      "enumNames": [],
+      "line": 2864,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeErosionMaskBuffer = (BufferID)0x530409;",
+      "value": 5440521
+    },
+    {
+      "enumNames": [],
+      "line": 2865,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeSdfOverrideBuffer = (BufferID)0x53040A;",
+      "value": 5440522
+    },
+    {
+      "enumNames": [],
+      "line": 2866,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeActiveSectorsBuffer = (BufferID)0x53040B;",
+      "value": 5440523
+    },
+    {
+      "enumNames": [],
+      "line": 2867,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeCounterBlocksBuffer = (BufferID)0x53040C;",
+      "value": 5440524
+    },
+    {
+      "enumNames": [],
+      "line": 2868,
+      "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+      "text": "private const BufferID ProbeCsvBuffer = (BufferID)0x53040D;",
+      "value": 5440525
+    },
+    {
+      "enumNames": [],
+      "line": 61,
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "text": "private const BufferID FloraAgeBufferId = (BufferID)74600;",
+      "value": 74600
+    },
+    {
+      "enumNames": [],
+      "line": 62,
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "text": "private const BufferID CpuCullingMatricesBufferId = (BufferID)74601;",
+      "value": 74601
+    },
+    {
+      "enumNames": [],
+      "line": 63,
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "text": "private const BufferID CpuCullingDataBufferId = (BufferID)74602;",
+      "value": 74602
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceAggregateBackSemanticTypes"
+      ],
+      "line": 2295,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryRecordsBuffer = (BufferID)74450;",
+      "value": 74450
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceAggregateBackBiomeLayers"
+      ],
+      "line": 2296,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryRecordsCountBuffer = (BufferID)74451;",
+      "value": 74451
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceAggregateBackFlowDirections"
+      ],
+      "line": 2297,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryRecordsByChunkKeysBuffer = (BufferID)74452;",
+      "value": 74452
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceAggregateBackFlowVectors"
+      ],
+      "line": 2298,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryRecordsByChunkValuesBuffer = (BufferID)74453;",
+      "value": 74453
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateFrontMatrices"
+      ],
+      "line": 2299,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryRecordsByChunkCountBuffer = (BufferID)74454;",
+      "value": 74454
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateFrontMetadata"
+      ],
+      "line": 2300,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaRecordsBuffer = (BufferID)74455;",
+      "value": 74455
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateFrontTypes"
+      ],
+      "line": 2301,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaRecordsCountBuffer = (BufferID)74456;",
+      "value": 74456
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateFrontSemanticTypes"
+      ],
+      "line": 2302,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaRecordIndexKeysBuffer = (BufferID)74457;",
+      "value": 74457
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateFrontBiomeLayers"
+      ],
+      "line": 2303,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaRecordIndexValuesBuffer = (BufferID)74458;",
+      "value": 74458
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateFrontFlowDirections"
+      ],
+      "line": 2304,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaRecordIndexStatesBuffer = (BufferID)74459;",
+      "value": 74459
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateFrontFlowVectors"
+      ],
+      "line": 2305,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaRecordIndexCountBuffer = (BufferID)74460;",
+      "value": 74460
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateBackMatrices"
+      ],
+      "line": 2306,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeletedInstanceKeysBuffer = (BufferID)74461;",
+      "value": 74461
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateBackMetadata"
+      ],
+      "line": 2307,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeletedInstanceValuesBuffer = (BufferID)74462;",
+      "value": 74462
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateBackTypes"
+      ],
+      "line": 2308,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeletedInstanceStatesBuffer = (BufferID)74463;",
+      "value": 74463
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateBackSemanticTypes"
+      ],
+      "line": 2309,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeletedInstanceCountBuffer = (BufferID)74464;",
+      "value": 74464
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateBackBiomeLayers"
+      ],
+      "line": 2310,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryResourceTombstoneKeysBuffer = (BufferID)74465;",
+      "value": 74465
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateBackFlowDirections"
+      ],
+      "line": 2311,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryResourceTombstoneValuesBuffer = (BufferID)74466;",
+      "value": 74466
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterAggregateBackFlowVectors"
+      ],
+      "line": 2312,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryResourceTombstoneStatesBuffer = (BufferID)74467;",
+      "value": 74467
+    },
+    {
+      "enumNames": [],
+      "line": 2313,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryResourceTombstoneCountBuffer = (BufferID)74468;",
+      "value": 74468
+    },
+    {
+      "enumNames": [],
+      "line": 2314,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryResourceMetamorphosedKeysBuffer = (BufferID)74469;",
+      "value": 74469
+    },
+    {
+      "enumNames": [],
+      "line": 2315,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryResourceMetamorphosedValuesBuffer = (BufferID)74470;",
+      "value": 74470
+    },
+    {
+      "enumNames": [],
+      "line": 2316,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryResourceMetamorphosedStatesBuffer = (BufferID)74471;",
+      "value": 74471
+    },
+    {
+      "enumNames": [],
+      "line": 2317,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryResourceMetamorphosedCountBuffer = (BufferID)74472;",
+      "value": 74472
+    },
+    {
+      "enumNames": [],
+      "line": 2318,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaChunkIndexKeysBuffer = (BufferID)74473;",
+      "value": 74473
+    },
+    {
+      "enumNames": [],
+      "line": 2319,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaChunkIndexValuesBuffer = (BufferID)74474;",
+      "value": 74474
+    },
+    {
+      "enumNames": [],
+      "line": 2320,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaChunkIndexStatesBuffer = (BufferID)74475;",
+      "value": 74475
+    },
+    {
+      "enumNames": [],
+      "line": 2321,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaChunkIndexCountBuffer = (BufferID)74476;",
+      "value": 74476
+    },
+    {
+      "enumNames": [],
+      "line": 2322,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaChunkIdsBuffer = (BufferID)74477;",
+      "value": 74477
+    },
+    {
+      "enumNames": [],
+      "line": 2323,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaChunkIdsCountBuffer = (BufferID)74478;",
+      "value": 74478
+    },
+    {
+      "enumNames": [],
+      "line": 2324,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaItemIndexKeysBuffer = (BufferID)74479;",
+      "value": 74479
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceChunkPoolMatrices"
+      ],
+      "line": 2325,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaItemIndexValuesBuffer = (BufferID)74480;",
+      "value": 74480
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceChunkPoolMetadata"
+      ],
+      "line": 2326,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaItemIndexStatesBuffer = (BufferID)74481;",
+      "value": 74481
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceChunkPoolTypes"
+      ],
+      "line": 2327,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaItemIndexCountBuffer = (BufferID)74482;",
+      "value": 74482
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceChunkPoolSemanticTypes"
+      ],
+      "line": 2328,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaItemHashesBuffer = (BufferID)74483;",
+      "value": 74483
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceChunkPoolBiomeLayers"
+      ],
+      "line": 2329,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaItemHashesCountBuffer = (BufferID)74484;",
+      "value": 74484
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceChunkPoolEdgeDistances"
+      ],
+      "line": 2330,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaRecordsByChunkKeysBuffer = (BufferID)74485;",
+      "value": 74485
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceChunkPoolFlowDirections"
+      ],
+      "line": 2331,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaRecordsByChunkValuesBuffer = (BufferID)74486;",
+      "value": 74486
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceChunkPoolFlowVectors"
+      ],
+      "line": 2332,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDeltaRecordsByChunkCountBuffer = (BufferID)74487;",
+      "value": 74487
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterChunkPoolMatrices"
+      ],
+      "line": 2333,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryTombstoneDecayIndicesBuffer = (BufferID)74488;",
+      "value": 74488
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterChunkPoolMetadata"
+      ],
+      "line": 2334,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryTombstoneDecayIndicesCountBuffer = (BufferID)74489;",
+      "value": 74489
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterChunkPoolTypes"
+      ],
+      "line": 2335,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistrySaveSnapshotDeltasBuffer = (BufferID)74490;",
+      "value": 74490
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterChunkPoolSemanticTypes"
+      ],
+      "line": 2336,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistrySaveSnapshotDeltasCountBuffer = (BufferID)74491;",
+      "value": 74491
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterChunkPoolBiomeLayers"
+      ],
+      "line": 2337,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryPoolSlotDataBuffer = (BufferID)74492;",
+      "value": 74492
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterChunkPoolEdgeDistances"
+      ],
+      "line": 2338,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryGuidToPoolIndexKeysBuffer = (BufferID)74493;",
+      "value": 74493
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterChunkPoolFlowDirections"
+      ],
+      "line": 2339,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryGuidToPoolIndexValuesBuffer = (BufferID)74494;",
+      "value": 74494
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterChunkPoolFlowVectors"
+      ],
+      "line": 2340,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryGuidToPoolIndexStatesBuffer = (BufferID)74495;",
+      "value": 74495
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceDefragScratchMatrices"
+      ],
+      "line": 2341,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryGuidToPoolIndexCountBuffer = (BufferID)74496;",
+      "value": 74496
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceDefragScratchMetadata"
+      ],
+      "line": 2342,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryEntityStateKeysBuffer = (BufferID)74497;",
+      "value": 74497
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceDefragScratchTypes"
+      ],
+      "line": 2343,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryEntityStateValuesBuffer = (BufferID)74498;",
+      "value": 74498
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceDefragScratchSemanticTypes"
+      ],
+      "line": 2344,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryEntityStateStatesBuffer = (BufferID)74499;",
+      "value": 74499
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceDefragScratchBiomeLayers"
+      ],
+      "line": 2345,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryEntityStateCountBuffer = (BufferID)74500;",
+      "value": 74500
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceDefragScratchEdgeDistances"
+      ],
+      "line": 2346,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryFloraSpawnStateKeysBuffer = (BufferID)74501;",
+      "value": 74501
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceDefragScratchFlowDirections"
+      ],
+      "line": 2347,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryFloraSpawnStateValuesBuffer = (BufferID)74502;",
+      "value": 74502
+    },
+    {
+      "enumNames": [
+        "VegetationSurfaceDefragScratchFlowVectors"
+      ],
+      "line": 2348,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryFloraSpawnStateStatesBuffer = (BufferID)74503;",
+      "value": 74503
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterDefragScratchMatrices"
+      ],
+      "line": 2349,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryFloraSpawnStateCountBuffer = (BufferID)74504;",
+      "value": 74504
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterDefragScratchMetadata"
+      ],
+      "line": 2350,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistrySpawnImpulseKeysBuffer = (BufferID)74505;",
+      "value": 74505
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterDefragScratchTypes"
+      ],
+      "line": 2351,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistrySpawnImpulseValuesBuffer = (BufferID)74506;",
+      "value": 74506
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterDefragScratchSemanticTypes"
+      ],
+      "line": 2352,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistrySpawnImpulseStatesBuffer = (BufferID)74507;",
+      "value": 74507
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterDefragScratchBiomeLayers"
+      ],
+      "line": 2353,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistrySpawnImpulseCountBuffer = (BufferID)74508;",
+      "value": 74508
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterDefragScratchEdgeDistances"
+      ],
+      "line": 2354,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistrySpawnVelocityKeysBuffer = (BufferID)74509;",
+      "value": 74509
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterDefragScratchFlowDirections"
+      ],
+      "line": 2355,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistrySpawnVelocityValuesBuffer = (BufferID)74510;",
+      "value": 74510
+    },
+    {
+      "enumNames": [
+        "VegetationUnderwaterDefragScratchFlowVectors"
+      ],
+      "line": 2356,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistrySpawnVelocityStatesBuffer = (BufferID)74511;",
+      "value": 74511
+    },
+    {
+      "enumNames": [],
+      "line": 2357,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistrySpawnVelocityCountBuffer = (BufferID)74512;",
+      "value": 74512
+    },
+    {
+      "enumNames": [],
+      "line": 2358,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDehydrateQueueValuesBuffer = (BufferID)74513;",
+      "value": 74513
+    },
+    {
+      "enumNames": [],
+      "line": 2359,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryDehydrateQueueStateBuffer = (BufferID)74514;",
+      "value": 74514
+    },
+    {
+      "enumNames": [],
+      "line": 2360,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryPendingHydrationRecordsBuffer = (BufferID)74515;",
+      "value": 74515
+    },
+    {
+      "enumNames": [],
+      "line": 2361,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryPendingHydrationRecordsCountBuffer = (BufferID)74516;",
+      "value": 74516
+    },
+    {
+      "enumNames": [],
+      "line": 2362,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryTelemetryRingBuffer = (BufferID)74517;",
+      "value": 74517
+    },
+    {
+      "enumNames": [],
+      "line": 2363,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "text": "private const BufferID WorldRegistryTelemetryCursorBuffer = (BufferID)74518;",
+      "value": 74518
+    },
+    {
+      "enumNames": [],
+      "line": 72,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID Rules = (BufferID)71390;",
+      "value": 71390
+    },
+    {
+      "enumNames": [],
+      "line": 73,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID InstructionScratchA = (BufferID)71391;",
+      "value": 71391
+    },
+    {
+      "enumNames": [],
+      "line": 74,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID InstructionScratchB = (BufferID)71392;",
+      "value": 71392
+    },
+    {
+      "enumNames": [],
+      "line": 75,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID Branches = (BufferID)71393;",
+      "value": 71393
+    },
+    {
+      "enumNames": [],
+      "line": 76,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID TurtleStack = (BufferID)71394;",
+      "value": 71394
+    },
+    {
+      "enumNames": [],
+      "line": 77,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID SpatialCells = (BufferID)71395;",
+      "value": 71395
+    },
+    {
+      "enumNames": [],
+      "line": 78,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID RenderMatrices = (BufferID)71396;",
+      "value": 71396
+    },
+    {
+      "enumNames": [],
+      "line": 79,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID IndirectArgs = (BufferID)71397;",
+      "value": 71397
+    },
+    {
+      "enumNames": [],
+      "line": 80,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID SectorTriggers = (BufferID)71398;",
+      "value": 71398
+    },
+    {
+      "enumNames": [],
+      "line": 81,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID CollisionProxies = (BufferID)71399;",
+      "value": 71399
+    },
+    {
+      "enumNames": [],
+      "line": 82,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID SyncPulses = (BufferID)71400;",
+      "value": 71400
+    },
+    {
+      "enumNames": [],
+      "line": 83,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID TelemetryRing = (BufferID)71401;",
+      "value": 71401
+    },
+    {
+      "enumNames": [],
+      "line": 84,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID TelemetryCursor = (BufferID)71402;",
+      "value": 71402
+    },
+    {
+      "enumNames": [],
+      "line": 85,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID Tuning = (BufferID)71403;",
+      "value": 71403
+    },
+    {
+      "enumNames": [],
+      "line": 86,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID CsvScratch = (BufferID)71404;",
+      "value": 71404
+    },
+    {
+      "enumNames": [],
+      "line": 87,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID Counters = (BufferID)71405;",
+      "value": 71405
+    },
+    {
+      "enumNames": [],
+      "line": 88,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID DebugSegments = (BufferID)71406;",
+      "value": 71406
+    },
+    {
+      "enumNames": [],
+      "line": 89,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID GpuSway = (BufferID)71407;",
+      "value": 71407
+    },
+    {
+      "enumNames": [],
+      "line": 90,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID SelfAudit = (BufferID)71408;",
+      "value": 71408
+    },
+    {
+      "enumNames": [],
+      "line": 91,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+      "text": "public const BufferID HzbTiles = (BufferID)71409;",
+      "value": 71409
+    },
+    {
+      "enumNames": [],
+      "line": 58,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID Rules = (BufferID)70840;",
+      "value": 70840
+    },
+    {
+      "enumNames": [],
+      "line": 59,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID Grid = (BufferID)70841;",
+      "value": 70841
+    },
+    {
+      "enumNames": [],
+      "line": 60,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID Nodes = (BufferID)70842;",
+      "value": 70842
+    },
+    {
+      "enumNames": [],
+      "line": 61,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID DebrisNodes = (BufferID)70843;",
+      "value": 70843
+    },
+    {
+      "enumNames": [],
+      "line": 62,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID RenderMatrices = (BufferID)70844;",
+      "value": 70844
+    },
+    {
+      "enumNames": [],
+      "line": 63,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID IndirectArgs = (BufferID)70845;",
+      "value": 70845
+    },
+    {
+      "enumNames": [],
+      "line": 64,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID SectorTriggers = (BufferID)70846;",
+      "value": 70846
+    },
+    {
+      "enumNames": [],
+      "line": 65,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID LootRequests = (BufferID)70847;",
+      "value": 70847
+    },
+    {
+      "enumNames": [],
+      "line": 66,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID CollisionProxies = (BufferID)70848;",
+      "value": 70848
+    },
+    {
+      "enumNames": [],
+      "line": 67,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID TelemetryRing = (BufferID)70849;",
+      "value": 70849
+    },
+    {
+      "enumNames": [],
+      "line": 68,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID TelemetryCursor = (BufferID)70850;",
+      "value": 70850
+    },
+    {
+      "enumNames": [],
+      "line": 69,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID Tuning = (BufferID)70851;",
+      "value": 70851
+    },
+    {
+      "enumNames": [],
+      "line": 70,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID CsvScratch = (BufferID)70852;",
+      "value": 70852
+    },
+    {
+      "enumNames": [],
+      "line": 71,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID Counters = (BufferID)70853;",
+      "value": 70853
+    },
+    {
+      "enumNames": [],
+      "line": 72,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID DebugCells = (BufferID)70854;",
+      "value": 70854
+    },
+    {
+      "enumNames": [],
+      "line": 73,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID GpuScalars = (BufferID)70855;",
+      "value": 70855
+    },
+    {
+      "enumNames": [],
+      "line": 74,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID SelfAudit = (BufferID)70856;",
+      "value": 70856
+    },
+    {
+      "enumNames": [],
+      "line": 75,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+      "text": "public const BufferID HzbTiles = (BufferID)70857;",
+      "value": 70857
+    },
+    {
+      "enumNames": [],
+      "line": 38,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID ResourceNodes = (BufferID)71530;",
+      "value": 71530
+    },
+    {
+      "enumNames": [],
+      "line": 39,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID OrePositions = (BufferID)71531;",
+      "value": 71531
+    },
+    {
+      "enumNames": [],
+      "line": 40,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID OreTypes = (BufferID)71532;",
+      "value": 71532
+    },
+    {
+      "enumNames": [],
+      "line": 41,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID DepletionMasks = (BufferID)71533;",
+      "value": 71533
+    },
+    {
+      "enumNames": [],
+      "line": 42,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID ResourceMatrices = (BufferID)71534;",
+      "value": 71534
+    },
+    {
+      "enumNames": [],
+      "line": 43,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID BiomeHeatmap = (BufferID)71535;",
+      "value": 71535
+    },
+    {
+      "enumNames": [],
+      "line": 44,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID SpawnCounts = (BufferID)71536;",
+      "value": 71536
+    },
+    {
+      "enumNames": [],
+      "line": 45,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID TelemetryRing = (BufferID)71537;",
+      "value": 71537
+    },
+    {
+      "enumNames": [],
+      "line": 46,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID MockTerrainSdf = (BufferID)71538;",
+      "value": 71538
+    },
+    {
+      "enumNames": [],
+      "line": 47,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID DistributionRules = (BufferID)71539;",
+      "value": 71539
+    },
+    {
+      "enumNames": [],
+      "line": 48,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID Tuning = (BufferID)71540;",
+      "value": 71540
+    },
+    {
+      "enumNames": [],
+      "line": 49,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID CsvScratch = (BufferID)71541;",
+      "value": 71541
+    },
+    {
+      "enumNames": [],
+      "line": 50,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID SelfAudit = (BufferID)71542;",
+      "value": 71542
+    },
+    {
+      "enumNames": [],
+      "line": 51,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID CandidateSlots = (BufferID)71543;",
+      "value": 71543
+    },
+    {
+      "enumNames": [],
+      "line": 52,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID DepletionCacheKeys = (BufferID)71544;",
+      "value": 71544
+    },
+    {
+      "enumNames": [],
+      "line": 53,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID DepletionCacheMasks = (BufferID)71545;",
+      "value": 71545
+    },
+    {
+      "enumNames": [],
+      "line": 54,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID DepletionCacheCount = (BufferID)71546;",
+      "value": 71546
+    },
+    {
+      "enumNames": [],
+      "line": 55,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID SectorHashGrid = (BufferID)71547;",
+      "value": 71547
+    },
+    {
+      "enumNames": [],
+      "line": 56,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID IndirectArgs = (BufferID)71548;",
+      "value": 71548
+    },
+    {
+      "enumNames": [],
+      "line": 57,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID HzbTiles = (BufferID)71549;",
+      "value": 71549
+    },
+    {
+      "enumNames": [],
+      "line": 58,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "text": "public const BufferID HzbMeta = (BufferID)71550;",
+      "value": 71550
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisCounters"
+      ],
+      "line": 524,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiTransformsBufferId = (BufferID)70420;",
+      "value": 70420
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisCsvScratch"
+      ],
+      "line": 525,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiSortedTransformsBufferId = (BufferID)70421;",
+      "value": 70421
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisScannerVfx"
+      ],
+      "line": 526,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiRoutesBufferId = (BufferID)70422;",
+      "value": 70422
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisOxygenEmitters"
+      ],
+      "line": 527,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiSectorRangesBufferId = (BufferID)70423;",
+      "value": 70423
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisAdherence"
+      ],
+      "line": 528,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiNarrativeRulesBufferId = (BufferID)70424;",
+      "value": 70424
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisSeeds"
+      ],
+      "line": 529,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiFloraMasksBufferId = (BufferID)70425;",
+      "value": 70425
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisAcousticTaps"
+      ],
+      "line": 530,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiTelemetryRingBufferId = (BufferID)70426;",
+      "value": 70426
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisTuning"
+      ],
+      "line": 531,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiVisualAnchorsBufferId = (BufferID)70427;",
+      "value": 70427
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisFloraHashBucketHeads"
+      ],
+      "line": 532,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiRulesBufferId = (BufferID)70428;",
+      "value": 70428
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisFloraHashNext"
+      ],
+      "line": 533,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiBoundsBufferId = (BufferID)70429;",
+      "value": 70429
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisMockBoids"
+      ],
+      "line": 534,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiBakeConfigBufferId = (BufferID)70430;",
+      "value": 70430
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisLegacyScratch"
+      ],
+      "line": 535,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiCullProxyBufferId = (BufferID)70431;",
+      "value": 70431
+    },
+    {
+      "enumNames": [
+        "ShinobuSymbiosisMockFish"
+      ],
+      "line": 536,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiHzbDepthPyramidBufferId = (BufferID)70432;",
+      "value": 70432
+    },
+    {
+      "enumNames": [
+        "ShinobuMacroEcosystemSectorFront"
+      ],
+      "line": 537,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiVisibleMaskBufferId = (BufferID)70433;",
+      "value": 70433
+    },
+    {
+      "enumNames": [
+        "ShinobuMacroEcosystemSectorBack"
+      ],
+      "line": 538,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiIndirectArgsBufferId = (BufferID)70434;",
+      "value": 70434
+    },
+    {
+      "enumNames": [
+        "ShinobuMacroEcosystemRemainders"
+      ],
+      "line": 539,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiCandidateAupsBufferId = (BufferID)70435;",
+      "value": 70435
+    },
+    {
+      "enumNames": [
+        "ShinobuMacroEcosystemSectorCoords"
+      ],
+      "line": 540,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiMockSignalsBufferId = (BufferID)70436;",
+      "value": 70436
+    },
+    {
+      "enumNames": [
+        "ShinobuMacroEcosystemIndexEntries"
+      ],
+      "line": 541,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiPlacementCountersBufferId = (BufferID)70437;",
+      "value": 70437
+    },
+    {
+      "enumNames": [
+        "ShinobuMacroEcosystemBiomeSpecs"
+      ],
+      "line": 542,
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+      "text": "public const BufferID PoiCsvScratchBufferId = (BufferID)70438;",
+      "value": 70438
+    },
+    {
+      "enumNames": [],
+      "line": 31,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID MetadataBufferId = (BufferID)71740;",
+      "value": 71740
+    },
+    {
+      "enumNames": [],
+      "line": 32,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID SectorCoordsBufferId = (BufferID)71741;",
+      "value": 71741
+    },
+    {
+      "enumNames": [],
+      "line": 33,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID StagingBytesBufferId = (BufferID)71742;",
+      "value": 71742
+    },
+    {
+      "enumNames": [],
+      "line": 34,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID ActiveBytesBufferId = (BufferID)71743;",
+      "value": 71743
+    },
+    {
+      "enumNames": [],
+      "line": 35,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID CompressedScratchBufferId = (BufferID)71744;",
+      "value": 71744
+    },
+    {
+      "enumNames": [],
+      "line": 36,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID WorkerRequestBufferId = (BufferID)71745;",
+      "value": 71745
+    },
+    {
+      "enumNames": [],
+      "line": 37,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID WorkerResultBufferId = (BufferID)71746;",
+      "value": 71746
+    },
+    {
+      "enumNames": [],
+      "line": 38,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID JobLoadRequestsBufferId = (BufferID)71747;",
+      "value": 71747
+    },
+    {
+      "enumNames": [],
+      "line": 39,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID JobLoadCountBufferId = (BufferID)71748;",
+      "value": 71748
+    },
+    {
+      "enumNames": [],
+      "line": 40,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID JobStaleSlotsBufferId = (BufferID)71749;",
+      "value": 71749
+    },
+    {
+      "enumNames": [],
+      "line": 41,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID JobStaleCountBufferId = (BufferID)71750;",
+      "value": 71750
+    },
+    {
+      "enumNames": [],
+      "line": 42,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID TelemetryRingBufferId = (BufferID)71751;",
+      "value": 71751
+    },
+    {
+      "enumNames": [],
+      "line": 43,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID TuningBufferId = (BufferID)71752;",
+      "value": 71752
+    },
+    {
+      "enumNames": [],
+      "line": 44,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID CountersBufferId = (BufferID)71753;",
+      "value": 71753
+    },
+    {
+      "enumNames": [],
+      "line": 45,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID FreedSlotsBufferId = (BufferID)71754;",
+      "value": 71754
+    },
+    {
+      "enumNames": [],
+      "line": 46,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID FreedCountBufferId = (BufferID)71755;",
+      "value": 71755
+    },
+    {
+      "enumNames": [],
+      "line": 47,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID HardwareProfilesBufferId = (BufferID)71756;",
+      "value": 71756
+    },
+    {
+      "enumNames": [],
+      "line": 48,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID CsvScratchBufferId = (BufferID)71757;",
+      "value": 71757
+    },
+    {
+      "enumNames": [],
+      "line": 49,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID TelemetryDumpSnapshotBufferId = (BufferID)71758;",
+      "value": 71758
+    },
+    {
+      "enumNames": [],
+      "line": 184,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID VentsBuffer = (BufferID)70750;",
+      "value": 70750
+    },
+    {
+      "enumNames": [
+        "ShinobuHydroKccDebugOutputs"
+      ],
+      "line": 185,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID SettingsBuffer = (BufferID)70751;",
+      "value": 70751
+    },
+    {
+      "enumNames": [
+        "ShinobuHydroKccResolvedHits"
+      ],
+      "line": 186,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID TelemetryBuffer = (BufferID)70752;",
+      "value": 70752
+    },
+    {
+      "enumNames": [],
+      "line": 187,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID MockSubmarinesBuffer = (BufferID)70753;",
+      "value": 70753
+    },
+    {
+      "enumNames": [],
+      "line": 188,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID MockLeviathansBuffer = (BufferID)70754;",
+      "value": 70754
+    },
+    {
+      "enumNames": [],
+      "line": 189,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID FloatSignalsBuffer = (BufferID)70755;",
+      "value": 70755
+    },
+    {
+      "enumNames": [],
+      "line": 190,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID DynamicWakesBuffer = (BufferID)70756;",
+      "value": 70756
+    },
+    {
+      "enumNames": [],
+      "line": 191,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID MockFlowFieldBuffer = (BufferID)70757;",
+      "value": 70757
+    },
+    {
+      "enumNames": [],
+      "line": 192,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID CsvScratchBuffer = (BufferID)70758;",
+      "value": 70758
+    },
+    {
+      "enumNames": [],
+      "line": 193,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID FrameCountersBuffer = (BufferID)70759;",
+      "value": 70759
+    },
+    {
+      "enumNames": [
+        "ShinobuOceanWaveParameters"
+      ],
+      "line": 194,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID MockDebrisBuffer = (BufferID)70760;",
+      "value": 70760
+    },
+    {
+      "enumNames": [
+        "ShinobuOceanAtmosphere"
+      ],
+      "line": 195,
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "text": "public const BufferID PlayerHeatBuffer = (BufferID)70761;",
+      "value": 70761
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidCompartmentFront"
+      ],
+      "line": 48,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID Density = (BufferID)70780;",
+      "value": 70780
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidCompartmentBack"
+      ],
+      "line": 49,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID Vertices = (BufferID)70781;",
+      "value": 70781
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidIntegrityState"
+      ],
+      "line": 50,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID Indices = (BufferID)70782;",
+      "value": 70782
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidEdgeOffsets"
+      ],
+      "line": 51,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID CellVertexMap = (BufferID)70783;",
+      "value": 70783
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidEdgeDestinations"
+      ],
+      "line": 52,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID States = (BufferID)70784;",
+      "value": 70784
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidEdgeFlags"
+      ],
+      "line": 53,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID Tuning = (BufferID)70785;",
+      "value": 70785
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidCompartmentCentroids"
+      ],
+      "line": 54,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID TelemetryRing = (BufferID)70786;",
+      "value": 70786
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidWaterlineShader"
+      ],
+      "line": 55,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID TelemetryCursor = (BufferID)70787;",
+      "value": 70787
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidMassState"
+      ],
+      "line": 56,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID CsvScratch = (BufferID)70788;",
+      "value": 70788
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidTuning"
+      ],
+      "line": 57,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID SurfaceEdgeMasks = (BufferID)70789;",
+      "value": 70789
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidTelemetryRing"
+      ],
+      "line": 58,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID RawDebugVertices = (BufferID)70790;",
+      "value": 70790
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidTelemetryCursor"
+      ],
+      "line": 59,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID ChunkAabbs = (BufferID)70791;",
+      "value": 70791
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidBfsQueue"
+      ],
+      "line": 60,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID ModifiedSignals = (BufferID)70792;",
+      "value": 70792
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidBfsVisited"
+      ],
+      "line": 61,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID Priorities = (BufferID)70793;",
+      "value": 70793
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidDeltaVolumes"
+      ],
+      "line": 62,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID IndirectArgs = (BufferID)70794;",
+      "value": 70794
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidFrameSummary"
+      ],
+      "line": 63,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID MockDensityConfig = (BufferID)70795;",
+      "value": 70795
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidCsvScratch"
+      ],
+      "line": 64,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID PhysicsBakeRequests = (BufferID)70796;",
+      "value": 70796
+    },
+    {
+      "enumNames": [
+        "ShinobuFluidMockBreach"
+      ],
+      "line": 65,
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+      "text": "public const BufferID HzbTiles = (BufferID)70797;",
+      "value": 70797
+    },
+    {
+      "enumNames": [],
+      "line": 669,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ChunkResidencyVaultBufferId = (BufferID)70560;",
+      "value": 70560
+    },
+    {
+      "enumNames": [],
+      "line": 670,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID AddressablesRequestVaultBufferId = (BufferID)70561;",
+      "value": 70561
+    },
+    {
+      "enumNames": [],
+      "line": 671,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID HlodImpostorVaultBufferId = (BufferID)70562;",
+      "value": 70562
+    },
+    {
+      "enumNames": [],
+      "line": 672,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID StreamingTuningVaultBufferId = (BufferID)70563;",
+      "value": 70563
+    },
+    {
+      "enumNames": [],
+      "line": 673,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID MockAupShiftVaultBufferId = (BufferID)70564;",
+      "value": 70564
+    },
+    {
+      "enumNames": [],
+      "line": 675,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID HydrationApplyRecordVaultBufferId = (BufferID)70565;",
+      "value": 70565
+    },
+    {
+      "enumNames": [],
+      "line": 676,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ChunkIdsVaultBufferId = (BufferID)70566;",
+      "value": 70566
+    },
+    {
+      "enumNames": [],
+      "line": 677,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ChunkCentersVaultBufferId = (BufferID)70567;",
+      "value": 70567
+    },
+    {
+      "enumNames": [],
+      "line": 678,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ResidencyTelemetryVaultBufferId = (BufferID)70568;",
+      "value": 70568
+    },
+    {
+      "enumNames": [],
+      "line": 679,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID DehydrationMetadataVaultBufferId = (BufferID)70569;",
+      "value": 70569
+    },
+    {
+      "enumNames": [],
+      "line": 680,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID LoadStartTimesVaultBufferId = (BufferID)70570;",
+      "value": 70570
+    },
+    {
+      "enumNames": [],
+      "line": 681,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID LoadImmediateRadiusFlagsVaultBufferId = (BufferID)70571;",
+      "value": 70571
+    },
+    {
+      "enumNames": [],
+      "line": 682,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ActiveImpostorsVaultBufferId = (BufferID)70572;",
+      "value": 70572
+    },
+    {
+      "enumNames": [],
+      "line": 683,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ImpostorTypesVaultBufferId = (BufferID)70573;",
+      "value": 70573
+    },
+    {
+      "enumNames": [],
+      "line": 684,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ActiveImpostorChunkIdsVaultBufferId = (BufferID)70574;",
+      "value": 70574
+    },
+    {
+      "enumNames": [],
+      "line": 685,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ActiveImpostorSpawnTimesVaultBufferId = (BufferID)70575;",
+      "value": 70575
+    },
+    {
+      "enumNames": [],
+      "line": 686,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ActiveImpostorCentersVaultBufferId = (BufferID)70576;",
+      "value": 70576
+    },
+    {
+      "enumNames": [],
+      "line": 687,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ActiveImpostorSizesVaultBufferId = (BufferID)70577;",
+      "value": 70577
+    },
+    {
+      "enumNames": [],
+      "line": 688,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ActiveImpostorFlagsVaultBufferId = (BufferID)70578;",
+      "value": 70578
+    },
+    {
+      "enumNames": [],
+      "line": 689,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ActiveImpostorCartographyVaultBufferId = (BufferID)70579;",
+      "value": 70579
+    },
+    {
+      "enumNames": [],
+      "line": 690,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ActiveImpostorCountVaultBufferId = (BufferID)70580;",
+      "value": 70580
+    },
+    {
+      "enumNames": [],
+      "line": 691,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ActiveImpostorFadeOutCountVaultBufferId = (BufferID)70581;",
+      "value": 70581
+    },
+    {
+      "enumNames": [],
+      "line": 692,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID PagerReadTicketsVaultBufferId = (BufferID)70582;",
+      "value": 70582
+    },
+    {
+      "enumNames": [],
+      "line": 693,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID MacroDatabaseEvictionScratchVaultBufferId = (BufferID)70583;",
+      "value": 70583
+    },
+    {
+      "enumNames": [],
+      "line": 694,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ChunkStateSlotsVaultBufferId = (BufferID)70584;",
+      "value": 70584
+    },
+    {
+      "enumNames": [],
+      "line": 695,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID LoadRequestsVaultBufferId = (BufferID)70585;",
+      "value": 70585
+    },
+    {
+      "enumNames": [],
+      "line": 696,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "text": "private const BufferID ResidencyDecisionsVaultBufferId = (BufferID)70586;",
+      "value": 70586
+    }
+  ],
+  "schema": "hecton8.bufferid_sovereignty_audit.v1"
+}

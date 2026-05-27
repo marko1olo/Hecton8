@@ -140,17 +140,7 @@ namespace Hecton8.Thermodynamics
 
         private void OnDisable()
         {
-            if (_hasPendingJob)
-            {
-                // [BLOCKING_SYNC_POINT] Teardown cannot release thermal Vault buffers while the solver writer is active.
-                DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);
-                _hasPendingJob = false;
-            }
-
-            ReleaseReactorSharedLocks();
-            DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
-            H8Memory.RegisterActiveJob(SystemID.Thermodynamics, default);
-
+            CompleteThermalJobsForLifecycle();
             TryUnregisterHotSwapListener();
             TryUnregisterRuntimeLanes();
             if (_registeredOrigin)
@@ -159,6 +149,20 @@ namespace Hecton8.Thermodynamics
             _registeredOrigin = false;
 
             ReleaseVisualBuffers();
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+        }
+
+        private void OnDestroy()
+        {
+            CompleteThermalJobsForLifecycle();
+            ReleaseVisualBuffers();
+            ReleaseOwnedVaultHandles(_vault);
+            ClearVaultHandles();
+            _vault = null;
+            _nativeReady = false;
+            _lastInitializedResolution = 0;
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -182,21 +186,8 @@ namespace Hecton8.Thermodynamics
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            if (_hasPendingJob &&
-                !DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
-            {
+            if (!RebindDataVaultForLifecycle(currentService as IDataVault))
                 return;
-            }
-
-            _hasPendingJob = false;
-            ReleaseReactorSharedLocks();
-            DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
-            H8Memory.RegisterActiveJob(SystemID.Thermodynamics, default);
-            _vault = currentService as IDataVault;
-            ClearVaultHandles();
-            _nativeReady = false;
-            _lastInitializedResolution = 0;
-            _visualDirty = false;
 
             if (isActiveAndEnabled && _vault != null)
                 EnsureNative();
@@ -955,6 +946,74 @@ namespace Hecton8.Thermodynamics
             _solverConvergence = default;
             _solverResidualSamples = default;
             _solverDumpLatch = default;
+            ClearReactorThermalVaultHandles();
+        }
+
+        private bool CompleteThermalJobsForLifecycle()
+        {
+            if (_hasPendingJob &&
+                !DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+            {
+                return false;
+            }
+
+            _hasPendingJob = false;
+            ReleaseReactorSharedLocks();
+            DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
+            H8Memory.RegisterActiveJob(SystemID.Thermodynamics, default);
+            return true;
+        }
+
+        private bool RebindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return true;
+
+            if (!CompleteThermalJobsForLifecycle())
+                return false;
+
+            ReleaseOwnedVaultHandles(_vault);
+            ClearVaultHandles();
+            _vault = nextVault;
+            _nativeReady = false;
+            _lastInitializedResolution = 0;
+            _visualDirty = false;
+            return true;
+        }
+
+        private void ReleaseOwnedVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedVaultHandle(vault, ref _front);
+            ReleaseOwnedVaultHandle(vault, ref _back);
+            ReleaseOwnedVaultHandle(vault, ref _injection);
+            ReleaseOwnedVaultHandle(vault, ref _shiftScratch);
+            ReleaseOwnedVaultHandle(vault, ref _sources);
+            ReleaseOwnedVaultHandle(vault, ref _sourceCount);
+            ReleaseOwnedVaultHandle(vault, ref _tuning);
+            ReleaseOwnedVaultHandle(vault, ref _sampleAups);
+            ReleaseOwnedVaultHandle(vault, ref _sampleResults);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryRing);
+            ReleaseOwnedVaultHandle(vault, ref _profileBytes);
+            ReleaseOwnedVaultHandle(vault, ref _profiles);
+            ReleaseOwnedVaultHandle(vault, ref _profileCount);
+            ReleaseOwnedVaultHandle(vault, ref _solverConvergence);
+            ReleaseOwnedVaultHandle(vault, ref _solverResidualSamples);
+            ReleaseOwnedVaultHandle(vault, ref _solverDumpLatch);
+            ReleaseReactorThermalVaultHandles(vault);
+        }
+
+        private static void ReleaseOwnedVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u &&
+                handle.SystemID == (uint)SystemID.Thermodynamics)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private VaultGenerationHandle<T> Acquire<T>(BufferID id, int count) where T : struct
@@ -998,10 +1057,10 @@ namespace Hecton8.Thermodynamics
 
         private IDataVault EnsureVault()
         {
-            if (_vault != null)
-                return _vault;
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_vault, currentVault))
+                RebindDataVaultForLifecycle(currentVault);
 
-            _vault = GlobalRegistry.DataVault;
             if (_vault != null)
                 return _vault;
 

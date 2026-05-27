@@ -391,6 +391,7 @@ namespace Hecton8.Core.Determinism
                 GlobalTelemetryBus.PublishModTelemetry(ReasonDesyncHash, 0x4C41594Fu, 0u);
             EnsureNativeState();
             RestoreTelemetryCursorFromVault();
+            EnsureReplayWriterCold();
             TryRegisterHotSwapListener();
             if (GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core))
                 _registeredPostFixed = 1;
@@ -640,7 +641,7 @@ namespace Hecton8.Core.Determinism
         private bool CaptureInputFrame(uint frame, out InputStateSignal signal)
         {
             signal = default;
-            NativeArray<LockstepReplayInputFrame> inputRing = GetVaultBuffer<LockstepReplayInputFrame>(
+            NativeArray<LockstepReplayInputFrame> inputRing = OpenOrAcquireVaultBufferView<LockstepReplayInputFrame>(
                 BufferID.LockstepReplayInputRing,
                 ReplayInputFrameCapacity,
                 NativeArrayOptions.ClearMemory);
@@ -723,7 +724,7 @@ namespace Hecton8.Core.Determinism
 
         private void MirrorPlayerStateToVault(uint frame, bool hasInputSignal, in InputStateSignal inputSignal)
         {
-            NativeArray<LockstepPlayerKinematicState> buffer = GetVaultBuffer<LockstepPlayerKinematicState>(
+            NativeArray<LockstepPlayerKinematicState> buffer = OpenOrAcquireVaultBufferView<LockstepPlayerKinematicState>(
                 BufferID.PlayerKinematicState,
                 1,
                 NativeArrayOptions.ClearMemory);
@@ -815,7 +816,7 @@ namespace Hecton8.Core.Determinism
             if (count <= 0)
                 return false;
 
-            NativeArray<float> destination = GetVaultBuffer<float>(
+            NativeArray<float> destination = OpenOrAcquireVaultBufferView<float>(
                 BufferID.RoomWaterLevels,
                 count,
                 NativeArrayOptions.ClearMemory);
@@ -839,17 +840,17 @@ namespace Hecton8.Core.Determinism
             EnsureNativeState();
             EnsureHashNativeState();
 
-            NativeArray<uint> rigidbodyElementHashes = GetVaultBuffer<uint>(BufferID.LockstepRigidbodyElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<uint> playerElementHashes = GetVaultBuffer<uint>(BufferID.LockstepPlayerElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<uint> roomElementHashes = GetVaultBuffer<uint>(BufferID.LockstepRoomElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<uint> entityElementHashes = GetVaultBuffer<uint>(BufferID.LockstepEntityElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> rigidbodyElementFlags = GetVaultBuffer<byte>(BufferID.LockstepRigidbodyElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> playerElementFlags = GetVaultBuffer<byte>(BufferID.LockstepPlayerElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> roomElementFlags = GetVaultBuffer<byte>(BufferID.LockstepRoomElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> entityElementFlags = GetVaultBuffer<byte>(BufferID.LockstepEntityElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<LockstepArrayHash> arrayHashes = GetVaultBuffer<LockstepArrayHash>(BufferID.LockstepArrayHashes, (int)LockstepHashCategory.Count, NativeArrayOptions.ClearMemory);
-            NativeArray<ulong> masterHash = GetVaultBuffer<ulong>(BufferID.LockstepMasterStateHash, 1, NativeArrayOptions.ClearMemory);
-            NativeArray<uint> masterFlags = GetVaultBuffer<uint>(BufferID.LockstepMasterFlags, 1, NativeArrayOptions.ClearMemory);
+            NativeArray<uint> rigidbodyElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepRigidbodyElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            NativeArray<uint> playerElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepPlayerElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            NativeArray<uint> roomElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepRoomElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            NativeArray<uint> entityElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepEntityElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> rigidbodyElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepRigidbodyElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> playerElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepPlayerElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> roomElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepRoomElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> entityElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepEntityElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            NativeArray<LockstepArrayHash> arrayHashes = OpenOrAcquireVaultBufferView<LockstepArrayHash>(BufferID.LockstepArrayHashes, (int)LockstepHashCategory.Count, NativeArrayOptions.ClearMemory);
+            NativeArray<ulong> masterHash = OpenOrAcquireVaultBufferView<ulong>(BufferID.LockstepMasterStateHash, 1, NativeArrayOptions.ClearMemory);
+            NativeArray<uint> masterFlags = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepMasterFlags, 1, NativeArrayOptions.ClearMemory);
 
             if (!HashNativeStateReady(
                 rigidbodyElementHashes,
@@ -1168,11 +1169,11 @@ namespace Hecton8.Core.Determinism
             uint flags,
             NativeArray<LockstepArrayHash> arrayHashes)
         {
-            NativeArray<LockstepMasterHashHistoryEntry> history = GetVaultBuffer<LockstepMasterHashHistoryEntry>(
+            NativeArray<LockstepMasterHashHistoryEntry> history = OpenOrAcquireVaultBufferView<LockstepMasterHashHistoryEntry>(
                 BufferID.LockstepMasterHashHistory,
                 MasterHashHistoryCapacity,
                 NativeArrayOptions.ClearMemory);
-            NativeArray<int> cursor = GetVaultBuffer<int>(
+            NativeArray<int> cursor = OpenOrAcquireVaultBufferView<int>(
                 BufferID.LockstepMasterHashHistoryCursor,
                 1,
                 NativeArrayOptions.ClearMemory);
@@ -1300,7 +1301,6 @@ namespace Hecton8.Core.Determinism
             if (_inputFrameCount < ReplayInputFrameCapacity)
                 return;
 
-            EnsureReplayWriter();
             AutoResetEvent writerSignal = _writerSignal;
             if (_replayStream == null || writerSignal == null)
                 return;
@@ -1412,14 +1412,14 @@ namespace Hecton8.Core.Determinism
 
         private void WriteTelemetry(uint frame, uint flags)
         {
-            NativeArray<LockstepTelemetryEntry> telemetryRing = GetVaultBuffer<LockstepTelemetryEntry>(
+            NativeArray<LockstepTelemetryEntry> telemetryRing = OpenOrAcquireVaultBufferView<LockstepTelemetryEntry>(
                 BufferID.LockstepTelemetryRing,
                 TelemetryFrameCapacity,
                 NativeArrayOptions.ClearMemory);
             if (!telemetryRing.IsCreated)
                 return;
 
-            NativeArray<LockstepArrayHash> arrayHashes = GetVaultBuffer<LockstepArrayHash>(
+            NativeArray<LockstepArrayHash> arrayHashes = OpenOrAcquireVaultBufferView<LockstepArrayHash>(
                 BufferID.LockstepArrayHashes,
                 (int)LockstepHashCategory.Count,
                 NativeArrayOptions.ClearMemory);
@@ -1713,7 +1713,7 @@ namespace Hecton8.Core.Determinism
             return _dataVault;
         }
 
-        private NativeArray<T> GetVaultBuffer<T>(
+        private NativeArray<T> OpenOrAcquireVaultBufferView<T>(
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options = NativeArrayOptions.ClearMemory)
@@ -1850,25 +1850,25 @@ namespace Hecton8.Core.Determinism
 
         private void EnsureNativeState()
         {
-            GetVaultBuffer<LockstepArrayHash>(BufferID.LockstepArrayHashes, (int)LockstepHashCategory.Count, NativeArrayOptions.ClearMemory);
-            GetVaultBuffer<ulong>(BufferID.LockstepMasterStateHash, 1, NativeArrayOptions.ClearMemory);
-            GetVaultBuffer<uint>(BufferID.LockstepMasterFlags, 1, NativeArrayOptions.ClearMemory);
-            GetVaultBuffer<LockstepTelemetryEntry>(BufferID.LockstepTelemetryRing, TelemetryFrameCapacity, NativeArrayOptions.ClearMemory);
-            GetVaultBuffer<LockstepMasterHashHistoryEntry>(BufferID.LockstepMasterHashHistory, MasterHashHistoryCapacity, NativeArrayOptions.ClearMemory);
-            GetVaultBuffer<int>(BufferID.LockstepMasterHashHistoryCursor, 1, NativeArrayOptions.ClearMemory);
-            GetVaultBuffer<LockstepReplayInputFrame>(BufferID.LockstepReplayInputRing, ReplayInputFrameCapacity, NativeArrayOptions.ClearMemory);
+            OpenOrAcquireVaultBufferView<LockstepArrayHash>(BufferID.LockstepArrayHashes, (int)LockstepHashCategory.Count, NativeArrayOptions.ClearMemory);
+            OpenOrAcquireVaultBufferView<ulong>(BufferID.LockstepMasterStateHash, 1, NativeArrayOptions.ClearMemory);
+            OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepMasterFlags, 1, NativeArrayOptions.ClearMemory);
+            OpenOrAcquireVaultBufferView<LockstepTelemetryEntry>(BufferID.LockstepTelemetryRing, TelemetryFrameCapacity, NativeArrayOptions.ClearMemory);
+            OpenOrAcquireVaultBufferView<LockstepMasterHashHistoryEntry>(BufferID.LockstepMasterHashHistory, MasterHashHistoryCapacity, NativeArrayOptions.ClearMemory);
+            OpenOrAcquireVaultBufferView<int>(BufferID.LockstepMasterHashHistoryCursor, 1, NativeArrayOptions.ClearMemory);
+            OpenOrAcquireVaultBufferView<LockstepReplayInputFrame>(BufferID.LockstepReplayInputRing, ReplayInputFrameCapacity, NativeArrayOptions.ClearMemory);
         }
 
         private void EnsureHashNativeState()
         {
-            GetVaultBuffer<uint>(BufferID.LockstepRigidbodyElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            GetVaultBuffer<uint>(BufferID.LockstepPlayerElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            GetVaultBuffer<uint>(BufferID.LockstepRoomElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            GetVaultBuffer<uint>(BufferID.LockstepEntityElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            GetVaultBuffer<byte>(BufferID.LockstepRigidbodyElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            GetVaultBuffer<byte>(BufferID.LockstepPlayerElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            GetVaultBuffer<byte>(BufferID.LockstepRoomElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            GetVaultBuffer<byte>(BufferID.LockstepEntityElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepRigidbodyElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepPlayerElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepRoomElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepEntityElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepRigidbodyElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepPlayerElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepRoomElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+            OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepEntityElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
         }
 
         private static bool HashNativeStateReady(
@@ -1899,8 +1899,8 @@ namespace Hecton8.Core.Determinism
 
         private void EnsureGhostReplayBuffers()
         {
-            GetVaultBuffer<LockstepReplayBlockHeader>(BufferID.LockstepGhostReplayHeaders, MaxGhostReplayBlocks, NativeArrayOptions.ClearMemory);
-            GetVaultBuffer<LockstepReplayInputFrame>(BufferID.LockstepGhostReplayInputs, MaxGhostReplayBlocks * ReplayInputFrameCapacity, NativeArrayOptions.ClearMemory);
+            OpenOrAcquireVaultBufferView<LockstepReplayBlockHeader>(BufferID.LockstepGhostReplayHeaders, MaxGhostReplayBlocks, NativeArrayOptions.ClearMemory);
+            OpenOrAcquireVaultBufferView<LockstepReplayInputFrame>(BufferID.LockstepGhostReplayInputs, MaxGhostReplayBlocks * ReplayInputFrameCapacity, NativeArrayOptions.ClearMemory);
         }
 
         private static void DisposeNativeState()
@@ -1908,7 +1908,7 @@ namespace Hecton8.Core.Determinism
             // DataVault owns lockstep buffers and preserves the latest hash/blackbox across component lifetime churn.
         }
 
-        private void EnsureReplayWriter()
+        private void EnsureReplayWriterCold()
         {
             if (_writerSignal != null)
                 return;

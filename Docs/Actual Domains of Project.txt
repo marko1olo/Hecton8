@@ -1,4 +1,4 @@
-﻿Date: 2026-05-20
+﻿Date: 2026-05-28
 
 Status: PENDING VERIFICATION
 
@@ -40,9 +40,13 @@ NativeArray at startup. No ScriptableObjects in hot paths.
 
 6. Native Arena Allocator: Custom UnsafeUtility allocator for bypassing TempJob limits and memory pooling for Burst Jobs.
 
-7. Crash Telemetry (Blackbox): Circular event buffer (32-byte structures).
+7. Crash Telemetry (Blackbox): Fixed-size black-box rings keep the last
 
-Dump to .h8dump during crashes or FPS drops on a background thread.
+300 frames of high-level state. Primary fault dumps use bounded
+
+`Docs/AgentLogs/Dump_*.bin` files. `.h8dump` mirrors are legacy-only unless
+
+current source explicitly keeps them.
 
 8. Scalability Dictator (Hardware): Continuous `GlobalQualityWeight` scaling of Math LOD, cadence, capacity, and presentation cost from survival budget to visual-overrun budget.
 9. Platform Abstraction Layer (PAL): IInputProvider. Steam Deck broadcasting of Trackpad/gyro/gamepad inputs without API leaks in Core.

@@ -46,7 +46,7 @@ namespace Hecton8.Visor
         private sealed class VoxelSsaoPass : ScriptableRenderPass, IDisposable
         {
             private const int RenderTextureBucketSize = 64;
-            private const bool HasRuntimeConsumer = false;
+            private static readonly bool HasRuntimeConsumer = false;
             internal static bool HasRuntimeConsumerAvailable => HasRuntimeConsumer;
 
             private sealed class ComputePassData
