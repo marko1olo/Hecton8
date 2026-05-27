@@ -1232,3 +1232,10 @@ Follow-up proof after source-only refinement:
 - Scoped `git diff --check` on touched source/docs passed with line-ending warnings only.
 - Runtime touched-file brace balance: `FaunaDirector.cs=0`, `VocalWarningSystem.cs=0`.
 - CPU recheck after wait sampled `100%`; final CLI build/audit remains blocked by build guard, not declared complete.
+
+Final closure:
+- CPU later sampled `42%`, compiler count `0`.
+- `BUILD_UNKNOWN_SIGNAL_CLI_LAYOUT_ALIAS_FINAL_20260527.log`: `UnknownCheck` build failed with `CS2012` access denied on existing `obj`; not a source compile error.
+- `BUILD_UNKNOWN_SIGNAL_CLI_LAYOUT_ALIAS_FINAL2_20260527.log`: `UnknownFinal` build succeeded with `0` warnings and `0` errors.
+- `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_FINAL.json`: `errors=0`, `confirmedErrors=0`, `warnings=155`, `infos=1171`.
+- Important movement: `warnings 245 -> 155`, `LOCAL_NATIVE_TELEMETRY_RING_DECLARED_ONLY 1 -> 0`, `SIGNAL_LAYOUT_REVIEW 0`, `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT 1`.

@@ -1457,3 +1457,15 @@ Rejected Alternatives: Marking the pass complete from static checks was rejected
 Scalability potential: No runtime behavior change. The project keeps truthful evidence boundaries for low, middle, high, and ultra targets.
 
 Hardware Impact: Runtime microseconds saved claimed: `0`; documentation/tooling evidence boundary only.
+
+## Decision 116 - Close The Borrowed-View Classifier With A Separate Build Output
+
+Problem: The normal `UnknownCheck` build path failed with `CS2012` access denied on the existing intermediate DLL after CPU dropped below the build guard threshold.
+
+Solution: Build the same project source under a separate `UnknownFinal` configuration, then run the full SignalBus audit from that binary.
+
+Rejected Alternatives: Deleting the locked `obj` tree was rejected because other agents may be using it. Treating `CS2012` as a C# source failure was rejected because it is an output access boundary, not compiler diagnostics from project code.
+
+Scalability potential: No runtime behavior change. The final audit now separates borrowed job/struct telemetry views from persistent ownership debt across all target tiers.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; final tool proof only. Final audit warnings moved `245 -> 155`; declared-only telemetry ring warnings moved to `0`.
