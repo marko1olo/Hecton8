@@ -815,3 +815,9 @@ Solution: Replace the substring token with `json.AsSpan(tokenStart, length)` and
 Rejected Alternatives: Leave it because migration is cold. The domain is menu/settings hitch prevention, and this allocation was avoidable without changing the public format.
 Scalability potential: No tier behavior change. Old JSON float settings migrate identically.
 Hardware Impact: Removes one cold managed string allocation per migrated float option.
+
+Problem: Post-patch compile proof could not complete even after the CPU gate opened because the Core build references missing generated Unity ShaderGraph metadata.
+Solution: Run exactly one constrained Core build after CPU dropped to 37% and no compiler processes existed; record the external CS0006 metadata failure in status/log/report.
+Rejected Alternatives: Claim green compile, edit generated ShaderGraph metadata from the input/UI agent, or launch a broad solution rebuild after this known external wall. All would be false or outside domain.
+Scalability potential: Runtime design unchanged. Static proof remains valid; compile proof waits for generated metadata restoration.
+Hardware Impact: One constrained compiler pass, 48.43 s. No repeated build spam.

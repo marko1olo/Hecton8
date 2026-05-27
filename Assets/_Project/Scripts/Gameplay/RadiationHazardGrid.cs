@@ -478,7 +478,7 @@ namespace Hecton8.Gameplay
                     return;
 
                 _radiationSimulationJobActive = false;
-                ReleaseRadiationSdfReadLease();
+                ReleaseRadiationSdfSnapshotLock();
                 _lastBurstExecutionMicroseconds = TicksToMicroseconds(Stopwatch.GetTimestamp() - _radiationSimulationStartTicks);
             }
 
@@ -1844,7 +1844,10 @@ namespace Hecton8.Gameplay
             }
 
             if (!IsRadiationSdfSnapshotReady(vault, requiredLength, out snapshot))
+            {
+                UnlockRadiationSdfSnapshot(ref snapshotLocked);
                 return false;
+            }
 
             for (int i = 0; i < requiredLength; i++)
                 snapshot[i] = sourceSdf[i];
