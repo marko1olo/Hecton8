@@ -309,6 +309,32 @@ function Invoke-StarterIdentityToolProbe([string]$TemplatePath) {
     }
 }
 
+function Invoke-StarterInvalidVersionProbe([string]$TemplatePath) {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) 'Hecton8ModApiStaticValidation'
+    $probeRoot = Join-Path $tempRoot ([System.Guid]::NewGuid().ToString('N'))
+    $probeFull = $null
+    try {
+        [void](New-Item -ItemType Directory -Path $probeRoot -Force)
+        Get-ChildItem -LiteralPath $TemplatePath -Force | Copy-Item -Destination $probeRoot -Recurse -Force
+        $probeFull = (Resolve-Path -LiteralPath $probeRoot).Path
+        $toolPath = Join-Path $probeFull 'Tools\set_mod_identity.ps1'
+        $output = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'com.validation.badversion' -DisplayName 'Bad Version' -Author 'StaticValidator' -Version 'bad version'
+        return [pscustomobject]@{
+            ExitCode = $LASTEXITCODE
+            Output = @($output)
+        }
+    } finally {
+        if ($null -ne $probeFull) {
+            $tempRootFull = [System.IO.Path]::GetFullPath($tempRoot)
+            $probeFullPath = [System.IO.Path]::GetFullPath($probeFull)
+            if ($probeFullPath.StartsWith($tempRootFull, [System.StringComparison]::OrdinalIgnoreCase) -and
+                (Test-Path -LiteralPath $probeFullPath -PathType Container)) {
+                Remove-Item -LiteralPath $probeFullPath -Recurse -Force
+            }
+        }
+    }
+}
+
 function Invoke-StarterPrepareToolProbe([string]$TemplatePath) {
     $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) 'Hecton8ModApiStaticValidation'
     $probeRoot = Join-Path $tempRoot ([System.Guid]::NewGuid().ToString('N'))
@@ -876,6 +902,23 @@ $externalStarterKitIdentityToolValidatesCanonicalId =
     $moddingSdkHubSource.Contains('Validate-ModId $Id') -and
     $moddingSdkHubSource.Contains('reserved filesystem device segment') -and
     $moddingSdkHubSource.Contains('PASS HECTON-8 starter identity set')
+$externalStarterKitInvalidVersionProbe = Invoke-StarterInvalidVersionProbe $externalStarterKitTemplatePath
+$externalStarterKitIdentityToolRejectsInvalidVersion =
+    $externalStarterKitInvalidVersionProbe.ExitCode -ne 0
+$externalStarterKitValidatorChecksSemver =
+    $externalStarterKitTemplateValidatorSource.Contains('function Validate-Version') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('function Validate-Version') -and
+    $externalStarterKitTemplateValidatorSource.Contains('semantic version form MAJOR.MINOR.PATCH') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('semantic version form MAJOR.MINOR.PATCH') -and
+    $moddingSdkHubSource.Contains('function Validate-Version') -and
+    $moddingSdkHubSource.Contains('semantic version form MAJOR.MINOR.PATCH') -and
+    $externalStarterKitIdentityToolRejectsInvalidVersion
+$externalStarterKitValidatorChecksManifestIdentityTextParity =
+    $externalStarterKitTemplateValidatorSource.Contains('DisplayName must match mod.json Name') -and
+    $externalStarterKitTemplateValidatorSource.Contains('Author must match mod.json Author') -and
+    $externalStarterKitTemplateValidatorSource.Contains('Version must match mod.json Version') -and
+    $moddingSdkHubSource.Contains('DisplayName must match mod.json Name') -and
+    $moddingSdkHubSource.Contains('Version must match mod.json Version')
 $externalStarterKitToolsAvoidNestedPowerShell =
     (-not $externalStarterKitTemplateIdentityToolSource.Contains('& powershell')) -and
     (-not $externalStarterKitTemplateReviewManifestBuilderSource.Contains('& powershell')) -and
@@ -1119,6 +1162,9 @@ Assert-True $externalStarterKitWritesAllowedOpcodeListTool 'External starter kit
 Assert-True $externalStarterKitAllowedOpcodeListToolPasses 'External starter kit allowed opcode list helper must print current opcode aliases and hashes.'
 Assert-True $externalStarterKitAllowedOpcodeListToolSupportsJson 'External starter kit allowed opcode list helper must emit machine-readable JSON for Workbench/CLI reuse.'
 Assert-True $externalStarterKitIdentityToolValidatesCanonicalId 'External starter kit identity helper must validate canonical mod IDs.'
+Assert-True $externalStarterKitValidatorChecksSemver 'External starter kit validator and identity helper must enforce semantic version strings.'
+Assert-True $externalStarterKitValidatorChecksManifestIdentityTextParity 'External starter kit local validator must enforce display name, author, and version parity across manifests.'
+Assert-True $externalStarterKitIdentityToolRejectsInvalidVersion 'External starter kit identity helper must reject invalid version strings on a temp copy.'
 Assert-True $externalStarterKitToolsAvoidNestedPowerShell 'External starter kit tools must chain scripts in-process instead of requiring nested Windows PowerShell.'
 Assert-True $externalStarterKitToolsUsePortableJoinPath 'External starter kit tools must compose child paths through portable Join-Path segments.'
 Assert-True $externalStarterKitWritesJsonSchemas 'External starter kit must write JSON Schemas and editor schema mapping.'
@@ -1728,6 +1774,9 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesAllowedOpco
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitAllowedOpcodeListToolPasses) 'Schema sdkAuthoringAudit must record starter allowed opcode list helper pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitAllowedOpcodeListToolSupportsJson) 'Schema sdkAuthoringAudit must record starter allowed opcode list JSON output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitIdentityToolValidatesCanonicalId) 'Schema sdkAuthoringAudit must record starter identity helper canonical ID validation.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksSemver) 'Schema sdkAuthoringAudit must record starter semantic version validation.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksManifestIdentityTextParity) 'Schema sdkAuthoringAudit must record starter identity text parity validation.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitIdentityToolRejectsInvalidVersion) 'Schema sdkAuthoringAudit must record starter invalid version rejection.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitToolsAvoidNestedPowerShell) 'Schema sdkAuthoringAudit must record starter tools in-process script chaining.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitToolsUsePortableJoinPath) 'Schema sdkAuthoringAudit must record starter portable path composition.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesJsonSchemas) 'Schema sdkAuthoringAudit must record starter JSON Schema outputs.'
@@ -2249,6 +2298,9 @@ Assert-True ($lastStaticValidation.externalStarterKitWritesAllowedOpcodeListTool
 Assert-True ($lastStaticValidation.externalStarterKitAllowedOpcodeListToolPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter allowed opcode list helper pass."
 Assert-True ($lastStaticValidation.externalStarterKitAllowedOpcodeListToolSupportsJson -eq $true) "Schema lastStaticValidationSnapshot must record starter allowed opcode list JSON output."
 Assert-True ($lastStaticValidation.externalStarterKitIdentityToolValidatesCanonicalId -eq $true) "Schema lastStaticValidationSnapshot must record starter identity helper canonical ID validation."
+Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksSemver -eq $true) "Schema lastStaticValidationSnapshot must record starter semantic version validation."
+Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksManifestIdentityTextParity -eq $true) "Schema lastStaticValidationSnapshot must record starter identity text parity validation."
+Assert-True ($lastStaticValidation.externalStarterKitIdentityToolRejectsInvalidVersion -eq $true) "Schema lastStaticValidationSnapshot must record starter invalid version rejection."
 Assert-True ($lastStaticValidation.externalStarterKitToolsAvoidNestedPowerShell -eq $true) "Schema lastStaticValidationSnapshot must record starter tools in-process script chaining."
 Assert-True ($lastStaticValidation.externalStarterKitToolsUsePortableJoinPath -eq $true) "Schema lastStaticValidationSnapshot must record starter portable path composition."
 Assert-True ($lastStaticValidation.externalStarterKitWritesJsonSchemas -eq $true) "Schema lastStaticValidationSnapshot must record starter JSON Schema outputs."
@@ -2389,6 +2441,9 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesAllowedOpcod
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitAllowedOpcodeListToolPasses = True')) 'Runtime playbook missing starter allowed opcode list helper pass evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitAllowedOpcodeListToolSupportsJson = True')) 'Runtime playbook missing starter allowed opcode list JSON evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitIdentityToolValidatesCanonicalId = True')) 'Runtime playbook missing starter identity helper canonical ID evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksSemver = True')) 'Runtime playbook missing starter semver validation evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksManifestIdentityTextParity = True')) 'Runtime playbook missing starter identity text parity evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitIdentityToolRejectsInvalidVersion = True')) 'Runtime playbook missing starter invalid version rejection evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitToolsAvoidNestedPowerShell = True')) 'Runtime playbook missing starter cross-platform tool chaining evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitToolsUsePortableJoinPath = True')) 'Runtime playbook missing starter portable path composition evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesJsonSchemas = True')) 'Runtime playbook missing starter JSON Schema output evidence.'
@@ -2580,6 +2635,9 @@ $result = [pscustomobject]@{
     ExternalStarterKitAllowedOpcodeListToolPasses = $externalStarterKitAllowedOpcodeListToolPasses
     ExternalStarterKitAllowedOpcodeListToolSupportsJson = $externalStarterKitAllowedOpcodeListToolSupportsJson
     ExternalStarterKitIdentityToolValidatesCanonicalId = $externalStarterKitIdentityToolValidatesCanonicalId
+    ExternalStarterKitValidatorChecksSemver = $externalStarterKitValidatorChecksSemver
+    ExternalStarterKitValidatorChecksManifestIdentityTextParity = $externalStarterKitValidatorChecksManifestIdentityTextParity
+    ExternalStarterKitIdentityToolRejectsInvalidVersion = $externalStarterKitIdentityToolRejectsInvalidVersion
     ExternalStarterKitToolsAvoidNestedPowerShell = $externalStarterKitToolsAvoidNestedPowerShell
     ExternalStarterKitToolsUsePortableJoinPath = $externalStarterKitToolsUsePortableJoinPath
     ExternalStarterKitWritesJsonSchemas = $externalStarterKitWritesJsonSchemas
