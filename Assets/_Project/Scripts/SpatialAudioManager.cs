@@ -8441,7 +8441,7 @@ namespace Hecton8.Audio
             }
 
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
             {
                 handle = default;
                 return false;
@@ -8461,6 +8461,9 @@ namespace Hecton8.Audio
 
                 return true;
             }
+
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
 
             handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
@@ -8487,11 +8490,13 @@ namespace Hecton8.Audio
             IDataVault vault = _dataVault;
             bool lockAcquired =
                 vault != null &&
+                !vault.IsCompactionFenceActive &&
                 requiredLength > 0 &&
                 IsAudioVaultHandle(in handle, bufferId, SystemID.Audio) &&
                 vault.TryAcquireWriteLock(in handle, SystemID.Audio, out buffer);
 
             if (!lockAcquired ||
+                vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -8674,7 +8679,7 @@ namespace Hecton8.Audio
 
         private void ReleaseAcousticOcclusionBufferLocks()
         {
-            ReleaseAcousticOcclusionSdfLease();
+            ReleaseAcousticOcclusionSdfSnapshotLock();
 
             IDataVault vault = _acousticOcclusionBuffersLockVault ?? _dataVault;
             if (_acousticDspOutputPoolLockedForOcclusion)
@@ -8707,18 +8712,28 @@ namespace Hecton8.Audio
             _acousticOcclusionBuffersLockVault = null;
         }
 
-        private void ReleaseAcousticOcclusionSdfLease()
+        private void ReleaseAcousticOcclusionSdfSnapshotLock()
         {
-            if (!_acousticOcclusionSdfLeaseLocked)
+            if (!_acousticOcclusionSdfSnapshotLocked)
                 return;
 
-            HectonVoxelVolume volume = _acousticOcclusionSdfLeaseVolume;
-            if (volume != null)
-                volume.ReleasePublishedSonarSdfPayloadReadLease(in _acousticOcclusionSdfLease);
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(SpatialAudioAcousticVoxelSdfTexture3DBufferId, SystemID.Audio);
 
-            _acousticOcclusionSdfLeaseVolume = null;
-            _acousticOcclusionSdfLease = default;
-            _acousticOcclusionSdfLeaseLocked = false;
+            _acousticOcclusionSdfSnapshotLocked = false;
+        }
+
+        private void UnlockAcousticOcclusionSdfSnapshot(ref bool locked)
+        {
+            if (!locked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(SpatialAudioAcousticVoxelSdfTexture3DBufferId, SystemID.Audio);
+
+            locked = false;
         }
 
         private void ReleaseAcousticMaterialRowsOcclusionLock()
@@ -9192,6 +9207,7 @@ namespace Hecton8.Audio
                 return true;
 
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !vault.TryGetGenerationHandle(bufferId, out handle) ||
                 !TryOpenAudioVaultBuffer(vault, ref handle, bufferId, ownerSystem, requiredLength, out buffer))
@@ -9214,9 +9230,11 @@ namespace Hecton8.Audio
         {
             buffer = default;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !IsAudioVaultHandle(in handle, bufferId, ownerSystem) ||
                 !vault.TryResolveHandle(in handle, out buffer) ||
+                vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {

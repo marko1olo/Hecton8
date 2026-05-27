@@ -1621,190 +1621,133 @@ namespace Hecton8.UI
         }
 #endif
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct GenerateMockWristMatricesJob : IJobParallelFor
+        private static float TriangleWaveSigned(float phase)
         {
-            [NoAlias] public NativeArray<PdaProjectionInputDTO> Inputs;
-            public double3 CameraAup;
-            public float TimeSeconds;
-            public uint FrameIndex;
-            public uint ActiveTabHashID;
-            public float BootSequenceProgress01;
-            public float ScreenWidthMeters;
-            public float ScreenHeightMeters;
-            public float3 LocalScreenOffset;
-            public float GlassRefractionIndex;
-            public float ScreenCurvatureScalar;
-            public float GlobalQualityWeight01;
-            public uint Flags;
+            return math.abs(math.frac(phase) * 2f - 1f) * 2f - 1f;
+        }
 
-            public void Execute(int index)
+        private static void CompilePdaProjectionMatrices(
+            NativeArray<PdaProjectionInputDTO> inputs,
+            NativeArray<PdaStateDTO> states,
+            NativeArray<PdaProjectionTelemetryEntry> telemetry,
+            NativeArray<int> telemetryCursor,
+            uint frameIndex)
+        {
+            if (!inputs.IsCreated || inputs.Length <= 0 || !states.IsCreated || states.Length <= 0)
+                return;
+
+            ref readonly PdaProjectionInputDTO input = ref ResolvePdaProjectionReadOnlyElementRef(inputs, 0);
+            uint flags = input.PdaFlags;
+            quaternion rotation = NormalizePdaProjectionQuaternion(input.WristRotation, out uint rotationFlags);
+            flags |= rotationFlags;
+
+            float3 localDelta = AupPrecisionMath.LocalDeltaFloat3(
+                input.WristAup,
+                input.CameraAup,
+                MakeFloat3(0f, -0.08f, 0.54f));
+            if (!math.all(math.isfinite(localDelta)))
             {
-                float t = TimeSeconds + index * 0.17320508f;
-                float orbit = TriangleWaveSigned(t * 0.1162f) * 0.035f;
-                float3 local = MakeFloat3(
-                    orbit,
-                    -0.08f + TriangleWaveSigned(t * 0.1862f + 0.19f) * 0.018f,
-                    0.54f + TriangleWaveSigned(t * 0.1448f + 0.25f) * 0.025f);
-                quaternion rotation = quaternion.EulerXYZ(
-                    math.radians(-18f + TriangleWaveSigned(t * 0.1003f) * 8f),
-                    math.radians(4f + TriangleWaveSigned(t * 0.0653f + 0.31f) * 12f),
-                    math.radians(TriangleWaveSigned(t * 0.1385f + 0.07f) * 7f));
-                PdaProjectionInputDTO input = default;
-                input.WristAup = CameraAup + MakeDouble3(local.x, local.y, local.z);
-                input.CameraAup = CameraAup;
-                input.WristRotation = rotation.value;
-                input.LocalScreenOffset = LocalScreenOffset;
-                input.ScreenWidthMeters = ScreenWidthMeters;
-                input.ScreenHeightMeters = ScreenHeightMeters;
-                input.BootSequenceProgress01 = BootSequenceProgress01;
-                input.ActiveTabHashID = ActiveTabHashID;
-                input.PdaFlags = Flags;
-                input.GlassRefractionIndex = GlassRefractionIndex;
-                input.ScreenCurvatureScalar = ScreenCurvatureScalar;
-                input.GlobalQualityWeight01 = GlobalQualityWeight01;
-                Inputs[index] = input;
+                localDelta = MakeFloat3(0f, -0.08f, 0.54f);
+                flags |= PdaProjectionFlagNonFinite;
             }
 
-            private static float TriangleWaveSigned(float phase)
+            float3 rightFallback = MakeFloat3(1f, 0f, 0f);
+            float3 upFallback = MakeFloat3(0f, 1f, 0f);
+            float3 forwardFallback = MakeFloat3(0f, 0f, 1f);
+            float3 right = AupPrecisionMath.SafeNormalize(math.mul(rotation, rightFallback), rightFallback);
+            float3 up = AupPrecisionMath.SafeNormalize(math.mul(rotation, upFallback), upFallback);
+            float3 forward = AupPrecisionMath.SafeNormalize(math.mul(rotation, forwardFallback), forwardFallback);
+            float3 center = localDelta + right * input.LocalScreenOffset.x + up * input.LocalScreenOffset.y + forward * input.LocalScreenOffset.z;
+            if (!math.all(math.isfinite(center)))
             {
-                return math.abs(math.frac(phase) * 2f - 1f) * 2f - 1f;
+                center = MakeFloat3(0f, -0.08f, 0.54f);
+                flags |= PdaProjectionFlagNonFinite;
+            }
+
+            float4x4 matrix = default;
+            matrix.c0 = MakeFloat4(right, 0f);
+            matrix.c1 = MakeFloat4(up, 0f);
+            matrix.c2 = MakeFloat4(forward, 0f);
+            matrix.c3 = MakeFloat4(center, 1f);
+
+            ref PdaStateDTO state = ref ResolvePdaProjectionElementRef(states, 0);
+            state.LocalToWorld = matrix;
+            state.ActiveTabHashID = input.ActiveTabHashID;
+            state.BootSequenceProgress01 = math.saturate(input.BootSequenceProgress01);
+            state.PdaFlags = flags;
+
+            if (telemetry.IsCreated && telemetry.Length > 0 && telemetryCursor.IsCreated && telemetryCursor.Length > 0)
+            {
+                ref int cursor = ref ResolvePdaProjectionElementRef(telemetryCursor, 0);
+                int index = cursor;
+                if ((uint)index >= (uint)telemetry.Length)
+                    index = 0;
+                cursor = index + 1;
+
+                ref PdaProjectionTelemetryEntry entry = ref ResolvePdaProjectionElementRef(telemetry, index);
+                entry.FrameIndex = frameIndex;
+                entry.Flags = flags;
+                entry.ActiveTabHashID = input.ActiveTabHashID;
+                entry.JobMicrosecondsQ16 = 0u;
+                entry.LocalizedDistanceMeters = math.length(center);
+                entry.BootSequenceProgress01 = math.saturate(input.BootSequenceProgress01);
+                entry.QualityWeight01 = math.saturate(input.GlobalQualityWeight01);
+                entry.TelemetryCursor = (uint)cursor;
+                entry.MatrixHash = HashPdaProjectionMatrix(matrix);
+                entry.ProfileHash = input.ActiveTabHashID;
+                entry.ScreenWidthMeters = math.max(0.01f, input.ScreenWidthMeters);
+                entry.ScreenHeightMeters = math.max(0.01f, input.ScreenHeightMeters);
+                entry.GlassRefractionIndex = math.max(1f, input.GlassRefractionIndex);
+                entry.ScreenCurvatureScalar = math.saturate(input.ScreenCurvatureScalar);
+                entry.GlobalQualityWeight01 = math.saturate(input.GlobalQualityWeight01);
+                entry.PdaFlags = flags;
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct CompilePdaMatricesJob : IJob
+        private static quaternion NormalizePdaProjectionQuaternion(float4 value, out uint flags)
         {
-            [ReadOnly, NoAlias] public NativeArray<PdaProjectionInputDTO> Inputs;
-            [NoAlias] public NativeArray<PdaStateDTO> States;
-            [NoAlias] public NativeArray<PdaProjectionTelemetryEntry> Telemetry;
-            [NoAlias] public NativeArray<int> TelemetryCursor;
-            public uint FrameIndex;
-
-            public void Execute()
+            flags = 0u;
+            float lengthSq = math.lengthsq(value);
+            if (!math.isfinite(lengthSq) || lengthSq < 0.000001f)
             {
-                if (!Inputs.IsCreated || Inputs.Length <= 0 || !States.IsCreated || States.Length <= 0)
-                    return;
-
-                ref readonly PdaProjectionInputDTO input = ref ReadOnlyElementRef(Inputs, 0);
-                uint flags = input.PdaFlags;
-                quaternion rotation = NormalizeQuaternion(input.WristRotation, out uint rotationFlags);
-                flags |= rotationFlags;
-
-                float3 localDelta = AupPrecisionMath.LocalDeltaFloat3(
-                    input.WristAup,
-                    input.CameraAup,
-                    MakeFloat3(0f, -0.08f, 0.54f));
-                if (!math.all(math.isfinite(localDelta)))
-                {
-                    localDelta = MakeFloat3(0f, -0.08f, 0.54f);
-                    flags |= PdaProjectionFlagNonFinite;
-                }
-
-                float3 rightFallback = MakeFloat3(1f, 0f, 0f);
-                float3 upFallback = MakeFloat3(0f, 1f, 0f);
-                float3 forwardFallback = MakeFloat3(0f, 0f, 1f);
-                float3 right = AupPrecisionMath.SafeNormalize(math.mul(rotation, rightFallback), rightFallback);
-                float3 up = AupPrecisionMath.SafeNormalize(math.mul(rotation, upFallback), upFallback);
-                float3 forward = AupPrecisionMath.SafeNormalize(math.mul(rotation, forwardFallback), forwardFallback);
-                float3 center = localDelta + right * input.LocalScreenOffset.x + up * input.LocalScreenOffset.y + forward * input.LocalScreenOffset.z;
-                if (!math.all(math.isfinite(center)))
-                {
-                    center = MakeFloat3(0f, -0.08f, 0.54f);
-                    flags |= PdaProjectionFlagNonFinite;
-                }
-
-                float4x4 matrix = default;
-                matrix.c0 = MakeFloat4(right, 0f);
-                matrix.c1 = MakeFloat4(up, 0f);
-                matrix.c2 = MakeFloat4(forward, 0f);
-                matrix.c3 = MakeFloat4(center, 1f);
-
-                ref PdaStateDTO state = ref ElementRef(States, 0);
-                state.LocalToWorld = matrix;
-                state.ActiveTabHashID = input.ActiveTabHashID;
-                state.BootSequenceProgress01 = math.saturate(input.BootSequenceProgress01);
-                state.PdaFlags = flags;
-
-                if (Telemetry.IsCreated && Telemetry.Length > 0 && TelemetryCursor.IsCreated && TelemetryCursor.Length > 0)
-                {
-                    ref int cursor = ref ElementRef(TelemetryCursor, 0);
-                    int index = cursor;
-                    if ((uint)index >= (uint)Telemetry.Length)
-                        index = 0;
-                    cursor = index + 1;
-
-                    ref PdaProjectionTelemetryEntry entry = ref ElementRef(Telemetry, index);
-                    entry.FrameIndex = FrameIndex;
-                    entry.Flags = flags;
-                    entry.ActiveTabHashID = input.ActiveTabHashID;
-                    entry.JobMicrosecondsQ16 = 0u;
-                    entry.LocalizedDistanceMeters = math.length(center);
-                    entry.BootSequenceProgress01 = math.saturate(input.BootSequenceProgress01);
-                    entry.QualityWeight01 = math.saturate(input.GlobalQualityWeight01);
-                    entry.TelemetryCursor = (uint)cursor;
-                    entry.MatrixHash = HashMatrix(matrix);
-                    entry.ProfileHash = input.ActiveTabHashID;
-                    entry.ScreenWidthMeters = math.max(0.01f, input.ScreenWidthMeters);
-                    entry.ScreenHeightMeters = math.max(0.01f, input.ScreenHeightMeters);
-                    entry.GlassRefractionIndex = math.max(1f, input.GlassRefractionIndex);
-                    entry.ScreenCurvatureScalar = math.saturate(input.ScreenCurvatureScalar);
-                    entry.GlobalQualityWeight01 = math.saturate(input.GlobalQualityWeight01);
-                    entry.PdaFlags = flags;
-                }
+                flags |= PdaProjectionFlagNonFinite;
+                return quaternion.identity;
             }
 
-            private static quaternion NormalizeQuaternion(float4 value, out uint flags)
-            {
-                flags = 0u;
-                float lengthSq = math.lengthsq(value);
-                if (!math.isfinite(lengthSq) || lengthSq < 0.000001f)
-                {
-                    flags |= PdaProjectionFlagNonFinite;
-                    return quaternion.identity;
-                }
+            quaternion normalized = default;
+            normalized.value = value * math.rsqrt(lengthSq);
+            return normalized;
+        }
 
-                quaternion normalized = default;
-                normalized.value = value * math.rsqrt(lengthSq);
-                return normalized;
-            }
+        private static uint HashPdaProjectionMatrix(float4x4 matrix)
+        {
+            uint hash = 2166136261u;
+            hash = Mix(hash, math.asuint(matrix.c0.x));
+            hash = Mix(hash, math.asuint(matrix.c0.y));
+            hash = Mix(hash, math.asuint(matrix.c0.z));
+            hash = Mix(hash, math.asuint(matrix.c1.x));
+            hash = Mix(hash, math.asuint(matrix.c1.y));
+            hash = Mix(hash, math.asuint(matrix.c1.z));
+            hash = Mix(hash, math.asuint(matrix.c2.x));
+            hash = Mix(hash, math.asuint(matrix.c2.y));
+            hash = Mix(hash, math.asuint(matrix.c2.z));
+            hash = Mix(hash, math.asuint(matrix.c3.x));
+            hash = Mix(hash, math.asuint(matrix.c3.y));
+            hash = Mix(hash, math.asuint(matrix.c3.z));
+            return hash;
+        }
 
-            private static uint HashMatrix(float4x4 matrix)
-            {
-                uint hash = 2166136261u;
-                hash = Mix(hash, math.asuint(matrix.c0.x));
-                hash = Mix(hash, math.asuint(matrix.c0.y));
-                hash = Mix(hash, math.asuint(matrix.c0.z));
-                hash = Mix(hash, math.asuint(matrix.c1.x));
-                hash = Mix(hash, math.asuint(matrix.c1.y));
-                hash = Mix(hash, math.asuint(matrix.c1.z));
-                hash = Mix(hash, math.asuint(matrix.c2.x));
-                hash = Mix(hash, math.asuint(matrix.c2.y));
-                hash = Mix(hash, math.asuint(matrix.c2.z));
-                hash = Mix(hash, math.asuint(matrix.c3.x));
-                hash = Mix(hash, math.asuint(matrix.c3.y));
-                hash = Mix(hash, math.asuint(matrix.c3.z));
-                return hash;
-            }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Mix(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * 16777619u;
+        }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static uint Mix(uint hash, uint value)
-            {
-                hash ^= value;
-                return hash * 16777619u;
-            }
-
-            private static ref readonly T ReadOnlyElementRef<T>(NativeArray<T> buffer, int index) where T : unmanaged
-            {
-                void* basePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer);
-                return ref UnsafeUtility.AsRef<T>((byte*)basePtr + index * UnsafeUtility.SizeOf<T>());
-            }
-
-            private static ref T ElementRef<T>(NativeArray<T> buffer, int index) where T : unmanaged
-            {
-                void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
-                return ref UnsafeUtility.AsRef<T>((byte*)basePtr + index * UnsafeUtility.SizeOf<T>());
-            }
+        private static ref readonly T ResolvePdaProjectionReadOnlyElementRef<T>(NativeArray<T> buffer, int index) where T : unmanaged
+        {
+            void* basePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer);
+            return ref UnsafeUtility.AsRef<T>((byte*)basePtr + index * UnsafeUtility.SizeOf<T>());
         }
 
     }

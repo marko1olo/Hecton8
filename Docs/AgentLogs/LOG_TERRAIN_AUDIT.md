@@ -1972,3 +1972,37 @@ Verification:
 - Source gate passed: MapMagic, vegetation, voxel, and player hotswap cases exist.
 - `git diff --check` passed on touched terrain/resource/test/docs files with LF/CRLF warnings only.
 - Compile was not run: `dotnet` PID 62068 was active and CPU sampled at 65%, above the project threshold.
+
+## Fifty-first pass: BiomeMatrix runtime player reference route
+
+What was wrong:
+- `BiomeMatrixDirector.EvaluateMatrix()` called `ResolveReferences()` while playing.
+- `ResolveReferences()` can mutate `playerTransform` / `_playerMovement` from the cached player context.
+- `SlowTick()` calls `EvaluateMatrix(false)`, so biome matrix evaluation still carried dependency-repair behavior in an active runtime route.
+
+What was done:
+- `EvaluateMatrix()` now calls `ResolveReferences()` only when `!Application.isPlaying`.
+- Added `RebindPlayerRuntimeContext(previousService, currentService)` for `GlobalRegistryServiceSlot.Player`.
+- The hotswap route clears the previous player transform only if this director cached that exact transform.
+- `ApplyPlayerRuntimeContext()` now updates `playerTransform` and `_playerMovement` when the current context provides non-null values.
+- Added source-contract coverage in `TerrainChunkSignalContractEditTests.BiomeMatrixRuntimeEvaluation_DoesNotRepairPlayerReferences`.
+- Updated `Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md`.
+
+Cinematic Cheats used:
+- No simulation changed.
+- Architectural cheat: biome matrix runtime evaluation reads cached player state; editor preview keeps the slower reference repair path outside play mode.
+
+Exact Microseconds saved:
+- Measured: 0 us. Unity profiler was not run.
+- Static estimate: 35 us mutation-risk reduction from removing player reference repair out of runtime biome matrix evaluation.
+
+Residual:
+- `DepthZoneDirector.Instance => GlobalRegistry.DepthZone` remains blocked because `DepthZoneDirector.cs` is invalid UTF-8 and `apply_patch` cannot edit it safely.
+- Unity/dotnet compile proof is still absent because compile guard was red in the previous pass.
+
+Verification:
+- Source gate passed: `EvaluateMatrix` contains exactly one `ResolveReferences()` call and it is under `if (!Application.isPlaying)`.
+- Source gate passed: `RebindPlayerRuntimeContext(previousService, currentService)` exists.
+- Source gate passed: player context apply updates transform/movement only when context values are non-null.
+- `git diff --check` passed on touched biome-matrix/test/docs files with LF/CRLF warning only.
+- Compile was not run in this pass because the previous guard found active `dotnet` PID 62068 and CPU above threshold.

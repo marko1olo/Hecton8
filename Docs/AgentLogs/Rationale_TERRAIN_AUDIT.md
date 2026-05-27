@@ -511,3 +511,15 @@ Solution: Skipped `dotnet build` and recorded the missing compile proof explicit
 Rejected Alternatives: Starting a second build while another `dotnet` process was active and CPU exceeded 50% was rejected because it violates the project coordination rule.
 Scalability potential: None changed by the skipped build. Low/Middle/High/Ultra behavior is governed by the cached resource dependency route already patched.
 Hardware Impact: Exact microseconds saved: 0. This is a verification constraint, not a runtime optimization.
+
+Problem: `BiomeMatrixDirector.EvaluateMatrix()` called `ResolveReferences()` while playing. That helper can mutate player transform/movement caches; the matrix slow tick should evaluate from cached runtime context, not repair dependencies during evaluation.
+Solution: Gate `ResolveReferences()` inside `EvaluateMatrix()` behind `!Application.isPlaying`. Add `RebindPlayerRuntimeContext(previousService, currentService)` so player hotswap clears the previous cached transform if it owned it, then applies the current runtime context. `ApplyPlayerRuntimeContext()` now updates transform/movement when context values are non-null.
+Rejected Alternatives: Leaving per-evaluation player repair was rejected because biome matrix evaluation is an active slow-tick route. Removing editor reference repair was rejected because scene-view/editor preview still needs it. Polling bootstrap/player globals was rejected because `Player` hotswap already owns rebinding.
+Scalability potential: Low = biome matrix slow tick reads cached transform only. Middle = normal depth/region profile transitions. High = denser biome-linked dust/current/decal responses through the same cached context. Ultra = richer biome presentation without switching player authority or repairing dependencies during evaluation.
+Hardware Impact: Exact microseconds saved: 0 measured, profiler absent. Static estimate: 35 us mutation-risk reduction. Main value is route hygiene and stale-player prevention, not a measured frame-time claim.
+
+Problem: Fifty-first-pass compile proof was not taken because the previous compile guard found active `dotnet` PID 62068 and CPU above the project threshold.
+Solution: Kept verification to source gates and `git diff --check`.
+Rejected Alternatives: Starting a build while the guard was red was rejected by the project coordination rule.
+Scalability potential: None changed by skipped compile. Low/Middle/High/Ultra behavior is governed by the cached biome matrix player route already patched.
+Hardware Impact: Exact microseconds saved: 0. This is a verification constraint, not a runtime optimization.
