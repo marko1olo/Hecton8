@@ -124,3 +124,11 @@ Solution: Add generated previous-snapshot delta accounting, recheck current offi
 Rejected Alternatives: Restoring token telemetry into active `Docs/Reports` was rejected because it remains local process telemetry, not project engineering authority. Manual one-off delta math was rejected because it would rot on the next run.
 Scalability potential: Future daily refreshes now show totals and deltas from the last dated snapshot without hand calculation.
 Hardware Impact: 0 us runtime gain.
+
+## Decision 24 - 2026-05-27 late-day re-refresh and commit boundary
+
+Problem: The operator requested a fresh update and full commit/push after additional local Codex telemetry and workspace changes accumulated.
+Solution: Recheck official OpenAI pricing/cache/reasoning pages, regenerate the archived token snapshot from JSONL, and commit the token refresh separately before a full non-1334 workspace checkpoint.
+Rejected Alternatives: Treating `xhigh` as a separate price row was rejected because official docs define it as reasoning effort, with reasoning tokens billed as output. Staging paths containing `1334` was rejected because the operator explicitly forbade touching that agent's files.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; audit evidence remains reproducible and future full checkpoints can preserve explicit ownership exclusions.
+Hardware Impact: 0 us runtime gain.

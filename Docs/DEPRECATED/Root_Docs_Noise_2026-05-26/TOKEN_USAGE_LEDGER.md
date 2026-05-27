@@ -1,6 +1,6 @@
 ﻿# Codex Token Usage Ledger
 
-Date: 2026-05-27 13:47 Europe/Samara
+Date: 2026-05-27 20:42 Europe/Samara
 Status: CURRENT STATIC LOCAL TELEMETRY SNAPSHOT / NOT PROJECT ENGINEERING AUTHORITY
 
 This file is the local token accounting surface archived out of active project docs. The detailed current report is `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-27.md`; machine-readable data is `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-27.json`.
@@ -13,44 +13,44 @@ Accounting rule: parse JSONL `session_meta`/`token_count`, take the final per-se
 
 | Metric | Value |
 |---|---:|
-| unique_session_or_path_keys | 2,814 |
-| sessions_with_usage | 2,788 |
+| unique_session_or_path_keys | 2,827 |
+| sessions_with_usage | 2,801 |
 | sessions_without_usage | 26 |
 | duplicate_records_removed | 107 |
 | files_missing_session_id | 2 |
 | First selected timestamp UTC | 2026-04-03T17:11:28.591000+00:00 |
-| Last selected timestamp UTC | 2026-05-27T09:49:31.931000+00:00 |
-| input_tokens | 105,501,553,097 |
-| cached_input_tokens | 101,372,633,216 |
-| output_tokens | 367,050,571 |
-| reasoning_output_tokens | 115,519,808 |
-| total_tokens | 105,869,637,268 |
-| Uncached input tokens | 4,128,919,881 |
-| Cached-input ratio | 96.086389% |
+| Last selected timestamp UTC | 2026-05-27T16:44:10.389000+00:00 |
+| input_tokens | 107,399,653,529 |
+| cached_input_tokens | 103,189,309,056 |
+| output_tokens | 372,985,934 |
+| reasoning_output_tokens | 117,263,392 |
+| total_tokens | 107,773,673,063 |
+| Uncached input tokens | 4,210,344,473 |
+| Cached-input ratio | 96.079741% |
 
 ## Change Since Previous Snapshot
 
 Previous report: `C:\hades\Hecton8\Docs\DEPRECATED\Root_Docs_Noise_2026-05-26\TOKEN_USAGE_AUDIT_2026-05-26.json`.
 Previous generated Samara: `2026-05-26T21:33:27.098408+04:00`.
-Elapsed hours: 16.24
+Elapsed hours: 23.15
 
 | Metric | Delta |
 |---|---:|
-| file_count | 44 |
-| sessions_with_usage | 39 |
-| input_tokens | 3,428,623,438 |
-| cached_input_tokens | 3,292,579,712 |
-| output_tokens | 11,225,743 |
-| reasoning_output_tokens | 3,227,306 |
-| total_tokens | 3,439,849,181 |
-| GPT-5.5 standard API-equivalent $ | $2,663.28 |
-| GPT-5.5 priority API-equivalent $ | $6,658.20 |
-| gpt-5.3-codex standard comparison $ | $971.44 |
-| top model-effort tokens | 3,410,901,203 |
-| top model-effort sessions | 30 |
-| top model-effort standard $ | $2,638.44 |
-| tokens / primary code line | 1,099.54 |
-| tokens / 1k primary code chars | 26,096.69 |
+| file_count | 57 |
+| sessions_with_usage | 52 |
+| input_tokens | 5,326,723,870 |
+| cached_input_tokens | 5,109,255,552 |
+| output_tokens | 17,161,106 |
+| reasoning_output_tokens | 4,970,890 |
+| total_tokens | 5,343,884,976 |
+| GPT-5.5 standard API-equivalent $ | $4,156.80 |
+| GPT-5.5 priority API-equivalent $ | $10,392.01 |
+| gpt-5.3-codex standard comparison $ | $1,514.94 |
+| top model-effort tokens | 5,298,527,476 |
+| top model-effort sessions | 37 |
+| top model-effort standard $ | $4,117.74 |
+| tokens / primary code line | 1,670.63 |
+| tokens / 1k primary code chars | 39,454.91 |
 
 `cached_input_tokens` is a telemetry subcounter of input-token reuse, not an extra token class to add on top of `total_tokens`.
 
@@ -60,13 +60,13 @@ Local Codex telemetry is not an invoice. The primary estimate uses official `gpt
 
 | Scenario | Total | No-cache upper bound |
 |---|---:|---:|
-| gpt-5.5 standard short-context API-equivalent | $82,342.43 | $538,519.28 |
-| gpt-5.5_priority_short_context_equivalent | $205,856.08 | $1,346,298.21 |
-| gpt-5.5_batch_short_context_equivalent | $41,171.22 | $269,259.64 |
-| gpt-5.5_flex_short_context_equivalent | $41,171.22 | $269,259.64 |
-| gpt-5.4_standard_short_context_equivalent | $41,171.22 | $269,259.64 |
-| gpt-5.3-codex_standard_api_equivalent | $30,104.53 | $189,766.43 |
-| gpt-5.3-codex_priority_api_equivalent | $60,209.06 | $379,532.85 |
+| gpt-5.5 standard short-context API-equivalent | $83,835.95 | $548,187.85 |
+| gpt-5.5_priority_short_context_equivalent | $209,589.89 | $1,370,469.61 |
+| gpt-5.5_batch_short_context_equivalent | $41,917.98 | $274,093.92 |
+| gpt-5.5_flex_short_context_equivalent | $41,917.98 | $274,093.92 |
+| gpt-5.4_standard_short_context_equivalent | $41,917.98 | $274,093.92 |
+| gpt-5.3-codex_standard_api_equivalent | $30,648.03 | $193,171.20 |
+| gpt-5.3-codex_priority_api_equivalent | $61,296.07 | $386,342.39 |
 
 ## Model Attribution
 
@@ -74,7 +74,7 @@ Exact model labels are available only where JSONL contains structured `turn_cont
 
 | Model | Sessions | Total tokens | Standard cost if rate known |
 |---|---:|---:|---:|
-| gpt-5.5 | 2,543 | 94,202,563,511 | $72,880.85 |
+| gpt-5.5 | 2,556 | 96,106,599,306 | $74,374.38 |
 | gpt-5.4 | 232 | 11,564,030,598 | $4,680.91 |
 | gpt-5.2-codex | 3 | 85,512,992 | unpriced |
 | gpt-5.1-codex-mini | 3 | 13,472,930 | unpriced |
@@ -84,82 +84,82 @@ Exact model labels are available only where JSONL contains structured `turn_cont
 
 Model-specific cost bounds:
 
-- Known model standard cost only: $77,562.78
+- Known model standard cost only: $79,056.31
 - Unpriced known-model tokens: 99,128,081
-- Known + unpriced as gpt-5.3-codex standard: $77,598.17
-- Known + unpriced as gpt-5.5 standard: $77,658.22
+- Known + unpriced as gpt-5.3-codex standard: $79,091.69
+- Known + unpriced as gpt-5.5 standard: $79,151.74
 
 ## Interpretive Snapshot
 
 | Metric | Value |
 |---|---:|
 | active_days | 55.0000 |
-| mean_tokens_per_active_day | 1,924,902,495.7818 |
+| mean_tokens_per_active_day | 1,959,521,328.4182 |
 | median_tokens_per_active_day | 1,099,097,709.0000 |
-| session_gini_total_tokens | 0.7815 |
-| top_1_percent_sessions_share | 17.7721% |
-| top_10_percent_sessions_share | 61.7569% |
-| equivalent_full_258400_context_windows | 409,712.2185 |
-| tokens_per_primary_code_character | 1,328.0510 |
-| tokens_per_primary_code_non_ws_character | 1,900.6028 |
-| tokens_per_primary_code_alphanumeric_character | 2,157.0367 |
-| xhigh_final_sessions_share | 68.6155% |
-| xhigh_final_tokens_share | 90.6210% |
-| gpt_5_5_standard_xhigh_final_cost_usd | $74,034.98 |
-| gpt_5_5_standard_cost_per_xhigh_final_session_usd | $38.70 |
-| reasoning_tokens_per_1m_xhigh_final_tokens | 1,062.9387 |
-| gpt_5_5_standard_cache_discount_saved_usd | $456,176.85 |
-| gpt_5_5_standard_cost_per_1k_primary_loc_usd | $44.46 |
-| gpt_5_3_codex_standard_cache_discount_saved_usd | $159,661.90 |
-| gpt_5_3_codex_standard_cost_per_1k_primary_loc_usd | $16.25 |
-| priced_model_effort_final_standard_cost_usd | $77,562.78 |
+| session_gini_total_tokens | 0.7830 |
+| top_1_percent_sessions_share | 17.9593% |
+| top_10_percent_sessions_share | 62.1037% |
+| equivalent_full_258400_context_windows | 417,080.7781 |
+| tokens_per_primary_code_character | 1,341.4092 |
+| tokens_per_primary_code_non_ws_character | 1,920.0998 |
+| tokens_per_primary_code_alphanumeric_character | 2,179.0435 |
+| xhigh_final_sessions_share | 68.5469% |
+| xhigh_final_tokens_share | 90.7715% |
+| gpt_5_5_standard_xhigh_final_cost_usd | $75,514.28 |
+| gpt_5_5_standard_cost_per_xhigh_final_session_usd | $39.33 |
+| reasoning_tokens_per_1m_xhigh_final_tokens | 1,060.1602 |
+| gpt_5_5_standard_cache_discount_saved_usd | $464,351.89 |
+| gpt_5_5_standard_cost_per_1k_primary_loc_usd | $44.91 |
+| gpt_5_3_codex_standard_cache_discount_saved_usd | $162,523.16 |
+| gpt_5_3_codex_standard_cost_per_1k_primary_loc_usd | $16.42 |
+| priced_model_effort_final_standard_cost_usd | $79,056.31 |
 | unpriced_model_effort_final_tokens | 99,128,081.0000 |
-| unpriced_model_effort_final_tokens_share | 0.0936% |
-| top_model_effort_final_tokens_share | 87.9583% |
-| top_model_effort_final_cost_usd | $71,695.32 |
-| gpt_5_5_xhigh_exact_final_tokens | 93,121,134,702.0000 |
-| gpt_5_5_xhigh_exact_final_tokens_share | 87.9583% |
-| gpt_5_5_xhigh_exact_sessions | 1,810.0000 |
-| gpt_5_5_xhigh_exact_standard_cost_usd | $71,695.32 |
-| gpt_5_5_xhigh_exact_cache_savings_usd | $401,775.90 |
-| gpt_5_5_xhigh_exact_cost_per_session_usd | $39.61 |
-| gpt_5_5_xhigh_exact_reasoning_tokens_per_1m | 1,024.9817 |
-| observed_model_high_bound_cost_per_1k_primary_loc_usd | $41.93 |
+| unpriced_model_effort_final_tokens_share | 0.0920% |
+| top_model_effort_final_tokens_share | 88.1558% |
+| top_model_effort_final_cost_usd | $73,174.62 |
+| gpt_5_5_xhigh_exact_final_tokens | 95,008,760,975.0000 |
+| gpt_5_5_xhigh_exact_final_tokens_share | 88.1558% |
+| gpt_5_5_xhigh_exact_sessions | 1,817.0000 |
+| gpt_5_5_xhigh_exact_standard_cost_usd | $73,174.62 |
+| gpt_5_5_xhigh_exact_cache_savings_usd | $409,881.97 |
+| gpt_5_5_xhigh_exact_cost_per_session_usd | $40.27 |
+| gpt_5_5_xhigh_exact_reasoning_tokens_per_1m | 1,022.8748 |
+| observed_model_high_bound_cost_per_1k_primary_loc_usd | $42.40 |
 
 ## Input Output Snapshot
 
 | Metric | Value |
 |---|---:|
-| input_to_output_ratio | 28743.0565% |
-| uncached_input_to_output_ratio | 1124.8913% |
-| cached_input_to_output_ratio | 27618.1652% |
-| output_to_total_tokens_ratio | 0.3467% |
-| reasoning_to_output_ratio | 31.4725% |
-| paid_input_to_all_input_ratio | 3.9136% |
-| cached_input_to_uncached_input_ratio | 2455.1853% |
-| gpt_5_5_standard_input_side_cost_usd | $71,330.92 |
-| gpt_5_5_standard_output_side_cost_usd | $11,011.52 |
-| gpt_5_5_standard_output_cost_share | 13.3728% |
-| gpt_5_5_standard_effective_usd_per_1m_output_tokens | $224.34 |
-| gpt_5_5_standard_reasoning_output_cost_usd | $3,465.59 |
+| input_to_output_ratio | 28794.5587% |
+| uncached_input_to_output_ratio | 1128.8212% |
+| cached_input_to_output_ratio | 27665.7374% |
+| output_to_total_tokens_ratio | 0.3461% |
+| reasoning_to_output_ratio | 31.4391% |
+| paid_input_to_all_input_ratio | 3.9203% |
+| cached_input_to_uncached_input_ratio | 2450.8519% |
+| gpt_5_5_standard_input_side_cost_usd | $72,646.38 |
+| gpt_5_5_standard_output_side_cost_usd | $11,189.58 |
+| gpt_5_5_standard_output_cost_share | 13.3470% |
+| gpt_5_5_standard_effective_usd_per_1m_output_tokens | $224.77 |
+| gpt_5_5_standard_reasoning_output_cost_usd | $3,517.90 |
 
 ## Code Density Snapshot
 
 | Scope | Lines | Characters | Tokens / line | Tokens / 1k chars | Output tokens / 1k chars | GPT-5.5 $ / 1k lines | GPT-5.5 $ / 1k chars |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| first_party_assets_project_cs | 1,852,195 | 79,718,053 | 57,159.01 | 1,328,050.97 | 4,604.36 | $44.46 | $1.03 |
-| first_party_scripts_cs | 1,823,775 | 78,482,965 | 58,049.73 | 1,348,950.53 | 4,676.82 | $45.15 | $1.05 |
-| all_repo_cs_excluding_generated | 2,907,175 | 121,125,558 | 36,416.67 | 874,048.71 | 3,030.33 | $28.32 | $0.68 |
-| all_repo_source_broad | 3,249,321 | 136,412,713 | 32,582.08 | 776,098.03 | 2,690.74 | $25.34 | $0.60 |
-| docs_markdown_text | 202,327 | 18,979,195 | 523,260.06 | 5,578,194.29 | 19,339.63 | $406.98 | $4.34 |
+| first_party_assets_project_cs | 1,866,854 | 80,343,622 | 57,730.10 | 1,341,409.19 | 4,642.38 | $44.91 | $1.04 |
+| first_party_scripts_cs | 1,836,779 | 79,006,458 | 58,675.36 | 1,364,112.20 | 4,720.96 | $45.64 | $1.06 |
+| all_repo_cs_excluding_generated | 3,020,479 | 125,824,576 | 35,680.99 | 856,539.13 | 2,964.33 | $27.76 | $0.67 |
+| all_repo_source_broad | 3,363,667 | 141,173,460 | 32,040.53 | 763,413.13 | 2,642.04 | $24.92 | $0.59 |
+| docs_markdown_text | 252,912 | 25,150,193 | 426,131.12 | 4,285,202.63 | 14,830.34 | $331.48 | $3.33 |
 
 ## Chat Concentration Snapshot
 
 | Group | Key | Total tokens | Output tokens |
 |---|---|---:|---:|
-| cwd | `c:\hades` | 88,095,092,048 | 302,609,785 |
-| source | `vscode` | 102,313,611,456 | 349,426,174 |
-| cli | `0.131.0-alpha.9` | 58,256,017,828 | 206,952,797 |
+| cwd | `c:\hades` | 89,999,127,843 | 308,545,148 |
+| source | `vscode` | 104,172,815,521 | 355,227,606 |
+| cli | `0.131.0-alpha.9` | 60,160,053,623 | 212,888,160 |
 
 ## Root Breakdown
 
@@ -167,7 +167,7 @@ Model-specific cost bounds:
 |---|---:|---:|---:|---:|
 | backup_cleanup_20260521_194850 | 1,048 | 1,029 | 1,001 | 57,856,335,910 |
 | current_archived_sessions | 1 | 1 | 1 | 157,103 |
-| current_sessions | 1,872 | 1,865 | 1,786 | 48,013,144,255 |
+| current_sessions | 1,885 | 1,878 | 1,799 | 49,917,180,050 |
 
 ## Evidence Boundary
 

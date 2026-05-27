@@ -122,6 +122,14 @@ Cost snapshot -> GPT-5.5 standard API-equivalent $79,679.15; GPT-5.5 priority se
 Post-regeneration replay -> file/session/duplicate/missing-id/parse-error counters matched exactly. Token totals had live drift of +80,286,278 total tokens because 17 active JSONL files emitted token_count events after report cutoff 2026-05-26T17:35:39.754Z; this is live telemetry movement, not a parser mismatch.
 Evidence -> STATIC_LOCAL_CODEX_JSONL_AND_FILESYSTEM plus official OpenAI docs. Still not invoice proof: local JSONL lacks billing SKU, invoice IDs, enterprise discounts, subscription/internal routes.
 
+## 2026-05-27 TOKEN_USAGE_AUDIT late-day validation close
+
+What was wrong -> Late-day regenerated token surfaces and the requested full commit needed parser/doc-gate proof; `VerifyDocStructure.py` exposed three unrelated active report files without UTF-8-SIG.
+What was done -> Validated Python syntax, asserted JSON totals/deltas/model-effort owner, ran scoped diff whitespace checks, converted the three active report files to UTF-8-SIG without content changes, and reran documentation structure validation.
+Cinematic Cheats used -> None; audit/process hygiene only.
+Exact Microseconds saved -> 0 us game runtime. Static telemetry and docs only.
+Validation -> py_compile OK; JSON_RE_REFRESH_OK total=107773673063 sessions=2801 top=gpt-5.5::xhigh cost=$83835.954913; VerifyDocStructure pass=true activeDocCount=691 brokenLinkFiles=0 encodingWithoutUtf8Sig=0 duplicateHeaderFiles=0; scoped git diff --check passed with only LF-to-CRLF warnings on status/rationale/log files.
+
 ## 2026-05-26 TOKEN_USAGE_AUDIT verification validation close
 
 What was wrong -> Verification artifacts needed a final parser/doc-gate close. `VerifyDocStructure.py` also exposed an unrelated duplicate-header/UTF-8-SIG gate in active docs.
@@ -151,3 +159,17 @@ What was done -> Validated Python syntax, asserted JSON totals/deltas/model-effo
 Cinematic Cheats used -> None; audit/process hygiene only.
 Exact Microseconds saved -> 0 us game runtime. Static telemetry and docs only.
 Validation -> py_compile OK; JSON_20260527_OK total=105869637268 GPT-5.5 standard=$82342.433143; DOC_BYTES_20260527_OK; VerifyDocStructure pass=true activeDocCount=680 brokenLinkFiles=0 encodingWithoutUtf8Sig=0 duplicateHeaderFiles=0; git diff --check passed with only LF-to-CRLF warning for the Python script.
+
+## 2026-05-27 TOKEN_USAGE_AUDIT late-day re-refresh
+
+What was wrong -> The 13:47 2026-05-27 snapshot was stale by the evening because active Codex JSONL telemetry kept moving.
+What was done -> Rechecked official OpenAI pricing/cache/reasoning pages, regenerated `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-27.md/.json`, refreshed the archived ledger, and prepared commits with explicit 1334 exclusion.
+Cinematic Cheats used -> None; audit/process hygiene only.
+Exact Microseconds saved -> 0 us game runtime. Static telemetry and docs only.
+Current snapshot -> generated Samara 2026-05-27T20:42:16+04:00; file_count 2,934; sessions_with_usage 2,801; total_tokens 107,773,673,063; input 107,399,653,529; cached input 103,189,309,056; output 372,985,934; reasoning output 117,263,392.
+What changed since 2026-05-26T21:33:27+04:00 -> +57 JSONL files; +52 sessions with usage; +5,343,884,976 total tokens; +5,326,723,870 input; +5,109,255,552 cached input; +17,161,106 output; +4,970,890 reasoning output.
+Cost snapshot -> GPT-5.5 standard API-equivalent $83,835.95; GPT-5.5 priority sensitivity $209,589.89; gpt-5.3-codex secondary $30,648.03; exact `gpt-5.5::xhigh` $73,174.62 across 1,817 sessions and 95,008,760,975 tokens.
+Cost delta -> GPT-5.5 standard +$4,156.80; GPT-5.5 priority +$10,392.01; gpt-5.3-codex secondary +$1,514.94; top model-effort `gpt-5.5::xhigh` +$4,117.74.
+Input/output stats -> input/output 287.95:1; uncached-input/output 11.29:1; cached-input/output 276.66:1; reasoning/output 31.44%; output-side GPT-5.5 standard cost $11,189.58.
+Primary code density -> first-party project C# 1,866,854 lines / 80,343,622 chars; 57,730.10 tokens/line; 1,341,409.19 tokens/1k chars; GPT-5.5 $44.91/1k LOC and $1.04/1k chars.
+Evidence -> STATIC_LOCAL_CODEX_JSONL_AND_FILESYSTEM plus official OpenAI docs. Still not invoice proof: local JSONL lacks billing SKU, invoice IDs, enterprise discounts, subscription/internal routes.
