@@ -619,7 +619,7 @@ namespace Hecton8.AI
 
         private StressDrivenSpawnDirector()
         {
-            _vault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             RefreshFloatingOriginSnapshotCold();
             if (_vault != null && !_vault.IsAllocationLocked && !_vault.IsCompactionFenceActive)
@@ -805,9 +805,7 @@ namespace Hecton8.AI
             _ = previousService;
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                CompleteScheduledJobAndReleaseLocksForLifecycle();
-                _vault = currentService as IDataVault;
-                ClearHandlesCold();
+                RebindDataVaultForLifecycle(currentService as IDataVault);
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.EcosystemDirector)
             {
@@ -839,10 +837,8 @@ namespace Hecton8.AI
 
         public void Dispose()
         {
-            CompleteScheduledJobAndReleaseLocksForLifecycle();
             TryUnregisterTicks();
-            _vault = null;
-            ClearHandlesCold();
+            RebindDataVaultForLifecycle(null);
         }
 
         private void CompleteScheduledJobAndReleaseLocksForLifecycle()
@@ -858,6 +854,20 @@ namespace Hecton8.AI
             _lockedVault = null;
             _jobScheduled = false;
             _lockedCount = 0;
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_vault, currentVault))
+                return;
+
+            CompleteScheduledJobAndReleaseLocksForLifecycle();
+            ReleaseOwnedVaultHandles(_vault);
+            ClearHandlesCold();
+            _vault = currentVault;
+            _lastAppliedFrame = -1;
+            _monolithReady = 0;
+            _dumpFaultPending = 0;
         }
 
         private bool EnsureVaultState(IDataVault vault)
@@ -993,10 +1003,25 @@ namespace Hecton8.AI
             SystemID owner,
             NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct
         {
-            if (handle.BufferID != 0u && vault.TryResolveHandle(in handle, out NativeArray<T> existing) && existing.IsCreated && existing.Length >= length)
+            if (IsOwnedVaultHandle(in handle, bufferId, owner) &&
+                vault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                existing.IsCreated &&
+                existing.Length >= length)
+            {
                 return handle;
+            }
+
+            if (IsOwnedVaultHandle(in handle, bufferId, owner))
+                vault.ReleaseBuffer(in handle);
 
             return vault.EnsureGenerationHandle<T>(bufferId, length, owner, options);
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId, SystemID expectedOwner) where T : struct
+        {
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)expectedOwner;
         }
 
         private bool TryResolve<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T> array) where T : struct
