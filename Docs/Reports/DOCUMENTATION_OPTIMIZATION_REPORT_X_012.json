@@ -1,13 +1,13 @@
 ﻿{
   "schema": "hecton8.documentation_actuality_scan.x012.v1",
-  "generatedUtc": "2026-05-27T22:40:56.787024+00:00",
+  "generatedUtc": "2026-05-27T22:42:52.835995+00:00",
   "repoRoot": "C:\\hades\\Hecton8",
   "scope": "repository root approved text anchors plus Docs/**/*.md/txt",
   "checks": {
     "activeFileCount": 705,
     "activeWordCount": 1448234,
     "inventoryFileCount": 5626,
-    "inventoryWordCount": 38449226,
+    "inventoryWordCount": 38449989,
     "rootTextDocs": [
       "AGENTS.md",
       "BUILD_PLAYTEST_ISSUES.md",

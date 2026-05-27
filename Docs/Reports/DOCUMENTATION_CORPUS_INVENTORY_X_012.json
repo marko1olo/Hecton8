@@ -11181,11 +11181,11 @@
   {
     "path": "Docs/AgentLogs/LOG_UNKNOWN.md",
     "active": false,
-    "bytes": 110450,
-    "lastWriteUtc": "2026-05-27T22:36:36.102842+00:00",
+    "bytes": 112665,
+    "lastWriteUtc": "2026-05-27T22:40:14.753161+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 11723,
+    "wordCount": 11994,
     "topic": "## 2026-05-25 NativeArray / Native Ownership Audit For 13XX Agents",
     "references": [
       "Status_UNKNOWN.md",
@@ -11238,7 +11238,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "87c442b4a51c8c4f263fba67f3e0d54192f094c9e18dc3c8098be90880369901"
+    "sha256": "f1c881a73dff5ee1746526f4024c213ae4eace8c7dba274da3e7a47d6ac153b6"
   },
   {
     "path": "Docs/AgentLogs/LOG_VocalRuntimeContractsMemoryAuditor.md",
@@ -12862,11 +12862,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_MODDING_SDK_AUDIT.md",
     "active": false,
-    "bytes": 118259,
-    "lastWriteUtc": "2026-05-27T22:22:31.369814+00:00",
+    "bytes": 120152,
+    "lastWriteUtc": "2026-05-27T22:40:47.870990+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 15356,
+    "wordCount": 15612,
     "topic": "# Rationale_MODDING_SDK_AUDIT",
     "references": [
       "Runtime_Verification_Playbook.md",
@@ -12882,7 +12882,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "406e050ca99dbe4e2ed10c6ff6f34ca032fd283f7ca2de82b24955af47db9b3a"
+    "sha256": "e8e907aeb544eba69ad387c4de32aaf1eaad60fde6006316fab788ce9d40881e"
   },
   {
     "path": "Docs/AgentLogs/Rationale_PROGRESS_AUDIT.md",
@@ -14392,8 +14392,8 @@
   {
     "path": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
     "active": true,
-    "bytes": 27112,
-    "lastWriteUtc": "2026-05-27T22:36:36.392912+00:00",
+    "bytes": 27111,
+    "lastWriteUtc": "2026-05-27T22:40:14.861325+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 2372,
@@ -14479,7 +14479,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3aaa68ecbbfb7732d51d3fc3d2b715fff803b5c09ec74d42c35abf00537dcba9"
+    "sha256": "94b370370d81a079188700a1cdce8d60dac7afcc83089de079602f1c424b9756"
   },
   {
     "path": "Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md",
@@ -132503,11 +132503,11 @@
   {
     "path": "Docs/Tasks/Status_DOC_ROOT_ARCH_AUDIT.md",
     "active": false,
-    "bytes": 3934,
-    "lastWriteUtc": "2026-05-27T22:14:21.911205+00:00",
+    "bytes": 5868,
+    "lastWriteUtc": "2026-05-27T22:41:46.478101+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 436,
+    "wordCount": 672,
     "topic": "# Status DOC_ROOT_ARCH_AUDIT",
     "references": [
       "QA_Evidence_Text_Filter_Audit.txt",
@@ -132519,7 +132519,8 @@
       "PROJECT_RUNTIME_TOPOLOGY.md",
       "DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md",
       "AGENTS.md",
-      "PROJECT_ATLAS_HPHI.md"
+      "PROJECT_ATLAS_HPHI.md",
+      "AGENTS.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -132527,7 +132528,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "44c650168b27e5662e57f22c94cb7bcf491b2a52cf655a649653a877da86d549"
+    "sha256": "2d2cd758bd1149009e99e2571a4a16745acdc4a99403fe3f6b8c83f14d252370"
   },
   {
     "path": "Docs/Tasks/Status_DOCS_ACTUALIZATION.md",
