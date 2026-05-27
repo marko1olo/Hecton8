@@ -1641,3 +1641,19 @@ Proof:
 Residuals:
 - No full Hecton8 build was launched by this pass. Existing external build/doc-scan processes were not killed.
 - Local `C:\Users\danat\.git-credentials` contains GitHub personal access tokens; do not paste it into chats or logs.
+
+Addendum:
+- Additional Hecton8 tail commits were pushed after live parallel agents kept writing the workspace:
+  - `8633f39e8` docs tail.
+  - `7338a0ea3` modding SDK audit tail.
+  - `030e998cf` kinetic animation update.
+  - `4bfd49726` doc root audit tail.
+  - `796eb4cb2` starter kit audit tail.
+  - `3f877ba18` documentation report tail.
+  - `ddee005e7` agent 1400 updates.
+  - `d3480bd63` mod API validator update.
+  - `96cfd6e58` fauna signal tail.
+- Additional dental-crm tail commits were pushed after active local dev/smoke processes kept writing the workspace:
+  - `26c570b` smart imports update.
+  - `68b35ff` follow-up updates.
+  - `3d1981d` migration plan update.

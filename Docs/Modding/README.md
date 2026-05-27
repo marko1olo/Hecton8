@@ -25,7 +25,7 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 
 ## Current Contract Snapshot
 
-- Schema revision: `78`
+- Schema revision: `79`
 - Source `ISignal` structs: `173`
 - Mod-projected `SignalBus<T>` lanes: `2`
 - Denied-by-default `ISignal` structs: `171`
@@ -39,7 +39,8 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 - External starter kit: `ModdingSDK/ExternalStarterKit/` is a versioned starter template and `Hecton/Modding/SDK Hub -> Create External Starter Kit` can refresh missing files non-destructively. It contains `mod.h8manifest.json`, `mod.json`, graph/table/locale/content/report folders, copied opcode/tuning references that are statically compared against `Docs/Modding/*.csv`, and a README stating that no Unity project is required for manifest/graph/table authoring while runtime remains envelope-only.
 - External local validation: starter kits include `Tools/validate_structure.ps1`, a no-Unity structure validator that checks required files, JSON parseability, canonical mod/dependency IDs, authoring/runtime manifest ID parity, envelope-only graph/manifest flags, empty `EntryAssembly`/`EntryType`, graph node ID uniqueness, graph opcode allowlist membership against `Reference/allowed_opcodes.csv`, and graph budget parity with `mod.h8manifest.json`.
 - External review manifest: starter kits include `Tools/build_review_manifest.ps1`, a no-Unity review handoff tool that runs the structure validator first and writes `Reports/review_manifest.json` with sorted file paths, byte counts, SHA-256 hashes, total bytes, and explicit count/byte limits while excluding `Generated/` and `Reports/` outputs.
-- External identity helper: starter kits include `Tools/set_mod_identity.ps1`, a no-Unity helper that writes the same canonical mod id, display name, author, and version into both manifests and then runs structure validation.
+- External identity helper: starter kits include `Tools/set_mod_identity.ps1`, a no-Unity helper that writes the same canonical mod id, display name, author, and semantic version into both manifests and then runs structure validation.
+- External manifest identity parity: local validation requires matching authoring/runtime id, display name/name, author, and semantic version, so one package cannot carry split public identity.
 - External prepare helper: starter kits include `Tools/prepare_mod.ps1`, a one-command no-Unity helper that writes identity, validates structure, and builds `Reports/review_manifest.json` in the correct order.
 - External opcode helper: starter kits include `Tools/list_allowed_opcodes.ps1`, a no-Unity helper that prints allowed graph opcode aliases/hex tokens from `Reference/allowed_opcodes.csv` and can emit JSON for future Workbench/CLI reuse.
 - External shell portability: public starter tools compose child paths through normalized `Join-Path` segments and do not rely on Windows backslash child paths, so the copied kit can use Windows PowerShell or `pwsh` on macOS/Linux.

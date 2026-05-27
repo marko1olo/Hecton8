@@ -1800,6 +1800,36 @@ namespace Hecton8.AI
             _cachedFloatingOriginSequence = sequence;
         }
 
+        private void ReleaseOwnedVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseOwnedVaultHandle(vault, ref _rulesHandle, RulesBufferId);
+            ReleaseOwnedVaultHandle(vault, ref _ruleLinksHandle, RuleLinksBufferId);
+            ReleaseOwnedVaultHandle(vault, ref _candidatesHandle, CandidatesBufferId);
+            ReleaseOwnedVaultHandle(vault, ref _selectionHandle, SelectionBufferId);
+            ReleaseOwnedVaultHandle(vault, ref _inputHandle, InputBufferId);
+            ReleaseOwnedVaultHandle(vault, ref _tuningHandle, TuningBufferId);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle, TelemetryBufferId);
+            ReleaseOwnedVaultHandle(vault, ref _countersHandle, CountersBufferId);
+#if UNITY_EDITOR
+            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle, CsvScratchBufferId);
+#endif
+            ReleaseOwnedVaultHandle(vault, ref _frustumPlanesHandle, FrustumPlanesBufferId);
+            ReleaseOwnedVaultHandle(vault, ref _ownedSlotsHandle, OwnedSlotsBufferId);
+            ReleaseOwnedVaultHandle(vault, ref _inventoryTicketsHandle, InventoryTicketsBufferId);
+            ReleaseOwnedVaultHandle(vault, ref _spawnDebugHandle, SpawnDebugBufferId);
+        }
+
+        private static void ReleaseOwnedVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            if (IsOwnedVaultHandle(in handle, expectedBufferId, SystemID.AIEcology))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
         private void ClearHandlesCold()
         {
             _rulesHandle = default;

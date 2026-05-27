@@ -1,0 +1,1122 @@
+﻿{
+    "generatedAt":  "2026-05-28T02:45:05.6743638+04:00",
+    "root":  "C:\\hades\\Hecton8",
+    "fileCount":  72,
+    "csprojCount":  71,
+    "slnCount":  0,
+    "slnxCount":  1,
+    "projectReferenceCount":  83,
+    "unityPackageCliShimProjects":  [
+                                        "Unity.RenderPipelines.Core.Editor",
+                                        "Unity.RenderPipelines.Universal.Editor",
+                                        "Unity.RenderPipelines.Universal.Runtime",
+                                        "Unity.ShaderGraph.Editor"
+                                    ],
+    "toxicPackageProjectReferences":  [
+                                          {
+                                              "Project":  "Unity.RenderPipelines.Universal.Editor",
+                                              "ProjectPath":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                              "ReferenceInclude":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                              "ReferenceName":  "Unity.RenderPipelines.Core.Editor",
+                                              "ReferencePath":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                              "Exists":  true
+                                          },
+                                          {
+                                              "Project":  "Unity.RenderPipelines.Universal.Editor",
+                                              "ProjectPath":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                              "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                              "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                                              "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                              "Exists":  true
+                                          },
+                                          {
+                                              "Project":  "Unity.RenderPipelines.Universal.Editor",
+                                              "ProjectPath":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                              "ReferenceInclude":  "Unity.ShaderGraph.Editor.csproj",
+                                              "ReferenceName":  "Unity.ShaderGraph.Editor",
+                                              "ReferencePath":  "Unity.ShaderGraph.Editor.csproj",
+                                              "Exists":  true
+                                          },
+                                          {
+                                              "Project":  "Unity.ShaderGraph.Editor",
+                                              "ProjectPath":  "Unity.ShaderGraph.Editor.csproj",
+                                              "ReferenceInclude":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                              "ReferenceName":  "Unity.RenderPipelines.Core.Editor",
+                                              "ReferencePath":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                              "Exists":  true
+                                          }
+                                      ],
+    "firstPartyProjectReferencesToThirdParty":  [
+                                                    {
+                                                        "Project":  "Hecton8.Editor",
+                                                        "ProjectPath":  "Hecton8.Editor.csproj",
+                                                        "ReferenceInclude":  "Den.Tools.csproj",
+                                                        "ReferenceName":  "Den.Tools",
+                                                        "ReferencePath":  "Den.Tools.csproj",
+                                                        "Exists":  true
+                                                    },
+                                                    {
+                                                        "Project":  "Hecton8.Editor",
+                                                        "ProjectPath":  "Hecton8.Editor.csproj",
+                                                        "ReferenceInclude":  "EasySave3.csproj",
+                                                        "ReferenceName":  "EasySave3",
+                                                        "ReferencePath":  "EasySave3.csproj",
+                                                        "Exists":  true
+                                                    },
+                                                    {
+                                                        "Project":  "Hecton8.Editor",
+                                                        "ProjectPath":  "Hecton8.Editor.csproj",
+                                                        "ReferenceInclude":  "GPUInstancer.csproj",
+                                                        "ReferenceName":  "GPUInstancer",
+                                                        "ReferencePath":  "GPUInstancer.csproj",
+                                                        "Exists":  true
+                                                    },
+                                                    {
+                                                        "Project":  "Hecton8.Editor",
+                                                        "ProjectPath":  "Hecton8.Editor.csproj",
+                                                        "ReferenceInclude":  "MapMagic.csproj",
+                                                        "ReferenceName":  "MapMagic",
+                                                        "ReferencePath":  "MapMagic.csproj",
+                                                        "Exists":  true
+                                                    },
+                                                    {
+                                                        "Project":  "Hecton8.Editor",
+                                                        "ProjectPath":  "Hecton8.Editor.csproj",
+                                                        "ReferenceInclude":  "ShapesRuntime.csproj",
+                                                        "ReferenceName":  "ShapesRuntime",
+                                                        "ReferencePath":  "ShapesRuntime.csproj",
+                                                        "Exists":  true
+                                                    }
+                                                ],
+    "cycles":  {
+                   "CoreEditorCycle":  [
+
+                                       ],
+                   "ShaderGraphEditorCycle":  [
+
+                                              ]
+               },
+    "projects":  [
+                     {
+                         "Name":  "AmplifyImpostors.Editor",
+                         "Path":  "AmplifyImpostors.Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "AmplifyImpostors.Runtime",
+                         "Path":  "AmplifyImpostors.Runtime.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Assembly-CSharp",
+                         "Path":  "Assembly-CSharp.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Assembly-CSharp-Editor",
+                         "Path":  "Assembly-CSharp-Editor.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Assembly-CSharp-Editor-firstpass",
+                         "Path":  "Assembly-CSharp-Editor-firstpass.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Assembly-CSharp-firstpass",
+                         "Path":  "Assembly-CSharp-firstpass.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "AstarPathfindingProject",
+                         "Path":  "AstarPathfindingProject.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "AstarPathfindingProjectEditor",
+                         "Path":  "AstarPathfindingProjectEditor.csproj",
+                         "ProjectReferenceCount":  4
+                     },
+                     {
+                         "Name":  "BakeryEditorAssembly",
+                         "Path":  "BakeryEditorAssembly.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "BakeryRuntimeAssembly",
+                         "Path":  "BakeryRuntimeAssembly.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Crest",
+                         "Path":  "Crest.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "Crest.Helpers.Editor",
+                         "Path":  "Crest.Helpers.Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "Den.Tools",
+                         "Path":  "Den.Tools.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Den.Tools.Editor",
+                         "Path":  "Den.Tools.Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "HectonSandboxAbyssalShelfStandaloneSmoke",
+                         "Path":  "Docs\\DEPRECATED\\Documentation_Bundles_2026-05-21_SANITIZED\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\HectonSandboxAbyssalShelfStandaloneSmoke.csproj",
+                         "ProjectReferenceCount":  1
+                     },
+                     {
+                         "Name":  "SpaceEngineResearchSmokeTester",
+                         "Path":  "Docs\\DEPRECATED\\Documentation_Bundles_2026-05-21_SANITIZED\\SPACE_ENGINE_RESEARCH\\SpaceEngineResearchSmokeTester.csproj",
+                         "ProjectReferenceCount":  1
+                     },
+                     {
+                         "Name":  "EasySave3",
+                         "Path":  "EasySave3.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "EasySave3Editor",
+                         "Path":  "EasySave3Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "GPUInstancer",
+                         "Path":  "GPUInstancer.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "GPUInstancer.Editor",
+                         "Path":  "GPUInstancer.Editor.csproj",
+                         "ProjectReferenceCount":  4
+                     },
+                     {
+                         "Name":  "Hecton8.Bootstrap.Contracts",
+                         "Path":  "Hecton8.Bootstrap.Contracts.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Hecton8.Core",
+                         "Path":  "Hecton8.Core.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Hecton8.Editor",
+                         "Path":  "Hecton8.Editor.csproj",
+                         "ProjectReferenceCount":  10
+                     },
+                     {
+                         "Name":  "Hecton8.Input.Generated",
+                         "Path":  "Hecton8.Input.Generated.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Hecton8.World.Contracts",
+                         "Path":  "Hecton8.World.Contracts.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Hecton8.World.Dots",
+                         "Path":  "Hecton8.World.Dots.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "JBooth.MicroSplat.Core",
+                         "Path":  "JBooth.MicroSplat.Core.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "JBooth.MicroSplat.Core.Editor",
+                         "Path":  "JBooth.MicroSplat.Core.Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "Lofelt.NiceVibrations",
+                         "Path":  "Lofelt.NiceVibrations.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Lofelt.NiceVibrations.Demo",
+                         "Path":  "Lofelt.NiceVibrations.Demo.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "Lofelt.NiceVibrations.Editor",
+                         "Path":  "Lofelt.NiceVibrations.Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "MapMagic",
+                         "Path":  "MapMagic.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "MapMagic.Editor",
+                         "Path":  "MapMagic.Editor.csproj",
+                         "ProjectReferenceCount":  5
+                     },
+                     {
+                         "Name":  "MapMagic.MicroSplat",
+                         "Path":  "MapMagic.MicroSplat.csproj",
+                         "ProjectReferenceCount":  5
+                     },
+                     {
+                         "Name":  "MapMagic.MicroSplat.Editor",
+                         "Path":  "MapMagic.MicroSplat.Editor.csproj",
+                         "ProjectReferenceCount":  9
+                     },
+                     {
+                         "Name":  "MapMagic.Settings",
+                         "Path":  "MapMagic.Settings.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "MeshBakerCore",
+                         "Path":  "MeshBakerCore.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "MeshBakerEditor",
+                         "Path":  "MeshBakerEditor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "MoreMountains.Feedbacks.Authorizations",
+                         "Path":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                         "ProjectReferenceCount":  11
+                     },
+                     {
+                         "Name":  "MoreMountains.Feedbacks.Cinemachine",
+                         "Path":  "MoreMountains.Feedbacks.Cinemachine.csproj",
+                         "ProjectReferenceCount":  4
+                     },
+                     {
+                         "Name":  "MoreMountains.Feedbacks",
+                         "Path":  "MoreMountains.Feedbacks.csproj",
+                         "ProjectReferenceCount":  5
+                     },
+                     {
+                         "Name":  "MoreMountains.Feedbacks.Editor",
+                         "Path":  "MoreMountains.Feedbacks.Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "MoreMountains.Feedbacks.HDRP",
+                         "Path":  "MoreMountains.Feedbacks.HDRP.csproj",
+                         "ProjectReferenceCount":  4
+                     },
+                     {
+                         "Name":  "MoreMountains.Feedbacks.MMTools",
+                         "Path":  "MoreMountains.Feedbacks.MMTools.csproj",
+                         "ProjectReferenceCount":  4
+                     },
+                     {
+                         "Name":  "MoreMountains.Feedbacks.NiceVibrations",
+                         "Path":  "MoreMountains.Feedbacks.NiceVibrations.csproj",
+                         "ProjectReferenceCount":  4
+                     },
+                     {
+                         "Name":  "MoreMountains.Feedbacks.PostProcessing",
+                         "Path":  "MoreMountains.Feedbacks.PostProcessing.csproj",
+                         "ProjectReferenceCount":  4
+                     },
+                     {
+                         "Name":  "MoreMountains.Feedbacks.TextMeshPro",
+                         "Path":  "MoreMountains.Feedbacks.TextMeshPro.csproj",
+                         "ProjectReferenceCount":  5
+                     },
+                     {
+                         "Name":  "MoreMountains.Feedbacks.URP",
+                         "Path":  "MoreMountains.Feedbacks.URP.csproj",
+                         "ProjectReferenceCount":  5
+                     },
+                     {
+                         "Name":  "MoreMountains.Tools",
+                         "Path":  "MoreMountains.Tools.csproj",
+                         "ProjectReferenceCount":  4
+                     },
+                     {
+                         "Name":  "MoreMountains.Tools.Editor",
+                         "Path":  "MoreMountains.Tools.Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "PackageToolsEditor",
+                         "Path":  "PackageToolsEditor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "ShapesEditor",
+                         "Path":  "ShapesEditor.csproj",
+                         "ProjectReferenceCount":  5
+                     },
+                     {
+                         "Name":  "ShapesRuntime",
+                         "Path":  "ShapesRuntime.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "Sirenix.OdinInspector.Modules.UnityMathematics",
+                         "Path":  "Sirenix.OdinInspector.Modules.UnityMathematics.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Tayx.Graphy",
+                         "Path":  "Tayx.Graphy.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Tayx.Graphy.Editor",
+                         "Path":  "Tayx.Graphy.Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "Technie.PhysicsCreator.Updater",
+                         "Path":  "Technie.PhysicsCreator.Updater.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "TechniePhysicsCreator",
+                         "Path":  "TechniePhysicsCreator.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "DataMonolithBakeCli",
+                         "Path":  "Tools\\DataMonolithBakeCli\\DataMonolithBakeCli.csproj",
+                         "ProjectReferenceCount":  1
+                     },
+                     {
+                         "Name":  "PresentationDecouplingAudit",
+                         "Path":  "Tools\\PresentationDecouplingAudit\\PresentationDecouplingAudit.csproj",
+                         "ProjectReferenceCount":  1
+                     },
+                     {
+                         "Name":  "Hecton8.PlatformNeutralityAnalyzer",
+                         "Path":  "Tools\\RoslynAnalyzers\\Hecton8.PlatformNeutralityAnalyzer\\Hecton8.PlatformNeutralityAnalyzer.csproj",
+                         "ProjectReferenceCount":  1
+                     },
+                     {
+                         "Name":  "SignalArchitectureOptimizationAuditX001",
+                         "Path":  "Tools\\SignalArchitectureOptimizationAuditX001\\SignalArchitectureOptimizationAuditX001.csproj",
+                         "ProjectReferenceCount":  1
+                     },
+                     {
+                         "Name":  "SignalBusContractAuditCli",
+                         "Path":  "Tools\\SignalBusContractAuditCli\\SignalBusContractAuditCli.csproj",
+                         "ProjectReferenceCount":  1
+                     },
+                     {
+                         "Name":  "VaultNativeAliasRoslynAudit",
+                         "Path":  "Tools\\VaultNativeAliasRoslynAudit\\VaultNativeAliasRoslynAudit.csproj",
+                         "ProjectReferenceCount":  1
+                     },
+                     {
+                         "Name":  "VoxelRuntimeHotPathAudit",
+                         "Path":  "Tools\\VoxelRuntimeHotPathAudit\\VoxelRuntimeHotPathAudit.csproj",
+                         "ProjectReferenceCount":  1
+                     },
+                     {
+                         "Name":  "Unity.RenderPipelines.Core.Editor",
+                         "Path":  "Unity.RenderPipelines.Core.Editor.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Unity.RenderPipelines.Universal.Editor",
+                         "Path":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                         "ProjectReferenceCount":  5
+                     },
+                     {
+                         "Name":  "Unity.RenderPipelines.Universal.Runtime",
+                         "Path":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                         "ProjectReferenceCount":  2
+                     },
+                     {
+                         "Name":  "Unity.ShaderGraph.Editor",
+                         "Path":  "Unity.ShaderGraph.Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "VolumetricLightBeam",
+                         "Path":  "VolumetricLightBeam.csproj",
+                         "ProjectReferenceCount":  3
+                     },
+                     {
+                         "Name":  "VolumetricLightBeam.Editor",
+                         "Path":  "VolumetricLightBeam.Editor.csproj",
+                         "ProjectReferenceCount":  3
+                     }
+                 ],
+    "edges":  [
+                  {
+                      "Project":  "AmplifyImpostors.Editor",
+                      "ProjectPath":  "AmplifyImpostors.Editor.csproj",
+                      "ReferenceInclude":  "AmplifyImpostors.Runtime.csproj",
+                      "ReferenceName":  "AmplifyImpostors.Runtime",
+                      "ReferencePath":  "AmplifyImpostors.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "AstarPathfindingProjectEditor",
+                      "ProjectPath":  "AstarPathfindingProjectEditor.csproj",
+                      "ReferenceInclude":  "AstarPathfindingProject.csproj",
+                      "ReferenceName":  "AstarPathfindingProject",
+                      "ReferencePath":  "AstarPathfindingProject.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "AstarPathfindingProjectEditor",
+                      "ProjectPath":  "AstarPathfindingProjectEditor.csproj",
+                      "ReferenceInclude":  "PackageToolsEditor.csproj",
+                      "ReferenceName":  "PackageToolsEditor",
+                      "ReferencePath":  "PackageToolsEditor.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "BakeryEditorAssembly",
+                      "ProjectPath":  "BakeryEditorAssembly.csproj",
+                      "ReferenceInclude":  "BakeryRuntimeAssembly.csproj",
+                      "ReferenceName":  "BakeryRuntimeAssembly",
+                      "ReferencePath":  "BakeryRuntimeAssembly.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Crest",
+                      "ProjectPath":  "Crest.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Crest.Helpers.Editor",
+                      "ProjectPath":  "Crest.Helpers.Editor.csproj",
+                      "ReferenceInclude":  "Crest.csproj",
+                      "ReferenceName":  "Crest",
+                      "ReferencePath":  "Crest.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Den.Tools.Editor",
+                      "ProjectPath":  "Den.Tools.Editor.csproj",
+                      "ReferenceInclude":  "Den.Tools.csproj",
+                      "ReferenceName":  "Den.Tools",
+                      "ReferencePath":  "Den.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "EasySave3Editor",
+                      "ProjectPath":  "EasySave3Editor.csproj",
+                      "ReferenceInclude":  "EasySave3.csproj",
+                      "ReferenceName":  "EasySave3",
+                      "ReferencePath":  "EasySave3.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "GPUInstancer",
+                      "ProjectPath":  "GPUInstancer.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "GPUInstancer.Editor",
+                      "ProjectPath":  "GPUInstancer.Editor.csproj",
+                      "ReferenceInclude":  "GPUInstancer.csproj",
+                      "ReferenceName":  "GPUInstancer",
+                      "ReferencePath":  "GPUInstancer.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "GPUInstancer.Editor",
+                      "ProjectPath":  "GPUInstancer.Editor.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Hecton8.Editor",
+                      "ProjectPath":  "Hecton8.Editor.csproj",
+                      "ReferenceInclude":  "Den.Tools.csproj",
+                      "ReferenceName":  "Den.Tools",
+                      "ReferencePath":  "Den.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Hecton8.Editor",
+                      "ProjectPath":  "Hecton8.Editor.csproj",
+                      "ReferenceInclude":  "EasySave3.csproj",
+                      "ReferenceName":  "EasySave3",
+                      "ReferencePath":  "EasySave3.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Hecton8.Editor",
+                      "ProjectPath":  "Hecton8.Editor.csproj",
+                      "ReferenceInclude":  "GPUInstancer.csproj",
+                      "ReferenceName":  "GPUInstancer",
+                      "ReferencePath":  "GPUInstancer.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Hecton8.Editor",
+                      "ProjectPath":  "Hecton8.Editor.csproj",
+                      "ReferenceInclude":  "Hecton8.Bootstrap.Contracts.csproj",
+                      "ReferenceName":  "Hecton8.Bootstrap.Contracts",
+                      "ReferencePath":  "Hecton8.Bootstrap.Contracts.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Hecton8.Editor",
+                      "ProjectPath":  "Hecton8.Editor.csproj",
+                      "ReferenceInclude":  "Hecton8.Core.csproj",
+                      "ReferenceName":  "Hecton8.Core",
+                      "ReferencePath":  "Hecton8.Core.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Hecton8.Editor",
+                      "ProjectPath":  "Hecton8.Editor.csproj",
+                      "ReferenceInclude":  "MapMagic.csproj",
+                      "ReferenceName":  "MapMagic",
+                      "ReferencePath":  "MapMagic.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Hecton8.Editor",
+                      "ProjectPath":  "Hecton8.Editor.csproj",
+                      "ReferenceInclude":  "ShapesRuntime.csproj",
+                      "ReferenceName":  "ShapesRuntime",
+                      "ReferencePath":  "ShapesRuntime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Hecton8.Editor",
+                      "ProjectPath":  "Hecton8.Editor.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Hecton8.World.Dots",
+                      "ProjectPath":  "Hecton8.World.Dots.csproj",
+                      "ReferenceInclude":  "Hecton8.World.Contracts.csproj",
+                      "ReferenceName":  "Hecton8.World.Contracts",
+                      "ReferencePath":  "Hecton8.World.Contracts.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "JBooth.MicroSplat.Core",
+                      "ProjectPath":  "JBooth.MicroSplat.Core.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "JBooth.MicroSplat.Core.Editor",
+                      "ProjectPath":  "JBooth.MicroSplat.Core.Editor.csproj",
+                      "ReferenceInclude":  "JBooth.MicroSplat.Core.csproj",
+                      "ReferenceName":  "JBooth.MicroSplat.Core",
+                      "ReferencePath":  "JBooth.MicroSplat.Core.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Lofelt.NiceVibrations.Demo",
+                      "ProjectPath":  "Lofelt.NiceVibrations.Demo.csproj",
+                      "ReferenceInclude":  "Lofelt.NiceVibrations.csproj",
+                      "ReferenceName":  "Lofelt.NiceVibrations",
+                      "ReferencePath":  "Lofelt.NiceVibrations.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Lofelt.NiceVibrations.Editor",
+                      "ProjectPath":  "Lofelt.NiceVibrations.Editor.csproj",
+                      "ReferenceInclude":  "Lofelt.NiceVibrations.csproj",
+                      "ReferenceName":  "Lofelt.NiceVibrations",
+                      "ReferencePath":  "Lofelt.NiceVibrations.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic",
+                      "ProjectPath":  "MapMagic.csproj",
+                      "ReferenceInclude":  "Den.Tools.csproj",
+                      "ReferenceName":  "Den.Tools",
+                      "ReferencePath":  "Den.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.Editor",
+                      "ProjectPath":  "MapMagic.Editor.csproj",
+                      "ReferenceInclude":  "Den.Tools.csproj",
+                      "ReferenceName":  "Den.Tools",
+                      "ReferencePath":  "Den.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.Editor",
+                      "ProjectPath":  "MapMagic.Editor.csproj",
+                      "ReferenceInclude":  "Den.Tools.Editor.csproj",
+                      "ReferenceName":  "Den.Tools.Editor",
+                      "ReferencePath":  "Den.Tools.Editor.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.Editor",
+                      "ProjectPath":  "MapMagic.Editor.csproj",
+                      "ReferenceInclude":  "MapMagic.csproj",
+                      "ReferenceName":  "MapMagic",
+                      "ReferencePath":  "MapMagic.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.MicroSplat",
+                      "ProjectPath":  "MapMagic.MicroSplat.csproj",
+                      "ReferenceInclude":  "Den.Tools.csproj",
+                      "ReferenceName":  "Den.Tools",
+                      "ReferencePath":  "Den.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.MicroSplat",
+                      "ProjectPath":  "MapMagic.MicroSplat.csproj",
+                      "ReferenceInclude":  "JBooth.MicroSplat.Core.csproj",
+                      "ReferenceName":  "JBooth.MicroSplat.Core",
+                      "ReferencePath":  "JBooth.MicroSplat.Core.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.MicroSplat",
+                      "ProjectPath":  "MapMagic.MicroSplat.csproj",
+                      "ReferenceInclude":  "MapMagic.csproj",
+                      "ReferenceName":  "MapMagic",
+                      "ReferencePath":  "MapMagic.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.MicroSplat.Editor",
+                      "ProjectPath":  "MapMagic.MicroSplat.Editor.csproj",
+                      "ReferenceInclude":  "Den.Tools.csproj",
+                      "ReferenceName":  "Den.Tools",
+                      "ReferencePath":  "Den.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.MicroSplat.Editor",
+                      "ProjectPath":  "MapMagic.MicroSplat.Editor.csproj",
+                      "ReferenceInclude":  "Den.Tools.Editor.csproj",
+                      "ReferenceName":  "Den.Tools.Editor",
+                      "ReferencePath":  "Den.Tools.Editor.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.MicroSplat.Editor",
+                      "ProjectPath":  "MapMagic.MicroSplat.Editor.csproj",
+                      "ReferenceInclude":  "JBooth.MicroSplat.Core.csproj",
+                      "ReferenceName":  "JBooth.MicroSplat.Core",
+                      "ReferencePath":  "JBooth.MicroSplat.Core.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.MicroSplat.Editor",
+                      "ProjectPath":  "MapMagic.MicroSplat.Editor.csproj",
+                      "ReferenceInclude":  "JBooth.MicroSplat.Core.Editor.csproj",
+                      "ReferenceName":  "JBooth.MicroSplat.Core.Editor",
+                      "ReferencePath":  "JBooth.MicroSplat.Core.Editor.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.MicroSplat.Editor",
+                      "ProjectPath":  "MapMagic.MicroSplat.Editor.csproj",
+                      "ReferenceInclude":  "MapMagic.csproj",
+                      "ReferenceName":  "MapMagic",
+                      "ReferencePath":  "MapMagic.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.MicroSplat.Editor",
+                      "ProjectPath":  "MapMagic.MicroSplat.Editor.csproj",
+                      "ReferenceInclude":  "MapMagic.Editor.csproj",
+                      "ReferenceName":  "MapMagic.Editor",
+                      "ReferencePath":  "MapMagic.Editor.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MapMagic.MicroSplat.Editor",
+                      "ProjectPath":  "MapMagic.MicroSplat.Editor.csproj",
+                      "ReferenceInclude":  "MapMagic.MicroSplat.csproj",
+                      "ReferenceName":  "MapMagic.MicroSplat",
+                      "ReferencePath":  "MapMagic.MicroSplat.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MeshBakerEditor",
+                      "ProjectPath":  "MeshBakerEditor.csproj",
+                      "ReferenceInclude":  "MeshBakerCore.csproj",
+                      "ReferenceName":  "MeshBakerCore",
+                      "ReferencePath":  "MeshBakerCore.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Authorizations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks",
+                      "ReferencePath":  "MoreMountains.Feedbacks.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Authorizations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.Cinemachine.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks.Cinemachine",
+                      "ReferencePath":  "MoreMountains.Feedbacks.Cinemachine.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Authorizations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.HDRP.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks.HDRP",
+                      "ReferencePath":  "MoreMountains.Feedbacks.HDRP.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Authorizations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.MMTools.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks.MMTools",
+                      "ReferencePath":  "MoreMountains.Feedbacks.MMTools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Authorizations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.NiceVibrations.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks.NiceVibrations",
+                      "ReferencePath":  "MoreMountains.Feedbacks.NiceVibrations.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Authorizations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.PostProcessing.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks.PostProcessing",
+                      "ReferencePath":  "MoreMountains.Feedbacks.PostProcessing.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Authorizations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.TextMeshPro.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks.TextMeshPro",
+                      "ReferencePath":  "MoreMountains.Feedbacks.TextMeshPro.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Authorizations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.URP.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks.URP",
+                      "ReferencePath":  "MoreMountains.Feedbacks.URP.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Authorizations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                      "ReferenceInclude":  "MoreMountains.Tools.csproj",
+                      "ReferenceName":  "MoreMountains.Tools",
+                      "ReferencePath":  "MoreMountains.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Cinemachine",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Cinemachine.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks",
+                      "ReferencePath":  "MoreMountains.Feedbacks.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Cinemachine",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Cinemachine.csproj",
+                      "ReferenceInclude":  "MoreMountains.Tools.csproj",
+                      "ReferenceName":  "MoreMountains.Tools",
+                      "ReferencePath":  "MoreMountains.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks",
+                      "ProjectPath":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceInclude":  "Lofelt.NiceVibrations.csproj",
+                      "ReferenceName":  "Lofelt.NiceVibrations",
+                      "ReferencePath":  "Lofelt.NiceVibrations.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks",
+                      "ProjectPath":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceInclude":  "MoreMountains.Tools.csproj",
+                      "ReferenceName":  "MoreMountains.Tools",
+                      "ReferencePath":  "MoreMountains.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks",
+                      "ProjectPath":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.Editor",
+                      "ProjectPath":  "MoreMountains.Feedbacks.Editor.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks",
+                      "ReferencePath":  "MoreMountains.Feedbacks.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.HDRP",
+                      "ProjectPath":  "MoreMountains.Feedbacks.HDRP.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks",
+                      "ReferencePath":  "MoreMountains.Feedbacks.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.HDRP",
+                      "ProjectPath":  "MoreMountains.Feedbacks.HDRP.csproj",
+                      "ReferenceInclude":  "MoreMountains.Tools.csproj",
+                      "ReferenceName":  "MoreMountains.Tools",
+                      "ReferencePath":  "MoreMountains.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.MMTools",
+                      "ProjectPath":  "MoreMountains.Feedbacks.MMTools.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks",
+                      "ReferencePath":  "MoreMountains.Feedbacks.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.MMTools",
+                      "ProjectPath":  "MoreMountains.Feedbacks.MMTools.csproj",
+                      "ReferenceInclude":  "MoreMountains.Tools.csproj",
+                      "ReferenceName":  "MoreMountains.Tools",
+                      "ReferencePath":  "MoreMountains.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.NiceVibrations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.NiceVibrations.csproj",
+                      "ReferenceInclude":  "Lofelt.NiceVibrations.csproj",
+                      "ReferenceName":  "Lofelt.NiceVibrations",
+                      "ReferencePath":  "Lofelt.NiceVibrations.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.NiceVibrations",
+                      "ProjectPath":  "MoreMountains.Feedbacks.NiceVibrations.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks",
+                      "ReferencePath":  "MoreMountains.Feedbacks.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.PostProcessing",
+                      "ProjectPath":  "MoreMountains.Feedbacks.PostProcessing.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks",
+                      "ReferencePath":  "MoreMountains.Feedbacks.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.PostProcessing",
+                      "ProjectPath":  "MoreMountains.Feedbacks.PostProcessing.csproj",
+                      "ReferenceInclude":  "MoreMountains.Tools.csproj",
+                      "ReferenceName":  "MoreMountains.Tools",
+                      "ReferencePath":  "MoreMountains.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.TextMeshPro",
+                      "ProjectPath":  "MoreMountains.Feedbacks.TextMeshPro.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks",
+                      "ReferencePath":  "MoreMountains.Feedbacks.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.TextMeshPro",
+                      "ProjectPath":  "MoreMountains.Feedbacks.TextMeshPro.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.MMTools.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks.MMTools",
+                      "ReferencePath":  "MoreMountains.Feedbacks.MMTools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.TextMeshPro",
+                      "ProjectPath":  "MoreMountains.Feedbacks.TextMeshPro.csproj",
+                      "ReferenceInclude":  "MoreMountains.Tools.csproj",
+                      "ReferenceName":  "MoreMountains.Tools",
+                      "ReferencePath":  "MoreMountains.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.URP",
+                      "ProjectPath":  "MoreMountains.Feedbacks.URP.csproj",
+                      "ReferenceInclude":  "MoreMountains.Feedbacks.csproj",
+                      "ReferenceName":  "MoreMountains.Feedbacks",
+                      "ReferencePath":  "MoreMountains.Feedbacks.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.URP",
+                      "ProjectPath":  "MoreMountains.Feedbacks.URP.csproj",
+                      "ReferenceInclude":  "MoreMountains.Tools.csproj",
+                      "ReferenceName":  "MoreMountains.Tools",
+                      "ReferencePath":  "MoreMountains.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Feedbacks.URP",
+                      "ProjectPath":  "MoreMountains.Feedbacks.URP.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Tools",
+                      "ProjectPath":  "MoreMountains.Tools.csproj",
+                      "ReferenceInclude":  "Lofelt.NiceVibrations.csproj",
+                      "ReferenceName":  "Lofelt.NiceVibrations",
+                      "ReferencePath":  "Lofelt.NiceVibrations.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Tools",
+                      "ProjectPath":  "MoreMountains.Tools.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "MoreMountains.Tools.Editor",
+                      "ProjectPath":  "MoreMountains.Tools.Editor.csproj",
+                      "ReferenceInclude":  "MoreMountains.Tools.csproj",
+                      "ReferenceName":  "MoreMountains.Tools",
+                      "ReferencePath":  "MoreMountains.Tools.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "PackageToolsEditor",
+                      "ProjectPath":  "PackageToolsEditor.csproj",
+                      "ReferenceInclude":  "AstarPathfindingProject.csproj",
+                      "ReferenceName":  "AstarPathfindingProject",
+                      "ReferencePath":  "AstarPathfindingProject.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "ShapesEditor",
+                      "ProjectPath":  "ShapesEditor.csproj",
+                      "ReferenceInclude":  "ShapesRuntime.csproj",
+                      "ReferenceName":  "ShapesRuntime",
+                      "ReferencePath":  "ShapesRuntime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "ShapesEditor",
+                      "ProjectPath":  "ShapesEditor.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Editor",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "ShapesEditor",
+                      "ProjectPath":  "ShapesEditor.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "ShapesRuntime",
+                      "ProjectPath":  "ShapesRuntime.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Tayx.Graphy.Editor",
+                      "ProjectPath":  "Tayx.Graphy.Editor.csproj",
+                      "ReferenceInclude":  "Tayx.Graphy.csproj",
+                      "ReferenceName":  "Tayx.Graphy",
+                      "ReferencePath":  "Tayx.Graphy.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Unity.RenderPipelines.Universal.Editor",
+                      "ProjectPath":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Core.Editor.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Core.Editor",
+                      "ReferencePath":  "Unity.RenderPipelines.Core.Editor.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Unity.RenderPipelines.Universal.Editor",
+                      "ProjectPath":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Unity.RenderPipelines.Universal.Editor",
+                      "ProjectPath":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                      "ReferenceInclude":  "Unity.ShaderGraph.Editor.csproj",
+                      "ReferenceName":  "Unity.ShaderGraph.Editor",
+                      "ReferencePath":  "Unity.ShaderGraph.Editor.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "Unity.ShaderGraph.Editor",
+                      "ProjectPath":  "Unity.ShaderGraph.Editor.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Core.Editor.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Core.Editor",
+                      "ReferencePath":  "Unity.RenderPipelines.Core.Editor.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "VolumetricLightBeam",
+                      "ProjectPath":  "VolumetricLightBeam.csproj",
+                      "ReferenceInclude":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "ReferenceName":  "Unity.RenderPipelines.Universal.Runtime",
+                      "ReferencePath":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                      "Exists":  true
+                  },
+                  {
+                      "Project":  "VolumetricLightBeam.Editor",
+                      "ProjectPath":  "VolumetricLightBeam.Editor.csproj",
+                      "ReferenceInclude":  "VolumetricLightBeam.csproj",
+                      "ReferenceName":  "VolumetricLightBeam",
+                      "ReferencePath":  "VolumetricLightBeam.csproj",
+                      "Exists":  true
+                  }
+              ]
+}
