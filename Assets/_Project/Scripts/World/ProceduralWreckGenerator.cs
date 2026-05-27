@@ -4650,7 +4650,7 @@ namespace Hecton8.World
                 {
                     int index = (start + i) % capacity;
                     WreckTelemetryEntry entry = telemetryEntries[index];
-                    WriteInt32LittleEndian(stream, entry.FrameIndex);
+                    WriteInt32LittleEndian(stream, unchecked((int)entry.FrameIndex));
                     WriteUInt32LittleEndian(stream, entry.EventHash);
                     WriteUInt32LittleEndian(stream, entry.Seed);
                     WriteUInt32LittleEndian(stream, entry.Flags);

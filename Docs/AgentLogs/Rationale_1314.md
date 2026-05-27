@@ -1025,3 +1025,17 @@ Scalability potential: Low/MX350/Quest get fail-fast packaging instead of silent
 Hardware Impact: 0 us/frame. Editor/build-time validation only.
 
 Proof State: STATIC_PACKAGING_BLOCKERS_GATED. Android native paths are absent, Windows LZ4 meta lacks `PluginImporter:`, MasterMixer has no concrete Hecton effect, and stale Windows audio DLL remains unresolved.
+
+## R73 - Android Native Plugin Needs A Reproducible Build Route And Freshness Gate
+
+Problem: The platform matrix already blocked Android builds when `libHectonAudioKernel.so` was absent, but there was no repo-owned Android arm64 build script and no freshness gate for a future packaged `.so`. A stale Android binary could satisfy file/importer presence while still carrying the old ABI, missing direct register/clear status exports, missing dump-thread removal, or old descriptor bounds.
+
+Solution: Add `NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernelAndroid.bat` as the explicit arm64 NDK route. It resolves NDK from argument, `ANDROID_NDK_ROOT`, `ANDROID_NDK_HOME`, `ANDROID_NDK`, or Unity Hub installs, uses `aarch64-linux-android24-clang++`, compiles only `Plugin_HectonSensoryKernel.cpp`, emits `Assets\Plugins\Android\arm64-v8a\libHectonAudioKernel.so`, and uses shared/PIC/hidden-visibility/dead-strip/no-exceptions/no-RTTI flags. `NativePluginMatrixValidator` now applies `RequireAnyCompatiblePluginFreshness` to Android audio-kernel candidates against both native source and the Android build script.
+
+Rejected Alternatives: Rejected fake `.so` placeholders because Unity would treat that as packaging proof without runtime ABI proof. Rejected auto-running NDK build because user asked to avoid builds unless necessary and current shared machine already had active compiler load earlier. Rejected only documenting the missing Android binary because the build preflight needed a future stale-binary gate, not just current absence detection.
+
+Scalability potential: Low/MX350/Quest get fail-fast packaging and a deterministic arm64 native route. Middle/High/Ultra keep the same ABI and build artifact route; quality scaling remains in DSP fidelity after the native plugin is actually built/imported.
+
+Hardware Impact: 0 us/frame. This is source/build-time only. Quest avoids shipping a managed-only or stale-native audio bridge; no runtime branch or DTO layout change was added.
+
+Proof State: STATIC_ANDROID_BUILD_ROUTE_AND_FRESHNESS_GATE_PASS. JSON reports parse with `filesScanned=12` and `failedChecks=6`; scanner tokens for arm64 clang, shared/PIC/hidden visibility, dead stripping, Android output binary, sample utility exclusion, and Android freshness gate are present. Runtime bridge forbidden-token scan and native heap/thread/sample-utility scan remain clean. No dotnet build, Unity compile, Android NDK build, native rebuild, player build, or fuzzer was run.

@@ -265,7 +265,7 @@ namespace Hecton8.Construction
             if (_hostModule == null)
                 ConstructionParentLookup.TryCaptureSelfOrParent(this, out _hostModule);
             if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
-                _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomReadModel>(this);
+                ConstructionParentLookup.TryCaptureSelfOrParent(this, out _atmosphereSystem);
         }
 
         private bool TryConnectDefaultOutlet(IFluidPipeGraphService graph, int networkId, int ingressNodeIndex)

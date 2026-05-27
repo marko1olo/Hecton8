@@ -1577,7 +1577,6 @@ namespace Hecton8.Atmosphere
                     Generation = _telemetryRingHandle.Generation,
                     DroppedUpdates = 1,
                     CpuMicroseconds = 0f,
-                    _pad0 = 0u,
                     Flags = failureCode,
                     Reserved = 0
                 };
@@ -2626,7 +2625,7 @@ namespace Hecton8.Atmosphere
             _latestToxicitySignal = new ToxicitySignal(
                 roomId,
                 snapshot.CarbonDioxideKPa,
-                snapshot.PressureAtm,
+                snapshot.PressureKPa * math.rcp(KPaPerAtmosphere),
                 toxicity01,
                 narcosis01,
                 frame,
@@ -2707,7 +2706,7 @@ namespace Hecton8.Atmosphere
                         writer.Write(entry.Generation);
                         writer.Write(entry.DroppedUpdates);
                         writer.Write(entry.CpuMicroseconds);
-                        writer.Write(entry._pad0);
+                        writer.Write(0u);
                         writer.Write(entry.Flags);
                         writer.Write(entry.Reserved);
                     }
@@ -3298,8 +3297,7 @@ namespace Hecton8.Atmosphere
                     Flags = telemetryFlags,
                     Reserved = (ushort)math.min(ushort.MaxValue, sleepingRoomCount),
                     DroppedUpdates = 0,
-                    CpuMicroseconds = 0f,
-                    _pad0 = 0u
+                    CpuMicroseconds = 0f
                 };
             }
 

@@ -191,7 +191,7 @@ namespace Hecton8.Construction
             {
                 _atmosphereSystem = atmosphereSystemSource as ISubmarineAtmosphereRoomMutationSink;
                 if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
-                    _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(this);
+                    ConstructionParentLookup.TryCaptureSelfOrParent(this, out _atmosphereSystem);
             }
 
             if (_cachedRoomIndex >= 0 || _atmosphereSystem == null || _cachedTransform == null)

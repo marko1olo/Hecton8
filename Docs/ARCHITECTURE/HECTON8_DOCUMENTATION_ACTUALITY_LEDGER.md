@@ -80,6 +80,7 @@ Remaining MonoBehaviour/native hotspots:
 - Current native ring copy cleanup evidence is `../Reports/UNITY_NATIVE_RING_COPY_PASS_UNKNOWN_20260527.md`.
 - Current late-frame registry hot-path cleanup evidence is `../Reports/UNITY_LATEFRAME_REGISTRY_HOTPATH_PASS_UNKNOWN_20260527.md`.
 - Current read-accessor purity cleanup evidence is `../Reports/UNITY_READ_ACCESSOR_PURITY_PASS_UNKNOWN_20260527.md`.
+- Current global-route stability evidence is `../Reports/UNITY_GLOBAL_ROUTE_STABILITY_PASS_UNKNOWN_20260527.md`.
 - Runtime `Resources.Load` first-party source scan is currently `0`; shader catalog binding is now through `GameBootstrapper` and `00_BOOTSTRAP.unity`.
 - Release runtime `Shader.Find(...)` exact scan remains `0`; compute `FindKernel` calls are not shader lookup hits.
 - Current guarded `Hecton8.slnx` build fails before C# compile because ignored/generated Unity `.csproj` files are absent; latest proof is `../Reports/BUILD_UNKNOWN_RUNTIME_TRAP_DEEPER_PASS_POST_SCANNER_RECHECK_20260526.log`.
@@ -198,6 +199,27 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 | Signal-like DTO layouts | `FaunaDirector.AcousticPanicCommand` and `VocalWarningSystem.VocalWarningTelemetrySnapshot` now have explicit layout proof | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
 | Latest verified audit | Final recheck reports `errors=0`, `confirmedErrors=0`, `warnings=155`, `infos=1171`, `SIGNAL_LAYOUT_REVIEW=0`, `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT=1` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_FINAL.json` |
 | Closed gap | Final borrowed-view classifier build passed in `UnknownFinal` with `0` warnings and `0` errors | `../Reports/BUILD_UNKNOWN_SIGNAL_CLI_LAYOUT_ALIAS_FINAL2_20260527.log` |
+| Full solution boundary | Escalated `Hecton8.slnx` build is not green: `3141` warnings, `365` errors, `0` touched-file hits | `../Reports/BUILD_UNKNOWN_SIGNAL_LAYOUT_ALIAS_FULL_SOLUTION_ESCALATED_20260527.log` |
+| Documentation gates | `VerifyDocStructure pass=true activeDocCount=692`; `OOP_Doc_Scanner finalPass=true activeFileCount=692 sourceSyncPass=true` | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
+
+## 2026-05-27 Signal Residual Contract Cleanup
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Sector override commit route | `PersistentWorldRegistry` no longer snapshots due commit work with `List<T>.ToArray()`; the route uses a cold-owned bounded `SectorOverrideCommitWork[16]` buffer | `../Reports/UNITY_SIGNAL_RESIDUAL_CONTRACT_CLEANUP_UNKNOWN_20260527.md` |
+| Tether tension lane | `TetherTensionSignal` is no longer declared cache-line-critical while carrying a 192-byte endpoint telemetry payload | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TBDR_UI_SANDBOX_TETHER_SECTOR_RECHECK.json` |
+| Duplicate signal-like names | Clean sandbox/UI/TBDR local carriers were renamed; duplicate-name review warnings are now `8` instead of `14` | `../Reports/UNITY_SIGNAL_RESIDUAL_CONTRACT_CLEANUP_UNKNOWN_20260527.md` |
+| Build boundary | Full project compile errors were intentionally not fixed in this pass by user instruction | `../Reports/UNITY_SIGNAL_RESIDUAL_CONTRACT_CLEANUP_UNKNOWN_20260527.md` |
+| Documentation gates | `VerifyDocStructure pass=true activeDocCount=693`; `OOP_Doc_Scanner finalPass=true activeFileCount=693 sourceSyncPass=true` | `../Reports/UNITY_SIGNAL_RESIDUAL_CONTRACT_CLEANUP_UNKNOWN_20260527.md` |
+
+## 2026-05-27 Core Memory Signal Domain Deep Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Mod projection cull telemetry | Production ownership moved from local persistent ring to `GlobalDataVault` generation handle, with local fallback only when the Vault is unavailable | `../Reports/UNITY_CORE_MEMORY_SIGNAL_DOMAIN_DEEP_PASS_UNKNOWN_20260527.md` |
+| TBDR Vault lifetime | Runtime and vertex-budget Vault buffers now release their `VaultGenerationHandle` routes on dispose | `../Reports/UNITY_CORE_MEMORY_SIGNAL_DOMAIN_DEEP_PASS_UNKNOWN_20260527.md` |
+| SignalBus audit movement | Rebuilt-CLI recheck reports warnings `148 -> 145`, registered non-Vault telemetry rings `3 -> 0`, owner-local rings `7 -> 8`, and Vault aliases `3 -> 5` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_DEEP_DOMAIN_RECHECK_FINAL.json` |
+| Tool build boundary | `SignalBusContractAuditCli` build succeeds with `0` warnings and `0` errors; full project compile errors are intentionally untouched | `../Reports/BUILD_UNKNOWN_SIGNAL_CLI_DEEP_DOMAIN_RECHECK_20260527.log` |
 
 ## Validation
 

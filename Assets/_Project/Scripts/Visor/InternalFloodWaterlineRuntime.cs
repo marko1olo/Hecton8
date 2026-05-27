@@ -806,7 +806,7 @@ namespace Hecton8.Visor
         {
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.Sequence);
-            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(8, 4), entry.RoomId);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(8, 4), unchecked((uint)entry.RoomId));
             WriteFloatLittleEndian(destination.Slice(12, 4), entry.Fill01);
             WriteFloatLittleEndian(destination.Slice(16, 4), entry.CurrentWaterlineY);
             WriteFloatLittleEndian(destination.Slice(20, 4), entry.TargetWaterlineY);

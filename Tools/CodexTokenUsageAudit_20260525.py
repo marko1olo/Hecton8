@@ -460,27 +460,90 @@ def previous_snapshot_delta(report):
     previous_top = (previous.get("model_effort_final_standard_cost_rows") or [{}])[0]
     current_scope = (report.get("scope_economics") or {}).get("first_party_assets_project_cs") or {}
     previous_scope = (previous.get("scope_economics") or {}).get("first_party_assets_project_cs") or {}
+    totals_delta = sub_usage(report.get("totals") or zero_usage(), previous.get("totals") or zero_usage())
+    file_count_delta = int(report.get("file_count", 0) or 0) - int(previous.get("file_count", 0) or 0)
+    sessions_delta = int(report.get("sessions_with_usage", 0) or 0) - int(previous.get("sessions_with_usage", 0) or 0)
+    primary_cost_delta = price_delta(PRIMARY_PRICE_KEY)
+    priority_cost_delta = price_delta("gpt-5.5_priority_short_context_equivalent")
+    codex_cost_delta = price_delta(CODEX_STANDARD_PRICE_KEY)
+    primary_code_lines_delta = int(current_scope.get("lines", 0) or 0) - int(previous_scope.get("lines", 0) or 0)
+    primary_code_characters_delta = int(current_scope.get("characters", 0) or 0) - int(previous_scope.get("characters", 0) or 0)
+    uncached_input_delta = totals_delta["input_tokens"] - totals_delta["cached_input_tokens"]
+
+    def per_hour(value):
+        if elapsed_hours is None or elapsed_hours <= 0:
+            return None
+        return float(value) / elapsed_hours
+
+    def per_day(value):
+        hourly = per_hour(value)
+        return None if hourly is None else hourly * 24
+
+    def per_minute(value):
+        hourly = per_hour(value)
+        return None if hourly is None else hourly / 60
+
+    def per_second(value):
+        hourly = per_hour(value)
+        return None if hourly is None else hourly / 3600
+
+    def per_positive_unit(value, denominator):
+        if denominator <= 0:
+            return None
+        return float(value) / denominator
+
+    velocity = {
+        "total_tokens_per_hour": per_hour(totals_delta["total_tokens"]),
+        "total_tokens_per_day": per_day(totals_delta["total_tokens"]),
+        "total_tokens_per_minute": per_minute(totals_delta["total_tokens"]),
+        "total_tokens_per_second": per_second(totals_delta["total_tokens"]),
+        "input_tokens_per_hour": per_hour(totals_delta["input_tokens"]),
+        "cached_input_tokens_per_hour": per_hour(totals_delta["cached_input_tokens"]),
+        "uncached_input_tokens_per_hour": per_hour(uncached_input_delta),
+        "output_tokens_per_hour": per_hour(totals_delta["output_tokens"]),
+        "reasoning_output_tokens_per_hour": per_hour(totals_delta["reasoning_output_tokens"]),
+        "sessions_with_usage_per_hour": per_hour(sessions_delta),
+        "jsonl_files_per_hour": per_hour(file_count_delta),
+        "primary_code_lines_per_hour": per_hour(primary_code_lines_delta),
+        "primary_code_lines_per_day": per_day(primary_code_lines_delta),
+        "primary_code_characters_per_hour": per_hour(primary_code_characters_delta),
+        "primary_code_characters_per_day": per_day(primary_code_characters_delta),
+        "tokens_per_net_primary_code_line": per_positive_unit(totals_delta["total_tokens"], primary_code_lines_delta),
+        "input_tokens_per_net_primary_code_line": per_positive_unit(totals_delta["input_tokens"], primary_code_lines_delta),
+        "output_tokens_per_net_primary_code_line": per_positive_unit(totals_delta["output_tokens"], primary_code_lines_delta),
+        "reasoning_tokens_per_net_primary_code_line": per_positive_unit(totals_delta["reasoning_output_tokens"], primary_code_lines_delta),
+        "tokens_per_1k_net_primary_code_chars": per_positive_unit(totals_delta["total_tokens"] * 1000, primary_code_characters_delta),
+        "output_tokens_per_1k_net_primary_code_chars": per_positive_unit(totals_delta["output_tokens"] * 1000, primary_code_characters_delta),
+        "gpt_5_5_standard_usd_per_hour": per_hour(primary_cost_delta),
+        "gpt_5_5_standard_usd_per_day": per_day(primary_cost_delta),
+        "gpt_5_5_priority_usd_per_hour": per_hour(priority_cost_delta),
+        "gpt_5_3_codex_standard_usd_per_hour": per_hour(codex_cost_delta),
+        "gpt_5_5_standard_usd_per_net_primary_code_line": per_positive_unit(primary_cost_delta, primary_code_lines_delta),
+        "gpt_5_5_standard_usd_per_1k_net_primary_code_chars": per_positive_unit(primary_cost_delta * 1000, primary_code_characters_delta),
+    }
     return {
         "previous_report_path": str(previous_path),
         "previous_generated_at_samara": previous.get("generated_at_samara"),
         "elapsed_hours": elapsed_hours,
-        "file_count_delta": int(report.get("file_count", 0) or 0) - int(previous.get("file_count", 0) or 0),
-        "sessions_with_usage_delta": int(report.get("sessions_with_usage", 0) or 0) - int(previous.get("sessions_with_usage", 0) or 0),
-        "totals_delta": sub_usage(report.get("totals") or zero_usage(), previous.get("totals") or zero_usage()),
-        "gpt_5_5_standard_cost_usd_delta": price_delta(PRIMARY_PRICE_KEY),
-        "gpt_5_5_priority_cost_usd_delta": price_delta("gpt-5.5_priority_short_context_equivalent"),
-        "gpt_5_3_codex_standard_cost_usd_delta": price_delta(CODEX_STANDARD_PRICE_KEY),
+        "file_count_delta": file_count_delta,
+        "sessions_with_usage_delta": sessions_delta,
+        "totals_delta": totals_delta,
+        "uncached_input_tokens_delta": uncached_input_delta,
+        "gpt_5_5_standard_cost_usd_delta": primary_cost_delta,
+        "gpt_5_5_priority_cost_usd_delta": priority_cost_delta,
+        "gpt_5_3_codex_standard_cost_usd_delta": codex_cost_delta,
         "top_model_effort_key_current": current_top.get("key"),
         "top_model_effort_key_previous": previous_top.get("key"),
         "top_model_effort_tokens_delta": int(current_top.get("total_tokens", 0) or 0) - int(previous_top.get("total_tokens", 0) or 0),
         "top_model_effort_sessions_delta": int(current_top.get("session_count", 0) or 0) - int(previous_top.get("session_count", 0) or 0),
         "top_model_effort_cost_usd_delta": float(current_top.get("model_standard_cost_usd", 0) or 0) - float(previous_top.get("model_standard_cost_usd", 0) or 0),
-        "primary_code_lines_delta": int(current_scope.get("lines", 0) or 0) - int(previous_scope.get("lines", 0) or 0),
-        "primary_code_characters_delta": int(current_scope.get("characters", 0) or 0) - int(previous_scope.get("characters", 0) or 0),
+        "primary_code_lines_delta": primary_code_lines_delta,
+        "primary_code_characters_delta": primary_code_characters_delta,
         "tokens_per_primary_code_line_delta": float(current_scope.get("tokens_per_line", 0) or 0) - float(previous_scope.get("tokens_per_line", 0) or 0),
         "tokens_per_1k_primary_code_chars_delta": float(current_scope.get("tokens_per_1k_characters", 0) or 0) - float(previous_scope.get("tokens_per_1k_characters", 0) or 0),
         "gpt_5_5_cost_per_1k_primary_loc_delta": float(current_scope.get("gpt_5_5_standard_usd_per_1k_lines", 0) or 0) - float(previous_scope.get("gpt_5_5_standard_usd_per_1k_lines", 0) or 0),
         "gpt_5_5_cost_per_1k_primary_code_chars_delta": float(current_scope.get("gpt_5_5_standard_usd_per_1k_characters", 0) or 0) - float(previous_scope.get("gpt_5_5_standard_usd_per_1k_characters", 0) or 0),
+        "velocity": velocity,
     }
 
 
@@ -1014,6 +1077,55 @@ def usage_rows(items):
     return lines
 
 
+def fmt_optional_number(value, decimals=2):
+    if value is None:
+        return "n/a"
+    return f"{float(value):,.{decimals}f}"
+
+
+def fmt_optional_money(value):
+    if value is None:
+        return "n/a"
+    return fmt_money(float(value))
+
+
+def append_velocity_table(lines, velocity):
+    rows = (
+        ("Total tokens / hour", "total_tokens_per_hour", "number"),
+        ("Total tokens / minute", "total_tokens_per_minute", "number"),
+        ("Total tokens / second", "total_tokens_per_second", "number"),
+        ("Total tokens / day pace", "total_tokens_per_day", "number"),
+        ("Input tokens / hour", "input_tokens_per_hour", "number"),
+        ("Cached input tokens / hour", "cached_input_tokens_per_hour", "number"),
+        ("Uncached input tokens / hour", "uncached_input_tokens_per_hour", "number"),
+        ("Output tokens / hour", "output_tokens_per_hour", "number"),
+        ("Reasoning output tokens / hour", "reasoning_output_tokens_per_hour", "number"),
+        ("Usage sessions / hour", "sessions_with_usage_per_hour", "number"),
+        ("JSONL files / hour", "jsonl_files_per_hour", "number"),
+        ("Primary C# code lines / hour", "primary_code_lines_per_hour", "number"),
+        ("Primary C# code lines / day pace", "primary_code_lines_per_day", "number"),
+        ("Primary C# code chars / hour", "primary_code_characters_per_hour", "number"),
+        ("Primary C# code chars / day pace", "primary_code_characters_per_day", "number"),
+        ("Tokens / net primary C# code line", "tokens_per_net_primary_code_line", "number"),
+        ("Input tokens / net primary C# code line", "input_tokens_per_net_primary_code_line", "number"),
+        ("Output tokens / net primary C# code line", "output_tokens_per_net_primary_code_line", "number"),
+        ("Reasoning tokens / net primary C# code line", "reasoning_tokens_per_net_primary_code_line", "number"),
+        ("Tokens / 1k net primary C# code chars", "tokens_per_1k_net_primary_code_chars", "number"),
+        ("Output tokens / 1k net primary C# code chars", "output_tokens_per_1k_net_primary_code_chars", "number"),
+        ("GPT-5.5 standard $ / hour", "gpt_5_5_standard_usd_per_hour", "money"),
+        ("GPT-5.5 standard $ / day pace", "gpt_5_5_standard_usd_per_day", "money"),
+        ("GPT-5.5 priority $ / hour", "gpt_5_5_priority_usd_per_hour", "money"),
+        ("gpt-5.3-codex standard $ / hour", "gpt_5_3_codex_standard_usd_per_hour", "money"),
+        ("GPT-5.5 standard $ / net primary C# code line", "gpt_5_5_standard_usd_per_net_primary_code_line", "money"),
+        ("GPT-5.5 standard $ / 1k net primary C# code chars", "gpt_5_5_standard_usd_per_1k_net_primary_code_chars", "money"),
+    )
+    lines += ["", "## Velocity Since Previous Snapshot", "Speed and burn-rate are derived from previous-snapshot deltas. Code ratios use net primary C# code growth in the same window.", "", "| Metric | Value |", "|---|---:|"]
+    for label, key, kind in rows:
+        value = velocity.get(key)
+        text = fmt_optional_money(value) if kind == "money" else fmt_optional_number(value)
+        lines.append(f"| {label} | {text} |")
+
+
 def write_reports(report):
     REPORT_JSON.parent.mkdir(parents=True, exist_ok=True)
     REPORT_JSON.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -1060,6 +1172,7 @@ def write_reports(report):
         md.append(f"| tokens / 1k primary code chars | {change['tokens_per_1k_primary_code_chars_delta']:,.2f} |")
         md.append(f"| GPT-5.5 $ / 1k primary LOC | {fmt_money(change['gpt_5_5_cost_per_1k_primary_loc_delta'])} |")
         md.append(f"| GPT-5.5 $ / 1k primary code chars | {fmt_money(change['gpt_5_5_cost_per_1k_primary_code_chars_delta'])} |")
+        append_velocity_table(md, change.get("velocity") or {})
 
     md += ["", "## API-Equivalent Price Scenarios", f"Actual Codex billing cannot be proven from local JSONL. These are API-equivalent estimates using official OpenAI rates checked on {REPORT_DATE}. Cached input is charged at cached-input rate; reasoning output is an output subcounter, not added twice.", "", "| Scenario | Uncached input | Cached input | Output | Total | No-cache upper bound |", "|---|---:|---:|---:|---:|---:|"]
     for name, row in report["pricing"].items():
@@ -1236,6 +1349,7 @@ def write_reports(report):
         ledger.append(f"| top model-effort standard $ | {fmt_money(change['top_model_effort_cost_usd_delta'])} |")
         ledger.append(f"| tokens / primary code line | {change['tokens_per_primary_code_line_delta']:,.2f} |")
         ledger.append(f"| tokens / 1k primary code chars | {change['tokens_per_1k_primary_code_chars_delta']:,.2f} |")
+        append_velocity_table(ledger, change.get("velocity") or {})
     ledger += ["", "`cached_input_tokens` is a telemetry subcounter of input-token reuse, not an extra token class to add on top of `total_tokens`.", "", "## API-Equivalent Cost Snapshot", "", f"Local Codex telemetry is not an invoice. The primary estimate uses official `gpt-5.5` standard short-context API-equivalent rates checked on {REPORT_DATE}: input $5.00/1M, cached input $0.50/1M, output $30.00/1M. `xhigh` is a reasoning-effort setting; it changes observed token shape, not the public rate row.", "", "| Scenario | Total | No-cache upper bound |", "|---|---:|---:|"]
     ledger.append(f"| {PRIMARY_PRICE_LABEL} | {fmt_money(primary['total_cost_usd'])} | {fmt_money(upper_primary)} |")
     for name in ("gpt-5.5_priority_short_context_equivalent", "gpt-5.5_batch_short_context_equivalent", "gpt-5.5_flex_short_context_equivalent", "gpt-5.4_standard_short_context_equivalent", "gpt-5.3-codex_standard_api_equivalent", "gpt-5.3-codex_priority_api_equivalent"):
@@ -1409,6 +1523,10 @@ def main():
         "reasoning_to_output_ratio": report["input_output_stats"]["reasoning_to_output_ratio"],
         "primary_loc_lines": report["loc"]["first_party_assets_project_cs"]["lines"],
         "tokens_per_primary_loc_line": report["ratios"]["tokens_per_first_party_assets_project_cs_line"],
+        "delta_total_tokens_per_hour": ((report.get("previous_snapshot_delta") or {}).get("velocity") or {}).get("total_tokens_per_hour"),
+        "delta_gpt_5_5_standard_usd_per_hour": ((report.get("previous_snapshot_delta") or {}).get("velocity") or {}).get("gpt_5_5_standard_usd_per_hour"),
+        "delta_primary_code_lines_per_hour": ((report.get("previous_snapshot_delta") or {}).get("velocity") or {}).get("primary_code_lines_per_hour"),
+        "delta_tokens_per_net_primary_code_line": ((report.get("previous_snapshot_delta") or {}).get("velocity") or {}).get("tokens_per_net_primary_code_line"),
     }, indent=2, ensure_ascii=False))
 
 

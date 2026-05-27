@@ -4857,7 +4857,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Read-only terrain height payload alias exposed without binding consumers to the vegetation bridge owner type.
     /// </summary>
-    public readonly struct TerrainHeightSamplePayloadDTO
+    public readonly ref struct TerrainHeightSamplePayloadDTO
     {
         public TerrainHeightSamplePayloadDTO(
             NativeArray<ushort> heightSamples,

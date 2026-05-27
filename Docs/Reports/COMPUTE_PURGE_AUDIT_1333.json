@@ -21090,11 +21090,11 @@
         },
         {
           "code": "bool locked = vault.TryAcquireWriteLock(in s_TaskClaimCountsHandle, SystemID.Construction, out taskClaimCounts);",
-          "line": 8021
+          "line": 8026
         },
         {
           "code": "bool locked = vault.TryAcquireWriteLock(in s_DroneTaskPriorityHeapHandle, SystemID.Construction, out taskPriorityHeap);",
-          "line": 8084
+          "line": 8089
         }
       ],
       "nativeDeclarations": [
@@ -23801,7 +23801,7 @@
         {
           "declaration": "NativeArray<DroneRenderInstance> renderInstances,",
           "isField": false,
-          "line": 6734,
+          "line": 6739,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23811,7 +23811,7 @@
         {
           "declaration": "NativeArray<DroneCullingStateGpu> cullingStates,",
           "isField": false,
-          "line": 6735,
+          "line": 6740,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23821,7 +23821,7 @@
         {
           "declaration": "NativeArray<float4x4> droneRenderMatrices,",
           "isField": false,
-          "line": 6736,
+          "line": 6741,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23831,7 +23831,7 @@
         {
           "declaration": "NativeArray<HeadlessDroneState>.ReadOnly droneStates)",
           "isField": false,
-          "line": 6737,
+          "line": 6742,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23841,7 +23841,7 @@
         {
           "declaration": "private static void CaptureFleetBlackBoxFrame(NativeArray<HeadlessDroneState> droneStates)",
           "isField": false,
-          "line": 6891,
+          "line": 6896,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23851,7 +23851,7 @@
         {
           "declaration": "out NativeArray<DroneFleetBlackBoxEntry> blackBox,",
           "isField": false,
-          "line": 6896,
+          "line": 6901,
           "method": "CaptureFleetBlackBoxFrame",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23861,7 +23861,7 @@
         {
           "declaration": "private static void DumpDroneBlackBoxOncePerFrame(NativeArray<DroneFleetBlackBoxEntry> blackBox)",
           "isField": false,
-          "line": 6967,
+          "line": 6972,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23871,7 +23871,7 @@
         {
           "declaration": "private static void TryDumpDroneBlackBox(NativeArray<DroneFleetBlackBoxEntry> blackBox)",
           "isField": false,
-          "line": 6977,
+          "line": 6982,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23881,7 +23881,7 @@
         {
           "declaration": "private static void TryWriteDroneBlackBoxFile(string relativePath, NativeArray<DroneFleetBlackBoxEntry> blackBox)",
           "isField": false,
-          "line": 6988,
+          "line": 6993,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23891,7 +23891,7 @@
         {
           "declaration": "out NativeArray<DroneFleetTuningConstants> tuningConstants,",
           "isField": false,
-          "line": 7038,
+          "line": 7043,
           "method": "WriteDefaultDroneTuningConstants",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23901,7 +23901,7 @@
         {
           "declaration": "out NativeArray<DroneFleetTuningConstants>.ReadOnly tuningConstants);",
           "isField": false,
-          "line": 7057,
+          "line": 7062,
           "method": "TryGetDroneFleetTuningConstants",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23911,7 +23911,7 @@
         {
           "declaration": "out NativeArray<DroneFleetTuningConstants> tuningConstants,",
           "isField": false,
-          "line": 7068,
+          "line": 7073,
           "method": "ApplyDroneFleetTuningConstants",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23921,7 +23921,7 @@
         {
           "declaration": "return TryReadDroneStates(out NativeArray<HeadlessDroneState>.ReadOnly _);",
           "isField": false,
-          "line": 7108,
+          "line": 7113,
           "method": "TryGetDroneFleetAutomationStats",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23931,7 +23931,7 @@
         {
           "declaration": "!TryReadDroneStates(out NativeArray<HeadlessDroneState>.ReadOnly droneStates) ||",
           "isField": false,
-          "line": 7115,
+          "line": 7120,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23941,7 +23941,7 @@
         {
           "declaration": "out NativeArray<PathWaypointDTO>.ReadOnly macroWaypoints,",
           "isField": false,
-          "line": 7125,
+          "line": 7130,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23951,7 +23951,7 @@
         {
           "declaration": "out NativeArray<byte>.ReadOnly macroWaypointStates);",
           "isField": false,
-          "line": 7126,
+          "line": 7131,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23961,7 +23961,7 @@
         {
           "declaration": "out NativeArray<int>.ReadOnly macroRouteNodes,",
           "isField": false,
-          "line": 7128,
+          "line": 7133,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23971,7 +23971,7 @@
         {
           "declaration": "out NativeArray<byte>.ReadOnly macroRouteCounts);",
           "isField": false,
-          "line": 7129,
+          "line": 7134,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23981,7 +23981,7 @@
         {
           "declaration": "bool aStarNodeStatesReady = TryReadDroneAStarNodeStates(out NativeArray<byte>.ReadOnly aStarNodeStates);",
           "isField": false,
-          "line": 7130,
+          "line": 7135,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -23991,7 +23991,7 @@
         {
           "declaration": "NativeArray<int>.ReadOnly macroRouteNodes,",
           "isField": false,
-          "line": 7215,
+          "line": 7220,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24001,7 +24001,7 @@
         {
           "declaration": "NativeArray<byte>.ReadOnly macroRouteCounts,",
           "isField": false,
-          "line": 7216,
+          "line": 7221,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24011,7 +24011,7 @@
         {
           "declaration": "NativeArray<byte>.ReadOnly aStarNodeStates,",
           "isField": false,
-          "line": 7263,
+          "line": 7268,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24021,7 +24021,7 @@
         {
           "declaration": "out NativeArray<byte> csvScratch,",
           "isField": false,
-          "line": 7351,
+          "line": 7356,
           "method": "TryApplyDroneSpecsCsv",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24031,7 +24031,7 @@
         {
           "declaration": "out NativeArray<int> taskClaimCounts,",
           "isField": false,
-          "line": 7968,
+          "line": 7973,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24041,7 +24041,7 @@
         {
           "declaration": "out NativeArray<int> _))",
           "isField": false,
-          "line": 7984,
+          "line": 7989,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24051,7 +24051,7 @@
         {
           "declaration": "out NativeArray<DroneAssignmentTaskDTO> taskPriorityHeap)",
           "isField": false,
-          "line": 8038,
+          "line": 8043,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24061,7 +24061,7 @@
         {
           "declaration": "out NativeArray<DroneAssignmentTaskDTO> _))",
           "isField": false,
-          "line": 8049,
+          "line": 8054,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24071,7 +24071,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts,",
           "isField": false,
-          "line": 8100,
+          "line": 8105,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24081,7 +24081,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts)",
           "isField": false,
-          "line": 8123,
+          "line": 8128,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24091,7 +24091,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts,",
           "isField": false,
-          "line": 8157,
+          "line": 8162,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24101,7 +24101,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts)",
           "isField": false,
-          "line": 8214,
+          "line": 8219,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24111,7 +24111,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts)",
           "isField": false,
-          "line": 8223,
+          "line": 8228,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24121,7 +24121,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts)",
           "isField": false,
-          "line": 8255,
+          "line": 8260,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -24131,7 +24131,7 @@
       ],
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "persistentNativeFields": [],
-      "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4",
+      "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e",
       "telemetryEvidence": null,
       "throwNew": [],
       "transientJobViews": [],
@@ -26839,7 +26839,7 @@
         {
           "declaration": "NativeArray<DroneRenderInstance> renderInstances,",
           "isField": false,
-          "line": 6734,
+          "line": 6739,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26849,7 +26849,7 @@
         {
           "declaration": "NativeArray<DroneCullingStateGpu> cullingStates,",
           "isField": false,
-          "line": 6735,
+          "line": 6740,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26859,7 +26859,7 @@
         {
           "declaration": "NativeArray<float4x4> droneRenderMatrices,",
           "isField": false,
-          "line": 6736,
+          "line": 6741,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26869,7 +26869,7 @@
         {
           "declaration": "NativeArray<HeadlessDroneState>.ReadOnly droneStates)",
           "isField": false,
-          "line": 6737,
+          "line": 6742,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26879,7 +26879,7 @@
         {
           "declaration": "private static void CaptureFleetBlackBoxFrame(NativeArray<HeadlessDroneState> droneStates)",
           "isField": false,
-          "line": 6891,
+          "line": 6896,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26889,7 +26889,7 @@
         {
           "declaration": "out NativeArray<DroneFleetBlackBoxEntry> blackBox,",
           "isField": false,
-          "line": 6896,
+          "line": 6901,
           "method": "CaptureFleetBlackBoxFrame",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26899,7 +26899,7 @@
         {
           "declaration": "private static void DumpDroneBlackBoxOncePerFrame(NativeArray<DroneFleetBlackBoxEntry> blackBox)",
           "isField": false,
-          "line": 6967,
+          "line": 6972,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26909,7 +26909,7 @@
         {
           "declaration": "private static void TryDumpDroneBlackBox(NativeArray<DroneFleetBlackBoxEntry> blackBox)",
           "isField": false,
-          "line": 6977,
+          "line": 6982,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26919,7 +26919,7 @@
         {
           "declaration": "private static void TryWriteDroneBlackBoxFile(string relativePath, NativeArray<DroneFleetBlackBoxEntry> blackBox)",
           "isField": false,
-          "line": 6988,
+          "line": 6993,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26929,7 +26929,7 @@
         {
           "declaration": "out NativeArray<DroneFleetTuningConstants> tuningConstants,",
           "isField": false,
-          "line": 7038,
+          "line": 7043,
           "method": "WriteDefaultDroneTuningConstants",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26939,7 +26939,7 @@
         {
           "declaration": "out NativeArray<DroneFleetTuningConstants>.ReadOnly tuningConstants);",
           "isField": false,
-          "line": 7057,
+          "line": 7062,
           "method": "TryGetDroneFleetTuningConstants",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26949,7 +26949,7 @@
         {
           "declaration": "out NativeArray<DroneFleetTuningConstants> tuningConstants,",
           "isField": false,
-          "line": 7068,
+          "line": 7073,
           "method": "ApplyDroneFleetTuningConstants",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26959,7 +26959,7 @@
         {
           "declaration": "return TryReadDroneStates(out NativeArray<HeadlessDroneState>.ReadOnly _);",
           "isField": false,
-          "line": 7108,
+          "line": 7113,
           "method": "TryGetDroneFleetAutomationStats",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26969,7 +26969,7 @@
         {
           "declaration": "!TryReadDroneStates(out NativeArray<HeadlessDroneState>.ReadOnly droneStates) ||",
           "isField": false,
-          "line": 7115,
+          "line": 7120,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26979,7 +26979,7 @@
         {
           "declaration": "out NativeArray<PathWaypointDTO>.ReadOnly macroWaypoints,",
           "isField": false,
-          "line": 7125,
+          "line": 7130,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26989,7 +26989,7 @@
         {
           "declaration": "out NativeArray<byte>.ReadOnly macroWaypointStates);",
           "isField": false,
-          "line": 7126,
+          "line": 7131,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -26999,7 +26999,7 @@
         {
           "declaration": "out NativeArray<int>.ReadOnly macroRouteNodes,",
           "isField": false,
-          "line": 7128,
+          "line": 7133,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27009,7 +27009,7 @@
         {
           "declaration": "out NativeArray<byte>.ReadOnly macroRouteCounts);",
           "isField": false,
-          "line": 7129,
+          "line": 7134,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27019,7 +27019,7 @@
         {
           "declaration": "bool aStarNodeStatesReady = TryReadDroneAStarNodeStates(out NativeArray<byte>.ReadOnly aStarNodeStates);",
           "isField": false,
-          "line": 7130,
+          "line": 7135,
           "method": "CopyDroneFleetDebugRoutes",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27029,7 +27029,7 @@
         {
           "declaration": "NativeArray<int>.ReadOnly macroRouteNodes,",
           "isField": false,
-          "line": 7215,
+          "line": 7220,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27039,7 +27039,7 @@
         {
           "declaration": "NativeArray<byte>.ReadOnly macroRouteCounts,",
           "isField": false,
-          "line": 7216,
+          "line": 7221,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27049,7 +27049,7 @@
         {
           "declaration": "NativeArray<byte>.ReadOnly aStarNodeStates,",
           "isField": false,
-          "line": 7263,
+          "line": 7268,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27059,7 +27059,7 @@
         {
           "declaration": "out NativeArray<byte> csvScratch,",
           "isField": false,
-          "line": 7351,
+          "line": 7356,
           "method": "TryApplyDroneSpecsCsv",
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27069,7 +27069,7 @@
         {
           "declaration": "out NativeArray<int> taskClaimCounts,",
           "isField": false,
-          "line": 7968,
+          "line": 7973,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27079,7 +27079,7 @@
         {
           "declaration": "out NativeArray<int> _))",
           "isField": false,
-          "line": 7984,
+          "line": 7989,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27089,7 +27089,7 @@
         {
           "declaration": "out NativeArray<DroneAssignmentTaskDTO> taskPriorityHeap)",
           "isField": false,
-          "line": 8038,
+          "line": 8043,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27099,7 +27099,7 @@
         {
           "declaration": "out NativeArray<DroneAssignmentTaskDTO> _))",
           "isField": false,
-          "line": 8049,
+          "line": 8054,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27109,7 +27109,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts,",
           "isField": false,
-          "line": 8100,
+          "line": 8105,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27119,7 +27119,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts)",
           "isField": false,
-          "line": 8123,
+          "line": 8128,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27129,7 +27129,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts,",
           "isField": false,
-          "line": 8157,
+          "line": 8162,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27139,7 +27139,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts)",
           "isField": false,
-          "line": 8214,
+          "line": 8219,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27149,7 +27149,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts)",
           "isField": false,
-          "line": 8223,
+          "line": 8228,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -27159,7 +27159,7 @@
         {
           "declaration": "NativeArray<int> taskClaimCounts)",
           "isField": false,
-          "line": 8255,
+          "line": 8260,
           "method": null,
           "nativeType": "NativeArray",
           "ownerType": "DroneFleetManager",
@@ -32087,7 +32087,7 @@
       ],
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "persistentNativeFields": [],
-      "sha256": "a43b63ef22082f3e6d493ca61eb15e4aa8f8dce47116d1a6031aaa8eac3ac440",
+      "sha256": "a554255a8f3a37c2683f4a68e078ec68daa5f3b1f2c48973e48e1392cd12d213",
       "telemetryEvidence": null,
       "throwNew": [],
       "transientJobViews": [
@@ -63163,11 +63163,11 @@
     },
     {
       "code": "bool locked = vault.TryAcquireWriteLock(in s_TaskClaimCountsHandle, SystemID.Construction, out taskClaimCounts);",
-      "line": 8021
+      "line": 8026
     },
     {
       "code": "bool locked = vault.TryAcquireWriteLock(in s_DroneTaskPriorityHeapHandle, SystemID.Construction, out taskPriorityHeap);",
-      "line": 8084
+      "line": 8089
     },
     {
       "code": "!_vault.TryAcquireWriteLock(in _handle, VaultOwnerSystem, out array))",
@@ -66174,6 +66174,6 @@
       "scope": "vault_owner_internal_field"
     }
   ],
-  "verificationHashSha256": "f54d1fa1dc5d6fada69755f7f6625b14407dce2bdbf765e624869d36cf016364",
+  "verificationHashSha256": "40edfb80bcbb21c695a4235dd715cf04cc11048f369089c8221b15ec7d3cfd91",
   "zeroGcHotPathHits": 0
 }

@@ -1392,6 +1392,7 @@ namespace Hecton8.World
 
         public bool IsCreated => _vault != null && _keysHandle.BufferID != 0u && _valuesHandle.BufferID != 0u && _statesHandle.BufferID != 0u && _countHandle.BufferID != 0u && _capacity > 0;
         public int Capacity => IsCreated ? _capacity : 0;
+        public int Count => ReadCount();
         public long EstimatedBytes => IsCreated ? (long)_capacity * (UnsafeUtility.SizeOf<TKey>() + UnsafeUtility.SizeOf<TValue>() + 1L) + UnsafeUtility.SizeOf<int>() : 0L;
 
         public void Initialize(IDataVault vault, BufferID keysBufferId, BufferID valuesBufferId, BufferID statesBufferId, BufferID countBufferId, int capacity, SystemID owner)
@@ -1497,6 +1498,19 @@ namespace Hecton8.World
         public bool ContainsKey(TKey key)
         {
             return TryGetValue(key, out _);
+        }
+
+        private int ReadCount()
+        {
+            if (!IsCreated ||
+                _vault == null ||
+                !_vault.TryReadOnlyHandle(in _countHandle, out NativeArray<int>.ReadOnly count) ||
+                count.Length <= 0)
+            {
+                return 0;
+            }
+
+            return math.clamp(count[0], 0, _capacity);
         }
 
         public bool TryAdd(TKey key, TValue value)
@@ -1891,6 +1905,7 @@ namespace Hecton8.World
 
         public bool IsCreated => _map.IsCreated;
         public int Capacity => _map.Capacity;
+        public int Length => _map.Count;
         public long EstimatedBytes => _map.EstimatedBytes;
 
         public void Initialize(IDataVault vault, BufferID keysBufferId, BufferID valuesBufferId, BufferID statesBufferId, BufferID countBufferId, int capacity, SystemID owner)
@@ -2599,6 +2614,7 @@ namespace Hecton8.World
         private const float PagedSectorLoadRadiusMeters = 1000f;
         private const float PagedSectorLoadRadiusSq = PagedSectorLoadRadiusMeters * PagedSectorLoadRadiusMeters;
         private const float SectorEvictionDistanceMeters = 1500f;
+        private const int MaxSectorOverrideCommitsPerPass = 16;
         private const float SectorOverrideCommitIntervalSeconds = 10f;
         private const float SectorOverrideCommitDelaySeconds = 300f;
         private const float FloraStateQuantizationScale = 255f;
@@ -2930,7 +2946,7 @@ namespace Hecton8.World
         private List<EntityDataRecord> _entityStateScratch;
         private List<EntityDataRecord> _entityStateSectorTargetScratch;
         private List<EntityDataRecord> _floraSpawnStateScratch;
-        private List<SectorOverrideCommitWork> _dueSectorOverrideCommitWork;
+        private SectorOverrideCommitWork[] _sectorOverrideCommitWorkBuffer;
         private uint[] _whaleFallPoiInstanceUids;
         private int _whaleFallPoiInstanceUidCount;
         private int _whaleFallPoiInstanceUidWriteCursor;
@@ -3179,8 +3195,8 @@ namespace Hecton8.World
             // COLD ALLOC: List<EntityDataRecord>[128] — destination-sector entity-state rewrite scratch — owner: PersistentWorldRegistry
             _entityStateSectorTargetScratch = new List<EntityDataRecord>(128);
             _floraSpawnStateScratch = new List<EntityDataRecord>(maxTrackedItems); // COLD ALLOC: List<EntityDataRecord>[maxTrackedItems] - standalone flora spawn-state snapshot scratch - owner: PersistentWorldRegistry
-            // COLD ALLOC: List<SectorOverrideCommitWork>[16] - due sector override commit queue - owner: PersistentWorldRegistry
-            _dueSectorOverrideCommitWork = new List<SectorOverrideCommitWork>(16);
+            // COLD ALLOC: SectorOverrideCommitWork[16] - bounded due sector override commit queue - owner: PersistentWorldRegistry
+            _sectorOverrideCommitWorkBuffer = new SectorOverrideCommitWork[MaxSectorOverrideCommitsPerPass];
             // COLD ALLOC: uint[64] — active whale-fall POI uid index for bounded influence queries — owner: PersistentWorldRegistry
             _whaleFallPoiInstanceUids = new uint[MaxWhaleFallInfluenceScan];
             // COLD ALLOC: uint[256] — per-pass apex migration uid de-duplication scratch — owner: PersistentWorldRegistry
@@ -3996,15 +4012,15 @@ namespace Hecton8.World
             if (!TryResolveRegistryChunkId(in position, instanceUid, out int3 chunkId))
                 return false;
 
-            for (int recordIndex = 0; recordIndex < _records.Length; recordIndex++)
+            for (int pendingSeedRecordIndex = 0; pendingSeedRecordIndex < _records.Length; pendingSeedRecordIndex++)
             {
-                PersistentWorldItemRecord existing = _records[recordIndex];
+                PersistentWorldItemRecord existing = _records[pendingSeedRecordIndex];
                 if (existing.InstanceUid != instanceUid)
                     continue;
 
                 PersistentWorldItemRecord previousRecord = existing;
                 int3 previousChunkId = existing.ChunkId;
-                if (!TryMoveRecordIndexToChunk(existing.ChunkId, chunkId, recordIndex, instanceUid))
+                if (!TryMoveRecordIndexToChunk(existing.ChunkId, chunkId, pendingSeedRecordIndex, instanceUid))
                     return false;
 
                 existing.Position = position;
@@ -4014,14 +4030,14 @@ namespace Hecton8.World
                 existing.Flags = PersistentWorldItemFlags.FloraSeedPending;
                 if (!UpsertDeltaRecord(in existing))
                 {
-                    RollbackRecordChunkMove(chunkId, previousChunkId, recordIndex, instanceUid);
+                    RollbackRecordChunkMove(chunkId, previousChunkId, pendingSeedRecordIndex, instanceUid);
                     return false;
                 }
 
-                if (!TryWriteRecordAt(recordIndex, in existing))
+                if (!TryWriteRecordAt(pendingSeedRecordIndex, in existing))
                 {
                     UpsertDeltaRecord(in previousRecord);
-                    RollbackRecordChunkMove(chunkId, previousChunkId, recordIndex, instanceUid);
+                    RollbackRecordChunkMove(chunkId, previousChunkId, pendingSeedRecordIndex, instanceUid);
                     return false;
                 }
 
@@ -4131,7 +4147,7 @@ namespace Hecton8.World
                 WorldTelemetryCapacityMismatch,
                 WorldRegistryFloraSpawnStateKeysBuffer,
                 0u,
-                instanceUid,
+                unchecked((int)instanceUid),
                 _floraSpawnStateByInstanceUid.Capacity,
                 TryResolveRegistryChunkId(in position, instanceUid, out int3 telemetryChunk)
                     ? telemetryChunk
@@ -6856,7 +6872,7 @@ namespace Hecton8.World
                             WorldTelemetryCapacityMismatch,
                             WorldRegistryFloraSpawnStateKeysBuffer,
                             0u,
-                            pair.Key,
+                            unchecked((int)pair.Key),
                             _floraSpawnStateByInstanceUid.Capacity,
                             _currentPlayerChunk,
                             pair.Key);
@@ -6870,7 +6886,7 @@ namespace Hecton8.World
                         WorldTelemetryCapacityMismatch,
                         WorldRegistryEntityStateKeysBuffer,
                         0u,
-                        pair.Key,
+                        unchecked((int)pair.Key),
                         _entityStateByInstanceUid.Capacity,
                         _currentPlayerChunk,
                         pair.Key);
@@ -6962,17 +6978,17 @@ namespace Hecton8.World
 
         private async Awaitable RunSectorOverrideCommitAsync(int asyncGeneration)
         {
-            SectorOverrideCommitWork[] commitWork = null;
+            SectorOverrideCommitWork[] commitWork = _sectorOverrideCommitWorkBuffer;
+            int commitWorkCount = 0;
             try
             {
                 if (!IsIndexedSectorAsyncGenerationCurrent(asyncGeneration))
                     return;
 
-                _dueSectorOverrideCommitWork.Clear();
                 float now = Time.unscaledTime;
 
                 Dictionary<long, SectorOverrideState>.Enumerator enumerator = _sectorOverrideStates.GetEnumerator();
-                while (enumerator.MoveNext())
+                while (enumerator.MoveNext() && commitWorkCount < MaxSectorOverrideCommitsPerPass)
                 {
                     KeyValuePair<long, SectorOverrideState> pair = enumerator.Current;
                     SectorOverrideState state = pair.Value;
@@ -6980,20 +6996,22 @@ namespace Hecton8.World
                         continue;
 
                     if (now - state.LastUnloadedTime >= SectorOverrideCommitDelaySeconds)
-                        _dueSectorOverrideCommitWork.Add(new SectorOverrideCommitWork(pair.Key, state.TempPath, state.EntityStateTempPath));
+                    {
+                        commitWork[commitWorkCount] = new SectorOverrideCommitWork(pair.Key, state.TempPath, state.EntityStateTempPath);
+                        commitWorkCount++;
+                    }
                 }
                 enumerator.Dispose();
 
-                if (_dueSectorOverrideCommitWork.Count <= 0)
+                if (commitWorkCount <= 0)
                     return;
 
-                commitWork = _dueSectorOverrideCommitWork.ToArray();
                 string indexedSectorSavePath = _indexedSectorSavePath;
                 if (!IsIndexedSectorAsyncGenerationCurrent(asyncGeneration))
                     return;
 
                 await Awaitable.BackgroundThreadAsync();
-                for (int i = 0; i < commitWork.Length; i++)
+                for (int i = 0; i < commitWorkCount; i++)
                 {
                     if (!IsIndexedSectorAsyncGenerationCurrent(asyncGeneration))
                         break;
@@ -7028,7 +7046,7 @@ namespace Hecton8.World
                 if (!IsIndexedSectorAsyncGenerationCurrent(asyncGeneration))
                     return;
 
-                for (int i = 0; i < commitWork.Length; i++)
+                for (int i = 0; i < commitWorkCount; i++)
                 {
                     SectorOverrideCommitWork work = commitWork[i];
                     if (!string.IsNullOrEmpty(work.Error))
@@ -7052,7 +7070,7 @@ namespace Hecton8.World
                     }
                 }
 
-                for (int i = 0; i < commitWork.Length; i++)
+                for (int i = 0; i < commitWorkCount; i++)
                 {
                     long sectorHash = commitWork[i].SectorHash;
                     if (_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) &&
@@ -7783,7 +7801,7 @@ namespace Hecton8.World
                     WorldTelemetryCapacityMismatch,
                     WorldRegistryEntityStateKeysBuffer,
                     0u,
-                    entityState.InstanceUid,
+                    unchecked((int)entityState.InstanceUid),
                     _entityStateByInstanceUid.Capacity,
                     _currentPlayerChunk,
                     entityState.InstanceUid);
@@ -8157,7 +8175,7 @@ namespace Hecton8.World
                     WorldTelemetryCapacityMismatch,
                     WorldRegistryEntityStateKeysBuffer,
                     0u,
-                    record.InstanceUid,
+                    unchecked((int)record.InstanceUid),
                     _entityStateByInstanceUid.Capacity,
                     record.ChunkId,
                     record.InstanceUid);
@@ -8572,7 +8590,7 @@ namespace Hecton8.World
                     WorldTelemetryCapacityMismatch,
                     WorldRegistrySpawnImpulseKeysBuffer,
                     0u,
-                    instanceUid,
+                    unchecked((int)instanceUid),
                     _spawnImpulseByInstanceUid.Capacity,
                     _currentPlayerChunk,
                     instanceUid);
@@ -8603,7 +8621,7 @@ namespace Hecton8.World
                     WorldTelemetryCapacityMismatch,
                     WorldRegistrySpawnVelocityKeysBuffer,
                     0u,
-                    instanceUid,
+                    unchecked((int)instanceUid),
                     _spawnVelocityChangeByInstanceUid.Capacity,
                     _currentPlayerChunk,
                     instanceUid);

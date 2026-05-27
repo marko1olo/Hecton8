@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -447,6 +447,7 @@ namespace Hecton8.Core
         private IVramBudgetReadModel _vramMonitor;
         private IVramPressureSampleSink _vramPressure;
         private IMacroDatabaseService _macroDatabase;
+        private IPhysicsService _physics;
         private IObjectPoolService _objectPool;
         private float _globalQualityWeight01 = 1f;
         private float _timeDilationScalar = 1f;
@@ -643,7 +644,7 @@ namespace Hecton8.Core
             get
             {
                 SystemDispatcher dispatcher = ActiveRuntimeInstance;
-                return dispatcher != null ? dispatcher._timeSnapshot.UnscaledTime : Time.unscaledTimeAsDouble;
+                return dispatcher != null ? dispatcher._timeSnapshot.UnscaledTime : UnityEngine.Time.unscaledTimeAsDouble;
             }
         }
 
@@ -2006,6 +2007,7 @@ namespace Hecton8.Core
             _vramMonitor = null;
             _vramPressure = null;
             _macroDatabase = null;
+            _physics = null;
             _objectPool = null;
             _globalQualityWeight01 = 1f;
             _timeSnapshot = default;
@@ -4187,9 +4189,16 @@ namespace Hecton8.Core
             if (macroDatabase != null)
                 _macroDatabase = macroDatabase;
 
+            IPhysicsService physics = GlobalRegistry.Physics;
+            if (physics != null)
+                _physics = physics;
+
             IObjectPoolService objectPool = GlobalRegistry.ObjectPoolService;
             if (objectPool != null)
+            {
                 _objectPool = objectPool;
+                ThreadSafeCommandQueue.BindObjectPoolServiceCold(objectPool);
+            }
 
             ICameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
             if (cameraJuice != null)
@@ -4229,8 +4238,12 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.MacroDatabase:
                     _macroDatabase = currentService as IMacroDatabaseService;
                     break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physics = currentService as IPhysicsService;
+                    break;
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as IObjectPoolService;
+                    ThreadSafeCommandQueue.BindObjectPoolServiceCold(_objectPool);
                     break;
             }
         }
@@ -4287,6 +4300,15 @@ namespace Hecton8.Core
                 return null;
 
             return dispatcher._objectPool;
+        }
+
+        private static IPhysicsService ResolveCachedPhysicsService()
+        {
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return null;
+
+            return dispatcher._physics;
         }
 
         private float RefreshScalabilityQualityWeight()
@@ -4838,7 +4860,7 @@ namespace Hecton8.Core
             if (!IsFiniteDouble(dilatedTime) || dilatedTime < 0d)
                 dilatedTime = previousDilatedTime;
 
-            double unscaledTime = Time.unscaledTimeAsDouble;
+            double unscaledTime = UnityEngine.Time.unscaledTimeAsDouble;
             if (!IsFiniteDouble(unscaledTime) || unscaledTime < 0d)
                 unscaledTime = h8Time[(int)H8TimeSlot.UnscaledTime];
             if (!IsFiniteDouble(unscaledTime) || unscaledTime < 0d)
@@ -5033,7 +5055,7 @@ namespace Hecton8.Core
                 long dispatcherTickStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 long preSimulationStartTimestamp = dispatcherTickStartTimestamp;
                 HectonXRRuntimeState.RefreshFrameState(CurrentFrameIndex);
-                float measuredUnscaledDeltaTime = HectonXRRuntimeState.IsXRActive ? Time.smoothDeltaTime : Time.unscaledDeltaTime;
+                float measuredUnscaledDeltaTime = HectonXRRuntimeState.IsXRActive ? UnityEngine.Time.smoothDeltaTime : UnityEngine.Time.unscaledDeltaTime;
                 float unscaledDeltaTime = HectonXRRuntimeState.ResolveDispatcherDeltaTime(measuredUnscaledDeltaTime);
                 if (!math.isfinite(unscaledDeltaTime) || unscaledDeltaTime < 0f)
                     unscaledDeltaTime = 0f;
@@ -5290,7 +5312,7 @@ namespace Hecton8.Core
 
         private static float ResolveCurrentFrameMilliseconds()
         {
-            float deltaTime = Time.unscaledDeltaTime;
+            float deltaTime = UnityEngine.Time.unscaledDeltaTime;
             if (!math.isfinite(deltaTime) || deltaTime < 0f)
                 return 0f;
 
@@ -5325,7 +5347,7 @@ namespace Hecton8.Core
                 math.abs(_pauseDepthOfFieldTargetWeight - targetWeight) <= 0.0001f)
                 return;
 
-            float now = Time.unscaledTime;
+            float now = UnityEngine.Time.unscaledTime;
             _pauseDepthOfFieldBlendStartWeight = ResolvePauseDepthOfFieldWeight(now);
             _pauseDepthOfFieldWeight = _pauseDepthOfFieldBlendStartWeight;
             _pauseDepthOfFieldTargetWeight = targetWeight;
@@ -5378,7 +5400,7 @@ namespace Hecton8.Core
                 CompleteDispatcherSurfaceProbes();
                 UpdatePauseFreezeFrameDitherState();
                 UpdateVisualStaticGlitchState();
-                TickPauseDepthOfField(Time.unscaledTime);
+                TickPauseDepthOfField(UnityEngine.Time.unscaledTime);
 #if UNITY_EDITOR
                 completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
                 dispatcherPhaseTimingStarted = true;
@@ -5445,7 +5467,7 @@ namespace Hecton8.Core
 
                 try
                 {
-                    GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime);
+                    GlobalTelemetryBus.LateFrameUpdate(UnityEngine.Time.unscaledTime);
                     WorldSpatialHashGrid.LateFrameMaintenance(CurrentFrameIndex);
                 }
                 finally
@@ -5566,13 +5588,13 @@ namespace Hecton8.Core
 
         private static int ResolvePhysicsLateFramePendingCount()
         {
-            IPhysicsService physics = GlobalRegistry.Physics;
+            IPhysicsService physics = ResolveCachedPhysicsService();
             return physics != null ? physics.PendingLateFrameEventCount : 0;
         }
 
         private static void FlushPhysicsLateFrameEvents()
         {
-            IPhysicsService physics = GlobalRegistry.Physics;
+            IPhysicsService physics = ResolveCachedPhysicsService();
             physics?.FlushLateFrameEvents();
         }
 
@@ -5881,7 +5903,7 @@ namespace Hecton8.Core
         public static void RequestVisualStaticGlitch(float durationSeconds)
         {
             float safeDuration = math.max(0.05f, durationSeconds);
-            float untilTime = Time.unscaledTime + safeDuration;
+            float untilTime = UnityEngine.Time.unscaledTime + safeDuration;
             if (untilTime > _visualStaticGlitchUntilTime)
                 _visualStaticGlitchUntilTime = untilTime;
 
@@ -5893,7 +5915,7 @@ namespace Hecton8.Core
             if (!_visualStaticGlitchActive)
                 return;
 
-            if (Time.unscaledTime < _visualStaticGlitchUntilTime)
+            if (UnityEngine.Time.unscaledTime < _visualStaticGlitchUntilTime)
             {
                 Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, CurrentFrameIndex & 1023);
                 return;
@@ -6175,7 +6197,7 @@ namespace Hecton8.Core
             CrashTelemetryBuffer.ReportNanPhysicsRecovery();
 
 #if UNITY_EDITOR
-            float now = Time.unscaledTime;
+            float now = UnityEngine.Time.unscaledTime;
             if (now < _nextAupNanInquisitorLogTime)
                 return;
 
@@ -6678,7 +6700,7 @@ namespace Hecton8.Core
             double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowDispatcherPhaseWarningMilliseconds)
             {
-                float now = Time.unscaledTime;
+                float now = UnityEngine.Time.unscaledTime;
                 if (now >= _nextDispatcherPhaseWarningLogTime)
                 {
                     _nextDispatcherPhaseWarningLogTime = now + DispatcherPhaseWarningLogIntervalSeconds;
@@ -6704,7 +6726,7 @@ namespace Hecton8.Core
                 (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
             {
-                float now = Time.unscaledTime;
+                float now = UnityEngine.Time.unscaledTime;
                 if (now >= _nextFoveatedFrameWarningLogTime)
                 {
                     _nextFoveatedFrameWarningLogTime = now + DispatcherPhaseWarningLogIntervalSeconds;

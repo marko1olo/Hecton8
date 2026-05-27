@@ -591,13 +591,13 @@ namespace Hecton8.Core
             _objectPool = GlobalRegistry.ObjectPoolService;
         }
 
+        internal static void BindObjectPoolServiceCold(IObjectPoolService objectPool)
+        {
+            _objectPool = objectPool;
+        }
+
         private static IObjectPoolService ResolveObjectPoolCold()
         {
-            IObjectPoolService pool = _objectPool;
-            if (pool != null)
-                return pool;
-
-            _objectPool = GlobalRegistry.ObjectPoolService;
             return _objectPool;
         }
 

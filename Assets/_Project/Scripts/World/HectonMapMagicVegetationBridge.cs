@@ -3082,8 +3082,8 @@ namespace Hecton8.World
         {
             get
             {
-                NativeArray<float2> field = GetFlowFieldView();
-                return field.IsCreated ? field.AsReadOnly() : default;
+                NativeArray<float2> flowField = GetFlowFieldView();
+                return flowField.IsCreated ? flowField.AsReadOnly() : default;
             }
         }
 
@@ -5468,9 +5468,15 @@ namespace Hecton8.World
 
             NativeMemorySentinel.UnregisterNativeArray(array);
             if (dependency.IsCompleted)
+            {
+                dependency.Complete();
                 array.Dispose();
+            }
             else
-                array.Dispose(dependency);
+            {
+                JobHandle disposeHandle = array.Dispose(dependency);
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            }
 
             array = default;
         }
@@ -5485,9 +5491,15 @@ namespace Hecton8.World
                 NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
 
             if (dependency.IsCompleted)
+            {
+                dependency.Complete();
                 list.Dispose();
+            }
             else
-                list.Dispose(dependency);
+            {
+                JobHandle disposeHandle = list.Dispose(dependency);
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            }
 
             list = default;
         }
@@ -5519,9 +5531,15 @@ namespace Hecton8.World
                 NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, label);
 
             if (dependency.IsCompleted)
+            {
+                dependency.Complete();
                 map.Dispose();
+            }
             else
-                map.Dispose(dependency);
+            {
+                JobHandle disposeHandle = map.Dispose(dependency);
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            }
 
             map = default;
         }

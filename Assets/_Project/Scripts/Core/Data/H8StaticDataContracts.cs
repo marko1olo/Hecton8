@@ -1791,17 +1791,6 @@ namespace Hecton8.Core.Data
         [FieldOffset(12)] public uint Flags;
     }
 
-    /// <summary>
-    /// Blind UI output buffer contract for lookup smoke jobs. Size: 16 bytes.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
-    internal unsafe struct MockUIBuffer
-    {
-        [FieldOffset(0)] internal byte* Ptr;
-        [FieldOffset(8)] public int CapacityBytes;
-        [FieldOffset(12)] public int WrittenBytes;
-    }
-
     public partial struct MockSpanConverter
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

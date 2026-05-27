@@ -880,7 +880,7 @@ namespace Hecton8.World
                 return 1;
 
             float detailPressure = ResolveVisualDetailPressure(finalVariantRequested, visualQualityWeight);
-            float dither = ResolveStableHash01(stableHash ^ 0xBB67AE85) - 0.5f;
+            float dither = ResolveStableHash01(stableHash ^ unchecked((int)0xBB67AE85)) - 0.5f;
             int resolved = Mathf.RoundToInt(Mathf.Lerp(1f, configuredMax, detailPressure) + (dither * 0.34f));
             return Mathf.Clamp(resolved, 1, configuredMax);
         }

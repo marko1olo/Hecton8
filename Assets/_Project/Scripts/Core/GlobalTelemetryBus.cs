@@ -183,7 +183,17 @@ namespace Hecton8.Core
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(dependency);
+            if (dependency.IsCompleted)
+            {
+                dependency.Complete();
+                array.Dispose();
+            }
+            else
+            {
+                JobHandle disposeHandle = array.Dispose(dependency);
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            }
+
             array = default;
         }
 

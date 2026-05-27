@@ -107,15 +107,24 @@ namespace Hecton8.Inventory
 
         public void Dispose(JobHandle dependency)
         {
-            DisposeNativeArray(ref _cellAnchorIndices, dependency);
-            DisposeNativeArray(ref _anchorHashIds, dependency);
-            DisposeNativeArray(ref _anchorWidths, dependency);
-            DisposeNativeArray(ref _anchorHeights, dependency);
-            DisposeNativeArray(ref _anchorMaxStacks, dependency);
-            DisposeNativeArray(ref _anchorWeights, dependency);
-            DisposeNativeArray(ref _anchorCategoryIds, dependency);
-            DisposeNativeArray(ref _anchorRarityIds, dependency);
-            DisposeNativeArray(ref _anchorFlags, dependency);
+            JobHandle disposeHandle = dependency;
+            bool hasDependency = !dependency.IsCompleted;
+            if (!hasDependency)
+                dependency.Complete();
+
+            DisposeNativeArray(ref _cellAnchorIndices, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _anchorHashIds, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _anchorWidths, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _anchorHeights, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _anchorMaxStacks, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _anchorWeights, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _anchorCategoryIds, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _anchorRarityIds, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _anchorFlags, ref disposeHandle, ref hasDependency);
+
+            if (hasDependency)
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+
             _occupiedCells = 0;
             _singleCellFreeMask = 0UL;
         }
@@ -133,13 +142,21 @@ namespace Hecton8.Inventory
             NativeMemorySentinel.RegisterNativeArray(_anchorFlags, NativeMemoryOwner, nameof(_anchorFlags), NativeMemoryLifetime);
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle dependency, ref bool hasDependency) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(dependency);
+            if (hasDependency)
+            {
+                dependency = array.Dispose(dependency);
+            }
+            else
+            {
+                array.Dispose();
+            }
+
             array = default;
         }
 

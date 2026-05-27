@@ -169,94 +169,81 @@ namespace Hecton8.Gameplay
         public const int KinematicCapacity = 1;
         public const int TelemetryFrameCapacity = 300;
 
-        public NativeArray<float3> Positions;
-        public NativeArray<float3> Velocities;
-        public NativeArray<float3> IntendedMovements;
-        public NativeArray<float3> DragSolvedVelocities;
-        public NativeArray<PlayerKinematicsTelemetryEntry> TelemetryRing;
         public int TelemetryWriteIndex;
         public uint TelemetryFrameSequence;
 
-        private const int VaultPositionsFlag = 1 << 0;
-        private const int VaultVelocitiesFlag = 1 << 1;
-        private const int VaultIntendedMovementsFlag = 1 << 2;
-        private const int VaultDragSolvedVelocitiesFlag = 1 << 3;
-        private const int VaultTelemetryRingFlag = 1 << 4;
-        private int _vaultNativeStateMask;
+        private VaultGenerationHandle<float3> _positionsHandle;
+        private VaultGenerationHandle<float3> _velocitiesHandle;
+        private VaultGenerationHandle<float3> _intendedMovementsHandle;
+        private VaultGenerationHandle<float3> _dragSolvedVelocitiesHandle;
+        private VaultGenerationHandle<PlayerKinematicsTelemetryEntry> _telemetryRingHandle;
 
-        public bool IsCreated()
+        public bool IsCreated(IDataVault dataVault)
         {
-            return Positions.IsCreated &&
-                   Velocities.IsCreated &&
-                   IntendedMovements.IsCreated &&
-                   DragSolvedVelocities.IsCreated &&
-                   TelemetryRing.IsCreated;
+            return TryResolveArray(dataVault, in _positionsHandle, KinematicCapacity, out NativeArray<float3> _) &&
+                   TryResolveArray(dataVault, in _velocitiesHandle, KinematicCapacity, out NativeArray<float3> _) &&
+                   TryResolveArray(dataVault, in _intendedMovementsHandle, KinematicCapacity, out NativeArray<float3> _) &&
+                   TryResolveArray(dataVault, in _dragSolvedVelocitiesHandle, KinematicCapacity, out NativeArray<float3> _) &&
+                   TryResolveArray(dataVault, in _telemetryRingHandle, TelemetryFrameCapacity, out NativeArray<PlayerKinematicsTelemetryEntry> _);
         }
 
         public void EnsureCreated(IDataVault dataVault)
         {
             IDataVault vault = dataVault;
-            EnsureFloat3Array(
-                ref Positions,
+            EnsureFloat3Handle(
+                ref _positionsHandle,
                 BufferID.PlayerKinematicPositions,
                 KinematicCapacity,
-                nameof(Positions),
-                VaultPositionsFlag,
                 vault);
-            EnsureFloat3Array(
-                ref Velocities,
+            EnsureFloat3Handle(
+                ref _velocitiesHandle,
                 BufferID.PlayerKinematicVelocities,
                 KinematicCapacity,
-                nameof(Velocities),
-                VaultVelocitiesFlag,
                 vault);
-            EnsureFloat3Array(
-                ref IntendedMovements,
+            EnsureFloat3Handle(
+                ref _intendedMovementsHandle,
                 BufferID.PlayerKinematicIntendedMovements,
                 KinematicCapacity,
-                nameof(IntendedMovements),
-                VaultIntendedMovementsFlag,
                 vault);
-            EnsureFloat3Array(
-                ref DragSolvedVelocities,
+            EnsureFloat3Handle(
+                ref _dragSolvedVelocitiesHandle,
                 BufferID.PlayerKinematicDragSolvedVelocities,
                 KinematicCapacity,
-                nameof(DragSolvedVelocities),
-                VaultDragSolvedVelocitiesFlag,
                 vault);
 
-            if (!TelemetryRing.IsCreated)
-            {
-                TelemetryRing = AllocateArray<PlayerKinematicsTelemetryEntry>(
-                    BufferID.PlayerKinematicTelemetryRing,
-                    TelemetryFrameCapacity,
-                    nameof(TelemetryRing),
-                    VaultTelemetryRingFlag,
-                    vault);
-            }
+            EnsureHandle(
+                ref _telemetryRingHandle,
+                BufferID.PlayerKinematicTelemetryRing,
+                TelemetryFrameCapacity,
+                vault);
         }
 
-        public void WriteKinematicSnapshot(float3 position, float3 velocity, float3 intendedMovement)
+        public void WriteKinematicSnapshot(IDataVault dataVault, float3 position, float3 velocity, float3 intendedMovement)
         {
-            if (!IsCreated())
+            if (!TryResolveArray(dataVault, in _positionsHandle, KinematicCapacity, out NativeArray<float3> positions) ||
+                !TryResolveArray(dataVault, in _velocitiesHandle, KinematicCapacity, out NativeArray<float3> velocities) ||
+                !TryResolveArray(dataVault, in _intendedMovementsHandle, KinematicCapacity, out NativeArray<float3> intendedMovements))
                 return;
 
-            Positions[0] = position;
-            Velocities[0] = velocity;
-            IntendedMovements[0] = intendedMovement;
+            positions[0] = position;
+            velocities[0] = velocity;
+            intendedMovements[0] = intendedMovement;
         }
 
-        public void WriteTelemetry(float dragCoefficient, float waterDensityScale, uint flags)
+        public void WriteTelemetry(IDataVault dataVault, float dragCoefficient, float waterDensityScale, uint flags)
         {
-            if (!TelemetryRing.IsCreated || !Positions.IsCreated || !Velocities.IsCreated || !IntendedMovements.IsCreated)
+            if (!TryResolveArray(dataVault, in _telemetryRingHandle, TelemetryFrameCapacity, out NativeArray<PlayerKinematicsTelemetryEntry> telemetryRing) ||
+                !TryResolveArray(dataVault, in _positionsHandle, KinematicCapacity, out NativeArray<float3> positions) ||
+                !TryResolveArray(dataVault, in _velocitiesHandle, KinematicCapacity, out NativeArray<float3> velocities) ||
+                !TryResolveArray(dataVault, in _intendedMovementsHandle, KinematicCapacity, out NativeArray<float3> intendedMovements))
                 return;
 
             int index = TelemetryWriteIndex;
-            TelemetryRing[index] = new PlayerKinematicsTelemetryEntry
+            telemetryRing[index] = new PlayerKinematicsTelemetryEntry
             {
-                Position = Positions[0],
-                Velocity = Velocities[0],
-                IntendedMovement = IntendedMovements[0],
+                Position = positions[0],
+                Velocity = velocities[0],
+                IntendedMovement = intendedMovements[0],
                 DragCoefficient = dragCoefficient,
                 WaterDensityScale = waterDensityScale,
                 Frame = TelemetryFrameSequence,
@@ -267,97 +254,125 @@ namespace Hecton8.Gameplay
             TelemetryWriteIndex = (index + 1) % TelemetryFrameCapacity;
         }
 
-        public void ApplyOriginShift(float3 shiftOffset)
+        public bool TryResolveDragArrays(
+            IDataVault dataVault,
+            out NativeArray<float3> velocities,
+            out NativeArray<float3> dragSolvedVelocities)
+        {
+            bool hasVelocities = TryResolveArray(dataVault, in _velocitiesHandle, KinematicCapacity, out velocities);
+            bool hasSolved = TryResolveArray(dataVault, in _dragSolvedVelocitiesHandle, KinematicCapacity, out dragSolvedVelocities);
+            return hasVelocities && hasSolved;
+        }
+
+        public bool TryResolveTelemetryRing(
+            IDataVault dataVault,
+            out NativeArray<PlayerKinematicsTelemetryEntry> telemetryRing)
+        {
+            return TryResolveArray(dataVault, in _telemetryRingHandle, TelemetryFrameCapacity, out telemetryRing);
+        }
+
+        public void ApplyOriginShift(IDataVault dataVault, float3 shiftOffset)
         {
             if (!math.all(math.isfinite(shiftOffset)) || math.lengthsq(shiftOffset) <= 0.000001f)
                 return;
 
-            if (Positions.IsCreated)
-                Positions[0] -= shiftOffset;
+            if (TryResolveArray(dataVault, in _positionsHandle, KinematicCapacity, out NativeArray<float3> positions))
+                positions[0] -= shiftOffset;
 
-            if (TelemetryRing.IsCreated)
+            if (TryResolveArray(dataVault, in _telemetryRingHandle, TelemetryFrameCapacity, out NativeArray<PlayerKinematicsTelemetryEntry> telemetryRing))
             {
-                for (int i = 0; i < TelemetryRing.Length; i++)
+                for (int i = 0; i < telemetryRing.Length; i++)
                 {
-                    PlayerKinematicsTelemetryEntry entry = TelemetryRing[i];
+                    PlayerKinematicsTelemetryEntry entry = telemetryRing[i];
                     entry.Position -= shiftOffset;
-                    TelemetryRing[i] = entry;
+                    telemetryRing[i] = entry;
                 }
             }
         }
 
-        private void EnsureFloat3Array(
-            ref NativeArray<float3> array,
+        private void EnsureFloat3Handle(
+            ref VaultGenerationHandle<float3> handle,
             BufferID bufferId,
             int count,
-            string label,
-            int vaultFlag,
             IDataVault vault)
         {
-            if (array.IsCreated)
-                return;
-
-            array = AllocateArray<float3>(
+            EnsureHandle(
+                ref handle,
                 bufferId,
-                math.max(1, count),
-                label,
-                vaultFlag,
+                count,
                 vault);
         }
 
-        private NativeArray<T> AllocateArray<T>(
+        private void EnsureHandle<T>(
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int count,
-            string label,
-            int vaultFlag,
             IDataVault vault) where T : struct
         {
+            int minimumLength = math.max(1, count);
+            if (TryResolveArray(vault, in handle, minimumLength, out NativeArray<T> _))
+                return;
+
+            handle = default;
             if (vault != null)
             {
-                VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
+                VaultGenerationHandle<T> acquiredHandle = vault.EnsureGenerationHandle<T>(
                     bufferId,
-                    math.max(1, count),
+                    minimumLength,
                     SystemID.GameplayPlayer,
                     NativeArrayOptions.ClearMemory);
-                if (handle.BufferID == unchecked((uint)(int)bufferId) &&
-                    vault.TryResolveHandle(in handle, out NativeArray<T> vaultArray) &&
-                    vaultArray.IsCreated)
+                if (IsExpectedHandle(in acquiredHandle, bufferId) &&
+                    vault.TryResolveHandle(in acquiredHandle, out NativeArray<T> vaultArray) &&
+                    vaultArray.IsCreated &&
+                    vaultArray.Length >= minimumLength)
                 {
-                    _vaultNativeStateMask |= vaultFlag;
-                    return vaultArray;
+                    handle = acquiredHandle;
                 }
             }
+        }
 
-            _vaultNativeStateMask &= ~vaultFlag;
-            return default;
+        private static bool TryResolveArray<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int minimumLength,
+            out NativeArray<T> array) where T : struct
+        {
+            array = default;
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                handle.Generation == 0u ||
+                !vault.TryResolveHandle(in handle, out array) ||
+                !array.IsCreated ||
+                array.Length < math.max(1, minimumLength))
+            {
+                array = default;
+                return false;
+            }
+
+            return true;
         }
 
         public void Dispose()
         {
-            DisposeArray(ref Positions, VaultPositionsFlag);
-            DisposeArray(ref Velocities, VaultVelocitiesFlag);
-            DisposeArray(ref IntendedMovements, VaultIntendedMovementsFlag);
-            DisposeArray(ref DragSolvedVelocities, VaultDragSolvedVelocitiesFlag);
-            DisposeArray(ref TelemetryRing, VaultTelemetryRingFlag);
+            ClearHandle(ref _positionsHandle);
+            ClearHandle(ref _velocitiesHandle);
+            ClearHandle(ref _intendedMovementsHandle);
+            ClearHandle(ref _dragSolvedVelocitiesHandle);
+            ClearHandle(ref _telemetryRingHandle);
 
             TelemetryWriteIndex = 0;
             TelemetryFrameSequence = 0u;
         }
 
-        private void DisposeArray<T>(ref NativeArray<T> array, int vaultFlag) where T : struct
+        private static void ClearHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (!array.IsCreated)
-                return;
+            handle = default;
+        }
 
-            if ((_vaultNativeStateMask & vaultFlag) != 0)
-            {
-                array = default;
-                _vaultNativeStateMask &= ~vaultFlag;
-                return;
-            }
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array, SystemID.GameplayPlayer);
+        private static bool IsExpectedHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u;
         }
     }
 }

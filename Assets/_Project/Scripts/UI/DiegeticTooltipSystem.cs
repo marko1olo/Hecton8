@@ -1181,9 +1181,10 @@ namespace Hecton8.UI
         private Vector3 ResolveSignalAnchorRuntime()
         {
             AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
-            Vector3 aupRuntime = (Vector3)AupPrecisionMath.LocalDeltaFloat3(
+            Vector3 aupRuntime = (Vector3)AupPrecisionMath.LocalDeltaFloat3Clamped(
                 _activeTargetAup.ToAbsoluteDouble3(),
                 originAup.ToAbsoluteDouble3(),
+                AupPrecisionMath.DefaultMaxLocalCastMeters,
                 default);
             return IsFinite(aupRuntime) ? aupRuntime : _activeRuntimeAnchor;
         }

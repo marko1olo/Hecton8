@@ -173,3 +173,53 @@ Cost delta -> GPT-5.5 standard +$4,156.80; GPT-5.5 priority +$10,392.01; gpt-5.3
 Input/output stats -> input/output 287.95:1; uncached-input/output 11.29:1; cached-input/output 276.66:1; reasoning/output 31.44%; output-side GPT-5.5 standard cost $11,189.58.
 Primary code density -> first-party project C# 1,866,854 lines / 80,343,622 chars; 57,730.10 tokens/line; 1,341,409.19 tokens/1k chars; GPT-5.5 $44.91/1k LOC and $1.04/1k chars.
 Evidence -> STATIC_LOCAL_CODEX_JSONL_AND_FILESYSTEM plus official OpenAI docs. Still not invoice proof: local JSONL lacks billing SKU, invoice IDs, enterprise discounts, subscription/internal routes.
+
+
+## 2026-05-27 TOKEN_USAGE_AUDIT code-density economics
+
+What was wrong -> Prior report exposed per-character economics but did not show the requested per-line and per-1000-code-character units directly.
+What was done -> Added explicit tokens/line, tokens/1k chars, output tokens/1k chars, GPT-5.5 dollars/1k lines, GPT-5.5 dollars/1k chars, and secondary Codex/observed-high dollars/1k chars to generated reports. Refreshed ledger/report from 2,940 JSONL files.
+Cinematic Cheats used -> None; audit/process hygiene only.
+Exact Microseconds saved -> 0 us game runtime. Static telemetry and docs only.
+Interesting stats -> primary code lines 1,869,185; code chars 80,441,252; tokens/line 57,909.94; tokens/1k code chars 1,345,632.80; output tokens/1k code chars 4,655.89; GPT-5.5 dollars/1k LOC $45.04; GPT-5.5 dollars/1k code chars $1.05; input/output 288.01:1; top output session 019e42c1-57ec-7701-a1d7-7b5fbb073503 output 4,094,167; top reasoning session 019e42fa-4ec0-7e32-8384-f0756a3470c0 reasoning 1,164,831.
+Evidence -> STATIC_LOCAL_CODEX_JSONL_AND_FILESYSTEM plus official OpenAI pricing pages. Runtime/Unity PlayMode proof absent.
+## 2026-05-27 23:03 Europe/Samara - Token velocity refresh
+
+What was wrong:
+- The 20:42 token report was stale after more local Codex JSONL writes.
+- Previous report had deltas but did not persist velocity/burn-rate metrics as generated JSON fields.
+
+What was done:
+- Rechecked official OpenAI pricing, prompt-cache, and reasoning docs on 2026-05-27.
+- Extended `Tools/CodexTokenUsageAudit_20260525.py` with `previous_snapshot_delta.velocity`.
+- Regenerated `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-27.json`, matching Markdown report, and stable `TOKEN_USAGE_LEDGER.md`.
+- Current snapshot: 108,244,387,543 total tokens; 107,868,828,212 input; 103,642,537,600 cached input; 374,525,731 output; 117,698,876 reasoning output; 2,804 usage sessions; 2,940 JSONL files.
+
+Snapshot delta since `2026-05-26T21:33:27.098408+04:00`:
+- +5,814,599,456 total tokens.
+- +5,795,898,553 input tokens.
+- +5,562,484,096 cached input tokens.
+- +18,700,903 output tokens.
+- +5,406,374 reasoning output tokens.
+- +55 usage sessions.
+- +42,022 primary C# lines.
+- +1,767,377 primary C# characters.
+- +$4,509.34 GPT-5.5 standard API-equivalent.
+
+Velocity and burn-rate:
+- 228,009,054.25 tokens/hour; 3,800,150.90 tokens/minute; 63,335.85 tokens/second.
+- 5,472,217,302.10 tokens/day pace.
+- 733,322.26 output tokens/hour.
+- 212,001.23 reasoning output tokens/hour.
+- 1,647.82 primary C# lines/hour; 39,547.61 primary C# lines/day pace.
+- 69,304.51 primary C# characters/hour; 1,663,308.21 chars/day pace.
+- 138,370.36 total tokens per net primary C# line.
+- 445.03 output tokens per net primary C# line.
+- 3,289,959.90 total tokens per 1k net primary C# characters.
+- GPT-5.5 standard API-equivalent burn: $176.83/hour; $4,243.82/day pace; $0.11 per net primary C# line; $2.55 per 1k net primary C# chars.
+
+Cinematic Cheats used:
+- None. Audit-only telemetry and documentation generation.
+
+Exact Microseconds saved:
+- 0 runtime microseconds. Engineering audit work only; no game-frame path touched.

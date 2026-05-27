@@ -1,7 +1,7 @@
 ﻿# TOKEN USAGE AUDIT 2026-05-27
 
-Generated UTC: 2026-05-27T16:42:16.672214+00:00
-Generated Samara: 2026-05-27T20:42:16.672214+04:00
+Generated UTC: 2026-05-27T19:03:32.917743+00:00
+Generated Samara: 2026-05-27T23:03:32.917743+04:00
 Evidence class: STATIC_LOCAL_CODEX_JSONL_AND_FILESYSTEM. Not billing-provider proof.
 
 ## Scope
@@ -14,98 +14,131 @@ Accounting: all-time totals use final per-session `total_token_usage`, deduped b
 ## Totals
 | Metric | Value |
 |---|---:|
-| file_count | 2,934 |
-| unique_session_or_path_keys | 2,827 |
-| sessions_with_usage | 2,801 |
+| file_count | 2,940 |
+| unique_session_or_path_keys | 2,830 |
+| sessions_with_usage | 2,804 |
 | sessions_without_usage | 26 |
-| duplicate_records_removed | 107 |
+| duplicate_records_removed | 110 |
 | files_missing_session_id | 2 |
 | parse_errors_first_pass | 0 |
 | parse_errors_increment_pass | 0 |
 | day_span | 55 |
 | first_selected_timestamp_utc | 2026-04-03T17:11:28.591000+00:00 |
-| last_selected_timestamp_utc | 2026-05-27T16:44:10.389000+00:00 |
-| input_tokens | 107,399,653,529 |
-| cached_input_tokens | 103,189,309,056 |
-| output_tokens | 372,985,934 |
-| reasoning_output_tokens | 117,263,392 |
-| total_tokens | 107,773,673,063 |
-| uncached_input_tokens | 4,210,344,473 |
-| cache_ratio | 96.079741% |
-| output_ratio | 0.346083% |
-| reasoning_output_ratio_of_output | 31.439092% |
+| last_selected_timestamp_utc | 2026-05-27T19:04:43.056000+00:00 |
+| input_tokens | 107,868,828,212 |
+| cached_input_tokens | 103,642,537,600 |
+| output_tokens | 374,525,731 |
+| reasoning_output_tokens | 117,698,876 |
+| total_tokens | 108,244,387,543 |
+| uncached_input_tokens | 4,226,290,612 |
+| cache_ratio | 96.082009% |
+| output_ratio | 0.346000% |
+| reasoning_output_ratio_of_output | 31.426112% |
 
 ## Change Since Previous Snapshot
 Previous report: `C:\hades\Hecton8\Docs\DEPRECATED\Root_Docs_Noise_2026-05-26\TOKEN_USAGE_AUDIT_2026-05-26.json`
 Previous generated Samara: `2026-05-26T21:33:27.098408+04:00`
-Elapsed hours: 23.15
+Elapsed hours: 25.50
 
 | Metric | Delta |
 |---|---:|
-| file_count | 57 |
-| sessions_with_usage | 52 |
-| input_tokens | 5,326,723,870 |
-| cached_input_tokens | 5,109,255,552 |
-| output_tokens | 17,161,106 |
-| reasoning_output_tokens | 4,970,890 |
-| total_tokens | 5,343,884,976 |
-| GPT-5.5 standard API-equivalent $ | $4,156.80 |
-| GPT-5.5 priority API-equivalent $ | $10,392.01 |
-| gpt-5.3-codex standard comparison $ | $1,514.94 |
+| file_count | 63 |
+| sessions_with_usage | 55 |
+| input_tokens | 5,795,898,553 |
+| cached_input_tokens | 5,562,484,096 |
+| output_tokens | 18,700,903 |
+| reasoning_output_tokens | 5,406,374 |
+| total_tokens | 5,814,599,456 |
+| GPT-5.5 standard API-equivalent $ | $4,509.34 |
+| GPT-5.5 priority API-equivalent $ | $11,273.35 |
+| gpt-5.3-codex standard comparison $ | $1,643.72 |
 | top model-effort key | `gpt-5.5::xhigh` -> `gpt-5.5::xhigh` |
-| top model-effort tokens | 5,298,527,476 |
-| top model-effort sessions | 37 |
-| top model-effort standard $ | $4,117.74 |
-| primary code lines | 39,691 |
-| primary code characters | 1,669,747 |
-| tokens / primary code line | 1,670.63 |
-| tokens / 1k primary code chars | 39,454.91 |
-| GPT-5.5 $ / 1k primary LOC | $1.30 |
+| top model-effort tokens | 5,769,241,956 |
+| top model-effort sessions | 40 |
+| top model-effort standard $ | $4,470.28 |
+| primary code lines | 42,022 |
+| primary code characters | 1,767,377 |
+| tokens / primary code line | 1,850.47 |
+| tokens / 1k primary code chars | 43,678.53 |
+| GPT-5.5 $ / 1k primary LOC | $1.43 |
 | GPT-5.5 $ / 1k primary code chars | $0.03 |
+
+## Velocity Since Previous Snapshot
+Speed and burn-rate are derived from previous-snapshot deltas. Code ratios use net primary C# code growth in the same window.
+
+| Metric | Value |
+|---|---:|
+| Total tokens / hour | 228,009,054.25 |
+| Total tokens / minute | 3,800,150.90 |
+| Total tokens / second | 63,335.85 |
+| Total tokens / day pace | 5,472,217,302.10 |
+| Input tokens / hour | 227,275,732.00 |
+| Cached input tokens / hour | 218,122,804.10 |
+| Uncached input tokens / hour | 9,152,927.90 |
+| Output tokens / hour | 733,322.26 |
+| Reasoning output tokens / hour | 212,001.23 |
+| Usage sessions / hour | 2.16 |
+| JSONL files / hour | 2.47 |
+| Primary C# code lines / hour | 1,647.82 |
+| Primary C# code lines / day pace | 39,547.61 |
+| Primary C# code chars / hour | 69,304.51 |
+| Primary C# code chars / day pace | 1,663,308.21 |
+| Tokens / net primary C# code line | 138,370.36 |
+| Input tokens / net primary C# code line | 137,925.34 |
+| Output tokens / net primary C# code line | 445.03 |
+| Reasoning tokens / net primary C# code line | 128.66 |
+| Tokens / 1k net primary C# code chars | 3,289,959.90 |
+| Output tokens / 1k net primary C# code chars | 10,581.16 |
+| GPT-5.5 standard $ / hour | $176.83 |
+| GPT-5.5 standard $ / day pace | $4,243.82 |
+| GPT-5.5 priority $ / hour | $442.06 |
+| gpt-5.3-codex standard $ / hour | $64.46 |
+| GPT-5.5 standard $ / net primary C# code line | $0.11 |
+| GPT-5.5 standard $ / 1k net primary C# code chars | $2.55 |
 
 ## API-Equivalent Price Scenarios
 Actual Codex billing cannot be proven from local JSONL. These are API-equivalent estimates using official OpenAI rates checked on 2026-05-27. Cached input is charged at cached-input rate; reasoning output is an output subcounter, not added twice.
 
 | Scenario | Uncached input | Cached input | Output | Total | No-cache upper bound |
 |---|---:|---:|---:|---:|---:|
-| gpt-5.3-codex_standard_api_equivalent | $7,368.10 | $18,058.13 | $5,221.80 | $30,648.03 | $193,171.20 |
-| gpt-5.3-codex_priority_api_equivalent | $14,736.21 | $36,116.26 | $10,443.61 | $61,296.07 | $386,342.39 |
-| gpt-5.4_standard_short_context_equivalent | $10,525.86 | $25,797.33 | $5,594.79 | $41,917.98 | $274,093.92 |
-| gpt-5.5_standard_short_context_equivalent | $21,051.72 | $51,594.65 | $11,189.58 | $83,835.95 | $548,187.85 |
-| gpt-5.5_batch_short_context_equivalent | $10,525.86 | $25,797.33 | $5,594.79 | $41,917.98 | $274,093.92 |
-| gpt-5.5_flex_short_context_equivalent | $10,525.86 | $25,797.33 | $5,594.79 | $41,917.98 | $274,093.92 |
-| gpt-5.5_priority_short_context_equivalent | $52,629.31 | $128,986.64 | $27,973.95 | $209,589.89 | $1,370,469.61 |
-| gpt-5.4_mini_standard_equivalent | $3,157.76 | $7,739.20 | $1,678.44 | $12,575.39 | $82,228.18 |
+| gpt-5.3-codex_standard_api_equivalent | $7,396.01 | $18,137.44 | $5,243.36 | $30,776.81 | $194,013.81 |
+| gpt-5.3-codex_priority_api_equivalent | $14,792.02 | $36,274.89 | $10,486.72 | $61,553.63 | $388,027.62 |
+| gpt-5.4_standard_short_context_equivalent | $10,565.73 | $25,910.63 | $5,617.89 | $42,094.25 | $275,289.96 |
+| gpt-5.5_standard_short_context_equivalent | $21,131.45 | $51,821.27 | $11,235.77 | $84,188.49 | $550,579.91 |
+| gpt-5.5_batch_short_context_equivalent | $10,565.73 | $25,910.63 | $5,617.89 | $42,094.25 | $275,289.96 |
+| gpt-5.5_flex_short_context_equivalent | $10,565.73 | $25,910.63 | $5,617.89 | $42,094.25 | $275,289.96 |
+| gpt-5.5_priority_short_context_equivalent | $52,828.63 | $129,553.17 | $28,089.43 | $210,471.23 | $1,376,449.78 |
+| gpt-5.4_mini_standard_equivalent | $3,169.72 | $7,773.19 | $1,685.37 | $12,628.27 | $82,586.99 |
 
 ## Input Output Economics
 This section separates prompt mass, cache leverage, visible output, and hidden reasoning output. Cost shares use the primary GPT-5.5 standard scenario.
 
 | Metric | Value |
 |---|---:|
-| input_to_output_ratio | 28794.5587% |
-| uncached_input_to_output_ratio | 1128.8212% |
-| cached_input_to_output_ratio | 27665.7374% |
-| output_to_total_tokens_ratio | 0.3461% |
-| reasoning_to_output_ratio | 31.4391% |
-| reasoning_to_total_tokens_ratio | 0.1088% |
-| non_reasoning_output_tokens | 255,722,542 |
-| non_reasoning_output_to_output_ratio | 68.5609% |
-| paid_input_to_all_input_ratio | 3.9203% |
-| cached_input_to_uncached_input_ratio | 2450.8519% |
-| output_tokens_per_session | 133,161.7044 |
-| input_tokens_per_session | 38,343,325.0728 |
-| uncached_input_tokens_per_session | 1,503,157.6126 |
-| reasoning_output_tokens_per_session | 41,864.8311 |
-| gpt_5_5_standard_uncached_input_cost_share | 25.1106% |
-| gpt_5_5_standard_cached_input_cost_share | 61.5424% |
-| gpt_5_5_standard_output_cost_share | 13.3470% |
-| gpt_5_5_standard_input_side_cost_usd | $72,646.38 |
-| gpt_5_5_standard_output_side_cost_usd | $11,189.58 |
+| input_to_output_ratio | 28801.4465% |
+| uncached_input_to_output_ratio | 1128.4380% |
+| cached_input_to_output_ratio | 27673.0086% |
+| output_to_total_tokens_ratio | 0.3460% |
+| reasoning_to_output_ratio | 31.4261% |
+| reasoning_to_total_tokens_ratio | 0.1087% |
+| non_reasoning_output_tokens | 256,826,855 |
+| non_reasoning_output_to_output_ratio | 68.5739% |
+| paid_input_to_all_input_ratio | 3.9180% |
+| cached_input_to_uncached_input_ratio | 2452.3287% |
+| output_tokens_per_session | 133,568.3777 |
+| input_tokens_per_session | 38,469,624.8973 |
+| uncached_input_tokens_per_session | 1,507,236.3096 |
+| reasoning_output_tokens_per_session | 41,975.3481 |
+| gpt_5_5_standard_uncached_input_cost_share | 25.1002% |
+| gpt_5_5_standard_cached_input_cost_share | 61.5539% |
+| gpt_5_5_standard_output_cost_share | 13.3460% |
+| gpt_5_5_standard_input_side_cost_usd | $72,952.72 |
+| gpt_5_5_standard_output_side_cost_usd | $11,235.77 |
 | gpt_5_5_standard_effective_usd_per_1m_total_tokens | 0 |
 | gpt_5_5_standard_effective_usd_per_1m_output_tokens | 224 |
-| gpt_5_5_standard_reasoning_output_cost_usd | $3,517.90 |
-| gpt_5_5_standard_non_reasoning_output_cost_usd | $7,671.68 |
-| gpt_5_5_standard_reasoning_output_cost_share | 4.1962% |
+| gpt_5_5_standard_reasoning_output_cost_usd | $3,530.97 |
+| gpt_5_5_standard_non_reasoning_output_cost_usd | $7,704.81 |
+| gpt_5_5_standard_reasoning_output_cost_share | 4.1941% |
 | top_output_day | 2026-05-21 |
 | top_output_day_output_tokens | 40,439,316 |
 | top_reasoning_day | 2026-05-21 |
@@ -117,7 +150,7 @@ Model evidence comes from structured `turn_context.payload.model` / `collaborati
 ### Final Session Model Attribution
 | Model | Sessions | Total tokens | Input | Cached input | Output | Reasoning output | Standard cost if rate known |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| gpt-5.5 | 2,556 | 96,106,599,306 | 95,779,417,517 | 92,068,257,024 | 326,148,189 | 98,699,830 | $74,374.38 |
+| gpt-5.5 | 2,559 | 96,577,313,786 | 96,248,592,200 | 92,521,485,568 | 327,687,986 | 99,135,314 | $74,726.92 |
 | gpt-5.4 | 232 | 11,564,030,598 | 11,517,784,890 | 11,025,437,696 | 46,245,708 | 18,360,012 | $4,680.91 |
 | gpt-5.2-codex | 3 | 85,512,992 | 85,044,900 | 79,787,648 | 468,092 | 157,917 | unpriced |
 | gpt-5.1-codex-mini | 3 | 13,472,930 | 13,374,833 | 12,237,952 | 98,097 | 32,307 | unpriced |
@@ -130,12 +163,13 @@ This table assigns each token delta to the latest prior `turn_context` model in 
 
 | Model | Delta total | Delta input | Delta cached input | Delta output | Delta reasoning output |
 |---|---:|---:|---:|---:|---:|
-| gpt-5.5 | 94,812,149,353 | 94,490,829,458 | 90,832,132,352 | 321,319,895 | 96,928,730 |
+| gpt-5.5 | 95,247,607,213 | 94,924,861,585 | 91,251,557,504 | 322,745,628 | 97,333,216 |
 | gpt-5.4 | 13,002,550,593 | 12,950,641,924 | 12,396,688,640 | 51,908,669 | 20,348,155 |
 | gpt-5.2-codex | 31,468,079 | 31,351,204 | 28,951,680 | 116,875 | 50,048 |
 | gpt-5.3-codex | 22,822,547 | 22,773,200 | 21,537,152 | 49,347 | 20,889 |
 | gpt-5.4-mini | 5,851,626 | 5,821,586 | 5,453,824 | 30,040 | 15,652 |
 | gpt-5.1-codex-mini | 995,678 | 991,379 | 583,168 | 4,299 | 2,368 |
+| unknown_model | 570,802 | 566,451 | 506,496 | 4,351 | 1,697 |
 | gpt-5.2 | 142,159 | 141,729 | 56,192 | 430 | 165 |
 
 ### Reasoning Effort Attribution
@@ -143,7 +177,7 @@ Effort cost uses gpt-5.5 standard short-context API-equivalent. `xhigh` is a cos
 
 | Effort | Sessions | Total tokens | Input | Cached input | Output | Reasoning output | GPT-5.5 standard $ | $ / session |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| xhigh | 1,920 | 97,827,758,951 | 97,492,507,303 | 93,772,176,384 | 334,218,048 | 103,713,093 | $75,514.28 | $39.33 |
+| xhigh | 1,923 | 98,298,473,431 | 97,961,681,986 | 94,225,404,928 | 335,757,845 | 104,148,577 | $75,866.82 | $39.45 |
 | high | 251 | 8,592,719,908 | 8,559,979,733 | 8,183,280,256 | 32,740,175 | 11,910,695 | $6,957.34 | $27.72 |
 | medium | 619 | 1,346,643,132 | 1,340,655,010 | 1,228,428,672 | 5,988,122 | 1,635,697 | $1,354.99 | $2.19 |
 | low | 11 | 6,551,072 | 6,511,483 | 5,423,744 | 39,589 | 3,907 | $9.34 | $0.85 |
@@ -153,17 +187,17 @@ Final-session totals are the authoritative all-time local spend slice. `reasonin
 
 | Model | Effort | Sessions | Total | Share | Input / output | Paid input / output | Cached / output | Cache hit | Output / total | Reasoning / output | Output cost share | Input $/1M | Cached $/1M | Output $/1M | Standard model $ | Cache saved $ | $ / session |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| gpt-5.5 | xhigh | 1,817 | 95,008,760,975 | 88.1558% | 295.23 | 11.23 | 284.00 | 96.1958% | 0.3376% | 30.3014% | 13.1488% | $5.000 | $0.500 | $30.00 | $73,174.62 | $409,881.97 | $40.27 |
-| gpt-5.4 | high | 124 | 8,347,373,581 | 7.7453% | 264.64 | 11.33 | 253.32 | 95.7202% | 0.3764% | 36.2339% | 14.0654% | $2.500 | $0.250 | $15.00 | $3,351.13 | $17,910.09 | $27.03 |
-| gpt-5.4 | xhigh | 103 | 2,818,997,976 | 2.6157% | 207.82 | 8.76 | 199.06 | 95.7867% | 0.4789% | 48.3790% | 17.3098% | $2.500 | $0.250 | $15.00 | $1,169.83 | $6,046.41 | $11.36 |
-| gpt-5.5 | medium | 605 | 846,154,750 | 0.7851% | 206.69 | 21.42 | 185.27 | 89.6363% | 0.4815% | 24.2828% | 13.0581% | $5.000 | $0.500 | $30.00 | $935.98 | $3,396.64 | $1.55 |
-| gpt-5.4 | medium | 5 | 397,659,041 | 0.3690% | 299.65 | 13.79 | 285.87 | 95.3992% | 0.3326% | 33.4988% | 12.4035% | $2.500 | $0.250 | $15.00 | $159.95 | $850.73 | $31.99 |
-| gpt-5.5 | high | 126 | 245,273,572 | 0.2276% | 185.29 | 15.77 | 169.52 | 91.4902% | 0.5368% | 39.8507% | 15.4958% | $5.000 | $0.500 | $30.00 | $254.90 | $1,004.39 | $2.02 |
-| gpt-5.2-codex | medium | 3 | 85,512,992 | 0.0793% | 181.68 | 11.23 | 170.45 | 93.8183% | 0.5474% | 33.7363% | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced |
-| gpt-5.1-codex-mini | medium | 3 | 13,472,930 | 0.0125% | 136.34 | 11.59 | 124.75 | 91.4998% | 0.7281% | 32.9337% | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced |
+| gpt-5.5 | xhigh | 1,820 | 95,479,475,455 | 88.2073% | 295.28 | 11.23 | 284.05 | 96.1978% | 0.3375% | 30.2917% | 13.1485% | $5.000 | $0.500 | $30.00 | $73,527.16 | $411,921.50 | $40.40 |
+| gpt-5.4 | high | 124 | 8,347,373,581 | 7.7116% | 264.64 | 11.33 | 253.32 | 95.7202% | 0.3764% | 36.2339% | 14.0654% | $2.500 | $0.250 | $15.00 | $3,351.13 | $17,910.09 | $27.03 |
+| gpt-5.4 | xhigh | 103 | 2,818,997,976 | 2.6043% | 207.82 | 8.76 | 199.06 | 95.7867% | 0.4789% | 48.3790% | 17.3098% | $2.500 | $0.250 | $15.00 | $1,169.83 | $6,046.41 | $11.36 |
+| gpt-5.5 | medium | 605 | 846,154,750 | 0.7817% | 206.69 | 21.42 | 185.27 | 89.6363% | 0.4815% | 24.2828% | 13.0581% | $5.000 | $0.500 | $30.00 | $935.98 | $3,396.64 | $1.55 |
+| gpt-5.4 | medium | 5 | 397,659,041 | 0.3674% | 299.65 | 13.79 | 285.87 | 95.3992% | 0.3326% | 33.4988% | 12.4035% | $2.500 | $0.250 | $15.00 | $159.95 | $850.73 | $31.99 |
+| gpt-5.5 | high | 126 | 245,273,572 | 0.2266% | 185.29 | 15.77 | 169.52 | 91.4902% | 0.5368% | 39.8507% | 15.4958% | $5.000 | $0.500 | $30.00 | $254.90 | $1,004.39 | $2.02 |
+| gpt-5.2-codex | medium | 3 | 85,512,992 | 0.0790% | 181.68 | 11.23 | 170.45 | 93.8183% | 0.5474% | 33.7363% | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced |
+| gpt-5.1-codex-mini | medium | 3 | 13,472,930 | 0.0124% | 136.34 | 11.59 | 124.75 | 91.4998% | 0.7281% | 32.9337% | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced |
 | gpt-5.5 | low | 8 | 6,410,009 | 0.0059% | 162.53 | 25.58 | 136.95 | 84.2623% | 0.6115% | 9.6740% | 13.2528% | $5.000 | $0.500 | $30.00 | $8.87 | $24.16 | $1.11 |
 | gpt-5.4-mini | medium | 1 | 2,818,965 | 0.0026% | 157.03 | 8.32 | 148.72 | 94.7047% | 0.6328% | 67.4347% | 20.5572% | $0.750 | $0.075 | $4.50 | $0.39 | $1.79 | $0.39 |
-| gpt-5.3-codex | medium | 2 | 1,024,454 | 0.0010% | 137.38 | 24.05 | 113.34 | 82.4973% | 0.7226% | 14.6157% | 18.4419% | $1.750 | $0.175 | $14.00 | $0.56 | $1.32 | $0.28 |
+| gpt-5.3-codex | medium | 2 | 1,024,454 | 0.0009% | 137.38 | 24.05 | 113.34 | 82.4973% | 0.7226% | 14.6157% | 18.4419% | $1.750 | $0.175 | $14.00 | $0.56 | $1.32 | $0.28 |
 | gpt-5.2 | high | 1 | 72,755 | 0.0001% | 335.83 | 144.42 | 191.41 | 56.9955% | 0.2969% | 46.2963% | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced |
 | gpt-5.3-codex | low | 1 | 71,659 | 0.0001% | 403.85 | 173.89 | 229.97 | 56.9430% | 0.2470% | 28.2486% | 3.9047% | $1.750 | $0.175 | $14.00 | $0.06 | $0.06 | $0.06 |
 | gpt-5.2 | low | 2 | 69,404 | 0.0001% | 323.32 | 253.93 | 69.38 | 21.4597% | 0.3083% | 30.3738% | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced | unpriced |
@@ -173,18 +207,19 @@ This assigns each token delta to the latest prior `turn_context` model and effor
 
 | Model | Effort | Delta events | Delta total | Share | Input / output | Paid input / output | Cached / output | Cache hit | Output / total | Reasoning / output | Output cost share | Standard model $ | Cache saved $ | $ / delta event |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| gpt-5.5 | xhigh | 608,572 | 93,724,895,993 | 86.8821% | 295.63 | 11.24 | 284.39 | 96.1993% | 0.3371% | 30.2037% | 13.1362% | $72,159.18 | $404,364.46 | $0.12 |
-| gpt-5.4 | high | 63,032 | 9,901,523,177 | 9.1786% | 267.46 | 11.40 | 256.06 | 95.7374% | 0.3725% | 35.8855% | 13.9512% | $3,965.49 | $21,249.34 | $0.06 |
-| gpt-5.4 | xhigh | 19,172 | 2,946,820,824 | 2.7317% | 204.86 | 8.65 | 196.21 | 95.7783% | 0.4858% | 48.6115% | 17.5081% | $1,226.40 | $6,319.58 | $0.06 |
-| gpt-5.5 | medium | 7,614 | 835,569,779 | 0.7746% | 208.01 | 21.71 | 186.30 | 89.5652% | 0.4784% | 24.1859% | 12.9490% | $926.20 | $3,351.60 | $0.12 |
-| gpt-5.5 | high | 2,031 | 245,273,572 | 0.2274% | 185.29 | 15.77 | 169.52 | 91.4902% | 0.5368% | 39.8507% | 15.4958% | $254.90 | $1,004.39 | $0.13 |
-| gpt-5.4 | medium | 1,074 | 154,206,592 | 0.1429% | 215.60 | 13.57 | 202.03 | 93.7051% | 0.4617% | 21.6684% | 15.0847% | $70.79 | $323.62 | $0.07 |
-| gpt-5.2-codex | medium | 206 | 31,468,079 | 0.0292% | 268.25 | 20.53 | 247.71 | 92.3463% | 0.3714% | 42.8218% | unpriced | unpriced | unpriced | unpriced |
-| gpt-5.3-codex | high | 127 | 21,746,817 | 0.0202% | 476.72 | 18.88 | 457.84 | 96.0403% | 0.2093% | 44.5060% | 11.0100% | $5.79 | $32.83 | $0.05 |
+| gpt-5.5 | xhigh | 611,217 | 94,160,353,853 | 86.9344% | 295.67 | 11.23 | 284.44 | 96.2013% | 0.3371% | 30.1954% | 13.1362% | $72,484.70 | $406,251.87 | $0.12 |
+| gpt-5.4 | high | 63,032 | 9,901,523,177 | 9.1417% | 267.46 | 11.40 | 256.06 | 95.7374% | 0.3725% | 35.8855% | 13.9512% | $3,965.49 | $21,249.34 | $0.06 |
+| gpt-5.4 | xhigh | 19,172 | 2,946,820,824 | 2.7207% | 204.86 | 8.65 | 196.21 | 95.7783% | 0.4858% | 48.6115% | 17.5081% | $1,226.40 | $6,319.58 | $0.06 |
+| gpt-5.5 | medium | 7,614 | 835,569,779 | 0.7714% | 208.01 | 21.71 | 186.30 | 89.5652% | 0.4784% | 24.1859% | 12.9490% | $926.20 | $3,351.60 | $0.12 |
+| gpt-5.5 | high | 2,031 | 245,273,572 | 0.2265% | 185.29 | 15.77 | 169.52 | 91.4902% | 0.5368% | 39.8507% | 15.4958% | $254.90 | $1,004.39 | $0.13 |
+| gpt-5.4 | medium | 1,074 | 154,206,592 | 0.1424% | 215.60 | 13.57 | 202.03 | 93.7051% | 0.4617% | 21.6684% | 15.0847% | $70.79 | $323.62 | $0.07 |
+| gpt-5.2-codex | medium | 206 | 31,468,079 | 0.0291% | 268.25 | 20.53 | 247.71 | 92.3463% | 0.3714% | 42.8218% | unpriced | unpriced | unpriced | unpriced |
+| gpt-5.3-codex | high | 127 | 21,746,817 | 0.0201% | 476.72 | 18.88 | 457.84 | 96.0403% | 0.2093% | 44.5060% | 11.0100% | $5.79 | $32.83 | $0.05 |
 | gpt-5.5 | low | 85 | 6,410,009 | 0.0059% | 162.53 | 25.58 | 136.95 | 84.2623% | 0.6115% | 9.6740% | 13.2528% | $8.87 | $24.16 | $0.10 |
 | gpt-5.4-mini | medium | 55 | 5,851,626 | 0.0054% | 193.79 | 12.24 | 181.55 | 93.6828% | 0.5134% | 52.1039% | 16.4846% | $0.82 | $3.68 | $0.01 |
 | gpt-5.3-codex | medium | 11 | 1,004,071 | 0.0009% | 274.24 | 94.84 | 179.40 | 65.4187% | 0.3633% | 15.8717% | 6.6239% | $0.77 | $1.03 | $0.07 |
 | gpt-5.1-codex-mini | medium | 23 | 922,147 | 0.0009% | 239.21 | 89.93 | 149.27 | 62.4035% | 0.4163% | 53.3472% | unpriced | unpriced | unpriced | unpriced |
+| unknown_model | unknown | 7 | 570,802 | 0.0005% | 130.19 | 13.78 | 116.41 | 89.4157% | 0.7623% | 39.0025% | unpriced | unpriced | unpriced | unpriced |
 | gpt-5.1-codex-mini | high | 1 | 73,531 | 0.0001% | 158.85 | 136.87 | 21.98 | 13.8386% | 0.6256% | 69.5652% | unpriced | unpriced | unpriced | unpriced |
 | gpt-5.2 | high | 2 | 72,755 | 0.0001% | 335.83 | 144.42 | 191.41 | 56.9955% | 0.2969% | 46.2963% | unpriced | unpriced | unpriced | unpriced |
 | gpt-5.3-codex | low | 2 | 71,659 | 0.0001% | 403.85 | 173.89 | 229.97 | 56.9430% | 0.2470% | 28.2486% | 3.9047% | $0.06 | $0.06 | $0.03 |
@@ -193,12 +228,12 @@ This assigns each token delta to the latest prior `turn_context` model and effor
 ### Model-Specific Cost Bounds
 | Bound | USD |
 |---|---:|
-| known_models_only_standard_usd | $79,056.31 |
+| known_models_only_standard_usd | $79,408.84 |
 | unpriced_known_model_total_tokens | 99,128,081 tokens |
 | unpriced_as_gpt_5_3_codex_standard_usd | $35.39 |
 | unpriced_as_gpt_5_5_standard_usd | $95.44 |
-| known_plus_unpriced_as_gpt_5_3_codex_standard_usd | $79,091.69 |
-| known_plus_unpriced_as_gpt_5_5_standard_usd | $79,151.74 |
+| known_plus_unpriced_as_gpt_5_3_codex_standard_usd | $79,444.23 |
+| known_plus_unpriced_as_gpt_5_5_standard_usd | $79,504.28 |
 
 ## Interpretive Stats
 These are derived diagnostics, not billing proof. They are useful for waste shape, concentration, and cache economics.
@@ -207,67 +242,67 @@ These are derived diagnostics, not billing proof. They are useful for waste shap
 |---|---:|
 | active_days | 55.0000 |
 | calendar_day_span | 55.0000 |
-| mean_tokens_per_active_day | 1,959,521,328.4182 |
+| mean_tokens_per_active_day | 1,968,079,773.5091 |
 | median_tokens_per_active_day | 1,099,097,709.0000 |
 | peak_day_tokens | 11,101,068,200.0000 |
-| peak_day_vs_mean_active_day | 5.6652 |
-| session_gini_total_tokens | 0.7830 |
-| top_1_percent_sessions_share | 17.9593% |
-| top_5_percent_sessions_share | 44.1718% |
-| top_10_percent_sessions_share | 62.1037% |
-| largest_session_share | 1.8128% |
-| equivalent_full_258400_context_windows | 417,080.7781 |
-| equivalent_full_270k_context_windows | 399,161.7521 |
-| gpt_5_5_standard_cache_discount_saved_usd | $464,351.89 |
-| gpt_5_5_standard_cost_per_primary_loc_usd | $0.04 |
-| gpt_5_5_standard_cost_per_1k_primary_loc_usd | $44.91 |
+| peak_day_vs_mean_active_day | 5.6406 |
+| session_gini_total_tokens | 0.7834 |
+| top_1_percent_sessions_share | 17.9738% |
+| top_5_percent_sessions_share | 44.2522% |
+| top_10_percent_sessions_share | 62.1379% |
+| largest_session_share | 1.8049% |
+| equivalent_full_258400_context_windows | 418,902.4286 |
+| equivalent_full_270k_context_windows | 400,905.1390 |
+| gpt_5_5_standard_cache_discount_saved_usd | $466,391.42 |
+| gpt_5_5_standard_cost_per_primary_loc_usd | $0.05 |
+| gpt_5_5_standard_cost_per_1k_primary_loc_usd | $45.04 |
 | gpt_5_5_standard_cost_per_primary_code_character_usd | $0.00 |
-| gpt_5_3_codex_standard_cache_discount_saved_usd | $162,523.16 |
-| gpt_5_3_codex_standard_cost_per_1k_primary_loc_usd | $16.42 |
-| observed_model_high_bound_cost_per_1k_primary_loc_usd | $42.40 |
-| tokens_per_primary_code_character | 1,341.4092 |
-| tokens_per_primary_code_non_ws_character | 1,920.0998 |
-| tokens_per_primary_code_alphanumeric_character | 2,179.0435 |
-| tokens_per_dollar_gpt_5_5_standard | 1,285,530.4526 |
-| tokens_per_dollar_gpt_5_3_codex_standard | 3,516,495.3676 |
-| xhigh_final_sessions_share | 68.5469% |
-| xhigh_final_tokens_share | 90.7715% |
-| xhigh_delta_tokens_share | 89.6138% |
-| gpt_5_5_standard_xhigh_final_cost_usd | $75,514.28 |
-| gpt_5_5_standard_cost_per_xhigh_final_session_usd | $39.33 |
-| reasoning_tokens_per_1m_xhigh_final_tokens | 1,060.1602 |
-| output_tokens_per_1m_xhigh_final_tokens | 3,416.3928 |
-| top_model_effort_final_tokens_share | 88.1558% |
-| top_model_effort_final_cost_usd | $73,174.62 |
-| priced_model_effort_final_standard_cost_usd | $79,056.31 |
+| gpt_5_3_codex_standard_cache_discount_saved_usd | $163,237.00 |
+| gpt_5_3_codex_standard_cost_per_1k_primary_loc_usd | $16.47 |
+| observed_model_high_bound_cost_per_1k_primary_loc_usd | $42.53 |
+| tokens_per_primary_code_character | 1,345.6328 |
+| tokens_per_primary_code_non_ws_character | 1,926.2965 |
+| tokens_per_primary_code_alphanumeric_character | 2,186.0617 |
+| tokens_per_dollar_gpt_5_5_standard | 1,285,738.4979 |
+| tokens_per_dollar_gpt_5_3_codex_standard | 3,517,075.9217 |
+| xhigh_final_sessions_share | 68.5806% |
+| xhigh_final_tokens_share | 90.8116% |
+| xhigh_delta_tokens_share | 89.6550% |
+| gpt_5_5_standard_xhigh_final_cost_usd | $75,866.82 |
+| gpt_5_5_standard_cost_per_xhigh_final_session_usd | $39.45 |
+| reasoning_tokens_per_1m_xhigh_final_tokens | 1,059.5137 |
+| output_tokens_per_1m_xhigh_final_tokens | 3,415.6974 |
+| top_model_effort_final_tokens_share | 88.2073% |
+| top_model_effort_final_cost_usd | $73,527.16 |
+| priced_model_effort_final_standard_cost_usd | $79,408.84 |
 | unpriced_model_effort_final_tokens | 99,128,081.0000 |
-| unpriced_model_effort_final_tokens_share | 0.0920% |
-| gpt_5_5_xhigh_exact_final_tokens | 95,008,760,975.0000 |
-| gpt_5_5_xhigh_exact_final_tokens_share | 88.1558% |
-| gpt_5_5_xhigh_exact_sessions | 1,817.0000 |
-| gpt_5_5_xhigh_exact_standard_cost_usd | $73,174.62 |
-| gpt_5_5_xhigh_exact_cache_savings_usd | $409,881.97 |
-| gpt_5_5_xhigh_exact_cost_per_session_usd | $40.27 |
-| gpt_5_5_xhigh_exact_reasoning_tokens_per_1m | 1,022.8748 |
-| output_tokens_per_1m_total_tokens | 3,460.8260 |
-| reasoning_tokens_per_1m_total_tokens | 1,088.0523 |
+| unpriced_model_effort_final_tokens_share | 0.0916% |
+| gpt_5_5_xhigh_exact_final_tokens | 95,479,475,455.0000 |
+| gpt_5_5_xhigh_exact_final_tokens_share | 88.2073% |
+| gpt_5_5_xhigh_exact_sessions | 1,820.0000 |
+| gpt_5_5_xhigh_exact_standard_cost_usd | $73,527.16 |
+| gpt_5_5_xhigh_exact_cache_savings_usd | $411,921.50 |
+| gpt_5_5_xhigh_exact_cost_per_session_usd | $40.40 |
+| gpt_5_5_xhigh_exact_reasoning_tokens_per_1m | 1,022.3930 |
+| output_tokens_per_1m_total_tokens | 3,460.0014 |
+| reasoning_tokens_per_1m_total_tokens | 1,087.3439 |
 
 ## Root Breakdown
 | Root | JSONL files | Files with usage | Selected sessions | Selected with usage | Selected total tokens |
 |---|---:|---:|---:|---:|---:|
 | backup_cleanup_20260521_194850 | 1,048 | 1,029 | 1,020 | 1,001 | 57,856,335,910 |
 | current_archived_sessions | 1 | 1 | 1 | 1 | 157,103 |
-| current_sessions | 1,885 | 1,878 | 1,806 | 1,799 | 49,917,180,050 |
+| current_sessions | 1,891 | 1,884 | 1,809 | 1,802 | 50,387,894,530 |
 
 ## Codebase Density And Economics
 | Scope | Files | Lines | Nonblank lines | Characters | Non-ws chars | Tokens / line | Tokens / 1k chars | Output tokens / 1k chars | Tokens / 1k non-ws chars | GPT-5.5 $ / 1k lines | GPT-5.5 $ / 1k chars | gpt-5.3-codex $ / 1k chars | Observed high $ / 1k chars |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| first_party_assets_project_cs | 2,532 | 1,866,854 | 1,635,413 | 80,343,622 | 56,129,205 | 57,730.10 | 1,341,409.19 | 4,642.38 | 1,920,099.76 | $44.91 | $1.04 | $0.38 | $0.99 |
-| first_party_scripts_cs | 2,441 | 1,836,779 | 1,609,192 | 79,006,458 | 55,156,252 | 58,675.36 | 1,364,112.20 | 4,720.96 | 1,953,970.21 | $45.64 | $1.06 | $0.39 | $1.00 |
-| all_repo_cs_excluding_generated | 6,407 | 3,020,479 | 2,638,196 | 125,824,576 | 88,795,162 | 35,680.99 | 856,539.13 | 2,964.33 | 1,213,733.62 | $27.76 | $0.67 | $0.24 | $0.63 |
-| all_repo_source_broad | 7,755 | 3,363,667 | 2,939,020 | 141,173,460 | 100,808,692 | 32,040.53 | 763,413.13 | 2,642.04 | 1,069,091.08 | $24.92 | $0.59 | $0.22 | $0.56 |
-| tools_scripts | 229 | 115,541 | 102,658 | 5,096,203 | 4,016,214 | 932,774.28 | 21,147,837.53 | 73,188.99 | 26,834,644.04 | $725.59 | $16.45 | $6.01 | $15.53 |
-| docs_markdown_text | 942 | 252,912 | 207,257 | 25,150,193 | 22,414,770 | 426,131.12 | 4,285,202.63 | 14,830.34 | 4,808,154.31 | $331.48 | $3.33 | $1.22 | $3.15 |
+| first_party_assets_project_cs | 2,533 | 1,869,185 | 1,637,505 | 80,441,252 | 56,193,003 | 57,909.94 | 1,345,632.80 | 4,655.89 | 1,926,296.55 | $45.04 | $1.05 | $0.38 | $0.99 |
+| first_party_scripts_cs | 2,442 | 1,838,970 | 1,611,161 | 79,093,073 | 55,210,822 | 58,861.42 | 1,368,569.76 | 4,735.25 | 1,960,564.68 | $45.78 | $1.06 | $0.39 | $1.01 |
+| all_repo_cs_excluding_generated | 6,413 | 3,035,728 | 2,651,652 | 126,465,126 | 89,232,648 | 35,656.81 | 855,922.82 | 2,961.49 | 1,213,058.11 | $27.73 | $0.67 | $0.24 | $0.63 |
+| all_repo_source_broad | 7,761 | 3,379,636 | 2,953,121 | 141,859,653 | 101,284,924 | 32,028.42 | 763,038.58 | 2,640.11 | 1,068,711.74 | $24.91 | $0.59 | $0.22 | $0.56 |
+| tools_scripts | 229 | 115,688 | 102,788 | 5,104,357 | 4,023,155 | 935,657.87 | 21,206,272.90 | 73,373.73 | 26,905,348.55 | $727.72 | $16.49 | $6.03 | $15.58 |
+| docs_markdown_text | 953 | 261,405 | 214,969 | 26,175,545 | 23,337,581 | 414,086.91 | 4,135,325.07 | 14,308.23 | 4,638,200.83 | $322.06 | $3.22 | $1.18 | $3.04 |
 
 ## Chat And Client Breakdowns
 Top groups use final per-session totals after dedupe. `key` is raw local telemetry.
@@ -275,14 +310,14 @@ Top groups use final per-session totals after dedupe. `key` is raw local telemet
 ### Top CWDs
 | Key | Total | Input | Cached input | Output | Reasoning output |
 |---|---:|---:|---:|---:|---:|
-| `c:\hades` | 89,999,127,843 | 89,689,549,095 | 86,190,656,128 | 308,545,148 | 92,982,252 |
+| `c:\hades` | 90,469,842,323 | 90,158,723,778 | 86,643,884,672 | 310,084,945 | 93,417,736 |
 | `c:\hades\Hecton8` | 17,735,682,299 | 17,671,512,163 | 16,964,203,008 | 64,170,136 | 24,214,929 |
 | `C:\Users\danat\Downloads` | 38,862,921 | 38,592,271 | 34,449,920 | 270,650 | 66,211 |
 
 ### Top Sources
 | Key | Total | Input | Cached input | Output | Reasoning output |
 |---|---:|---:|---:|---:|---:|
-| `vscode` | 104,172,815,521 | 103,816,554,315 | 99,888,245,760 | 355,227,606 | 110,142,150 |
+| `vscode` | 104,643,530,001 | 104,285,728,998 | 100,341,474,304 | 356,767,403 | 110,577,634 |
 | `cli` | 38,862,921 | 38,592,271 | 34,449,920 | 270,650 | 66,211 |
 | `{'subagent': {'thread_spawn': {'parent_thread_id': '019e54e5-7e0f-7d61-b2a8-7d3cf00593f8', 'depth': 1, 'agent_path': None, 'agent_nickname': 'Newton', 'agent_role': 'explorer'}}}` | 20,498,010 | 20,434,334 | 19,412,864 | 63,676 | 16,949 |
 | `{'subagent': {'thread_spawn': {'parent_thread_id': '019e54e5-7e0f-7d61-b2a8-7d3cf00593f8', 'depth': 1, 'agent_path': None, 'agent_nickname': 'Russell', 'agent_role': 'explorer'}}}` | 12,377,278 | 12,348,724 | 12,104,064 | 28,554 | 6,276 |
@@ -306,20 +341,20 @@ Top groups use final per-session totals after dedupe. `key` is raw local telemet
 ### Top Originators
 | Key | Total | Input | Cached input | Output | Reasoning output |
 |---|---:|---:|---:|---:|---:|
-| `codex_vscode` | 107,734,810,142 | 107,361,061,258 | 103,154,859,136 | 372,715,284 | 117,197,181 |
+| `codex_vscode` | 108,205,524,622 | 107,830,235,941 | 103,608,087,680 | 374,255,081 | 117,632,665 |
 | `codex-tui` | 38,862,921 | 38,592,271 | 34,449,920 | 270,650 | 66,211 |
 
 ### Top Plan Types
 | Key | Total | Input | Cached input | Output | Reasoning output |
 |---|---:|---:|---:|---:|---:|
-| `free` | 107,252,190,199 | 106,880,017,488 | 102,694,308,096 | 371,139,111 | 116,597,134 |
+| `free` | 107,722,904,679 | 107,349,192,171 | 103,147,536,640 | 372,678,908 | 117,032,618 |
 | `team` | 430,146,454 | 428,672,772 | 408,039,808 | 1,473,682 | 556,691 |
 | `unknown` | 91,336,410 | 90,963,269 | 86,961,152 | 373,141 | 109,567 |
 
 ### Top CLI Versions
 | Key | Total | Input | Cached input | Output | Reasoning output |
 |---|---:|---:|---:|---:|---:|
-| `0.131.0-alpha.9` | 60,160,053,623 | 59,946,390,263 | 57,599,739,776 | 212,888,160 | 62,419,925 |
+| `0.131.0-alpha.9` | 60,630,768,103 | 60,415,564,946 | 58,052,968,320 | 214,427,957 | 62,855,409 |
 | `0.130.0-alpha.5` | 14,337,281,085 | 14,289,475,888 | 13,766,278,784 | 47,546,797 | 14,804,881 |
 | `0.128.0-alpha.1` | 12,731,786,222 | 12,692,996,370 | 12,188,216,832 | 38,789,852 | 12,496,247 |
 | `0.125.0-alpha.3` | 9,670,604,755 | 9,637,610,872 | 9,273,073,536 | 32,993,883 | 12,000,325 |
@@ -390,7 +425,7 @@ Top groups use final per-session totals after dedupe. `key` is raw local telemet
 | 2026-05-24 | 4,895,972,931 | 4,881,900,914 | 4,747,163,776 | 14,072,017 | 3,566,006 |
 | 2026-05-25 | 4,655,452,664 | 4,639,883,798 | 4,476,006,016 | 15,568,866 | 4,208,630 |
 | 2026-05-26 | 4,344,417,825 | 4,328,992,452 | 4,170,849,280 | 15,425,373 | 4,423,936 |
-| 2026-05-27 | 4,455,518,037 | 4,441,319,255 | 4,252,981,120 | 14,198,782 | 4,158,132 |
+| 2026-05-27 | 4,891,546,699 | 4,875,917,833 | 4,672,912,768 | 15,628,866 | 4,564,315 |
 
 ## Daily Cost Stats
 | Date Samara | gpt-5.5 standard $ | gpt-5.3-codex secondary $ | Observed-model low bound $ | Observed-model high bound $ | Unpriced tokens |
@@ -449,7 +484,7 @@ Top groups use final per-session totals after dedupe. `key` is raw local telemet
 | 2026-05-24 | $3,469.43 | $1,263.55 | $3,469.43 | $3,469.43 | 0 |
 | 2026-05-25 | $3,524.46 | $1,288.05 | $3,524.46 | $3,524.46 | 0 |
 | 2026-05-26 | $3,338.90 | $1,222.60 | $3,338.90 | $3,338.90 | 0 |
-| 2026-05-27 | $3,494.14 | $1,272.65 | $3,494.14 | $3,494.14 | 0 |
+| 2026-05-27 | $3,820.35 | $1,391.82 | $3,819.92 | $3,820.35 | 570,802 |
 
 ## Weekly Stats
 | ISO Week Samara | Total | Input | Cached input | Output | Reasoning output |
@@ -462,7 +497,7 @@ Top groups use final per-session totals after dedupe. `key` is raw local telemet
 | 2026-W19 | 13,969,626,391 | 13,926,448,121 | 13,369,725,824 | 43,178,270 | 14,093,718 |
 | 2026-W20 | 20,734,290,922 | 20,663,518,474 | 19,865,176,576 | 70,772,448 | 22,303,737 |
 | 2026-W21 | 41,892,989,053 | 41,743,266,290 | 40,105,214,592 | 149,722,763 | 43,862,215 |
-| 2026-W22 | 13,455,388,526 | 13,410,195,505 | 12,899,836,416 | 45,193,021 | 12,790,698 |
+| 2026-W22 | 13,891,417,188 | 13,844,794,083 | 13,319,768,064 | 46,623,105 | 13,196,881 |
 
 ## Weekly Cost Stats
 | ISO Week Samara | gpt-5.5 standard $ | gpt-5.3-codex secondary $ | Observed-model low bound $ | Observed-model high bound $ | Unpriced tokens |
@@ -475,19 +510,19 @@ Top groups use final per-session totals after dedupe. `key` is raw local telemet
 | 2026-W19 | $10,763.82 | $3,918.46 | $10,763.82 | $10,763.82 | 0 |
 | 2026-W20 | $16,047.47 | $5,864.32 | $16,047.47 | $16,047.47 | 0 |
 | 2026-W21 | $32,734.55 | $11,981.12 | $32,734.55 | $32,734.55 | 0 |
-| 2026-W22 | $10,357.50 | $3,783.30 | $10,357.50 | $10,357.50 | 0 |
+| 2026-W22 | $10,683.71 | $3,902.48 | $10,683.28 | $10,683.71 | 570,802 |
 
 ## Monthly Stats
 | Month Samara | Total | Input | Cached input | Output | Reasoning output |
 |---|---:|---:|---:|---:|---:|
 | 2026-04 | 14,427,675,605 | 14,372,192,287 | 13,772,103,552 | 55,483,318 | 21,618,565 |
-| 2026-05 | 93,448,304,430 | 93,130,358,193 | 89,513,299,456 | 317,946,237 | 95,747,442 |
+| 2026-05 | 93,884,333,092 | 93,564,956,771 | 89,933,231,104 | 319,376,321 | 96,153,625 |
 
 ## Monthly Cost Stats
 | Month Samara | gpt-5.5 standard $ | gpt-5.3-codex secondary $ | Observed-model low bound $ | Observed-model high bound $ | Unpriced tokens |
 |---|---:|---:|---:|---:|---:|
 | 2026-04 | $11,550.99 | $4,237.04 | $6,250.89 | $6,271.86 | 32,605,916 |
-| 2026-05 | $72,380.33 | $26,445.93 | $72,380.33 | $72,380.33 | 0 |
+| 2026-05 | $72,706.53 | $26,565.10 | $72,706.10 | $72,706.53 | 570,802 |
 
 ## Top 20 Days
 | Date Samara | Total tokens |
@@ -496,10 +531,10 @@ Top groups use final per-session totals after dedupe. `key` is raw local telemet
 | 2026-05-20 | 7,029,317,551 |
 | 2026-05-19 | 6,373,573,208 |
 | 2026-05-24 | 4,895,972,931 |
+| 2026-05-27 | 4,891,546,699 |
 | 2026-05-23 | 4,820,332,622 |
 | 2026-05-25 | 4,655,452,664 |
 | 2026-05-22 | 4,536,739,481 |
-| 2026-05-27 | 4,455,518,037 |
 | 2026-05-26 | 4,344,417,825 |
 | 2026-05-13 | 4,316,279,171 |
 | 2026-05-15 | 4,068,018,530 |
@@ -521,10 +556,10 @@ Top groups use final per-session totals after dedupe. `key` is raw local telemet
 | 2026-05-19 | 24,353,572 | 6,373,573,208 | 7,357,653 | 0.3821% | 30.2118% |
 | 2026-05-23 | 16,155,250 | 4,820,332,622 | 4,746,761 | 0.3351% | 29.3822% |
 | 2026-05-22 | 15,632,939 | 4,536,739,481 | 4,671,535 | 0.3446% | 29.8826% |
+| 2026-05-27 | 15,628,866 | 4,891,546,699 | 4,564,315 | 0.3195% | 29.2044% |
 | 2026-05-25 | 15,568,866 | 4,655,452,664 | 4,208,630 | 0.3344% | 27.0323% |
 | 2026-05-26 | 15,425,373 | 4,344,417,825 | 4,423,936 | 0.3551% | 28.6796% |
 | 2026-05-15 | 15,105,114 | 4,068,018,530 | 4,582,586 | 0.3713% | 30.3380% |
-| 2026-05-27 | 14,198,782 | 4,455,518,037 | 4,158,132 | 0.3187% | 29.2851% |
 | 2026-05-24 | 14,072,017 | 4,895,972,931 | 3,566,006 | 0.2874% | 25.3411% |
 | 2026-05-13 | 13,162,275 | 4,316,279,171 | 4,084,874 | 0.3049% | 31.0347% |
 | 2026-05-18 | 12,770,979 | 3,135,985,060 | 4,073,419 | 0.4072% | 31.8959% |
@@ -546,9 +581,9 @@ Top groups use final per-session totals after dedupe. `key` is raw local telemet
 | 2026-05-23 | 4,746,761 | 16,155,250 | 4,820,332,622 | 29.3822% |
 | 2026-05-22 | 4,671,535 | 15,632,939 | 4,536,739,481 | 29.8826% |
 | 2026-05-15 | 4,582,586 | 15,105,114 | 4,068,018,530 | 30.3380% |
+| 2026-05-27 | 4,564,315 | 15,628,866 | 4,891,546,699 | 29.2044% |
 | 2026-05-26 | 4,423,936 | 15,425,373 | 4,344,417,825 | 28.6796% |
 | 2026-05-25 | 4,208,630 | 15,568,866 | 4,655,452,664 | 27.0323% |
-| 2026-05-27 | 4,158,132 | 14,198,782 | 4,455,518,037 | 29.2851% |
 | 2026-05-13 | 4,084,874 | 13,162,275 | 4,316,279,171 | 31.0347% |
 | 2026-05-18 | 4,073,419 | 12,770,979 | 3,135,985,060 | 31.8959% |
 | 2026-05-09 | 3,727,560 | 12,203,831 | 3,680,140,530 | 30.5442% |
@@ -564,20 +599,20 @@ Top groups use final per-session totals after dedupe. `key` is raw local telemet
 ## Distributions
 | Metric | Value |
 |---|---:|
-| tokens_per_day_span | 1,959,521,328.42 |
-| tokens_per_session_with_usage | 38,476,855.79 |
-| output_tokens_per_session_with_usage | 133,161.70 |
-| median_tokens_per_session | 3,553,551.00 |
-| p90_tokens_per_session | 108,787,904.00 |
-| p95_tokens_per_session | 178,298,138.00 |
-| p99_tokens_per_session | 408,633,638.00 |
+| tokens_per_day_span | 1,968,079,773.51 |
+| tokens_per_session_with_usage | 38,603,561.89 |
+| output_tokens_per_session_with_usage | 133,568.38 |
+| median_tokens_per_session | 3,555,385.00 |
+| p90_tokens_per_session | 108,828,922.00 |
+| p95_tokens_per_session | 178,487,644.00 |
+| p99_tokens_per_session | 417,444,229.00 |
 | max_tokens_per_session | 1,953,701,850.00 |
 
 Context window counts:
-- 258400: 2,801
+- 258400: 2,804
 
 Plan type counts:
-- free: 2,789
+- free: 2,792
 - team: 10
 - unknown: 2
 
@@ -590,14 +625,14 @@ Plan type counts:
 | 4 | `019e42c1-57ec-7701-a1d7-7b5fbb073503` | gpt-5.5 | xhigh | current_sessions | 2026-05-23T01:11:23.296000+00:00 | 1,167,862,097 | 1,163,767,930 | 1,128,039,680 | 4,094,167 | 284.25 | 0.3506% | 24.5933% | $865.49 | $865.49 | `c:\hades` |
 | 5 | `019e54e3-0619-7d00-bd04-709b7ec1949e` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T09:51:02.089000+00:00 | 892,421,675 | 890,196,376 | 866,640,512 | 2,225,299 | 400.03 | 0.2494% | 27.2065% | $617.86 | $617.86 | `c:\hades` |
 | 6 | `019e54e5-7e0f-7d61-b2a8-7d3cf00593f8` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T09:48:09.286000+00:00 | 822,302,475 | 820,019,618 | 799,859,200 | 2,282,857 | 359.21 | 0.2776% | 25.2734% | $569.22 | $569.22 | `c:\hades` |
-| 7 | `019e6137-88ea-7683-aec2-12061e8157bf` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T16:43:57.114000+00:00 | 743,842,970 | 741,648,870 | 720,842,240 | 2,194,100 | 338.02 | 0.2950% | 25.8009% | $530.28 | $530.28 | `c:\hades` |
+| 7 | `019e6137-88ea-7683-aec2-12061e8157bf` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T17:01:44.226000+00:00 | 755,622,806 | 753,403,283 | 732,507,136 | 2,219,523 | 339.44 | 0.2937% | 25.7552% | $537.32 | $537.32 | `c:\hades` |
 | 8 | `019e54e1-c11c-71b0-9b8a-21b8efdcde8c` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:02:22.353000+00:00 | 711,109,922 | 709,268,154 | 692,436,480 | 1,841,768 | 385.10 | 0.2590% | 25.6240% | $485.63 | $485.63 | `c:\hades` |
 | 9 | `019e558a-e142-7303-8f57-df6d1d2d75d4` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:25:51.533000+00:00 | 690,288,484 | 688,402,127 | 669,142,528 | 1,886,357 | 364.94 | 0.2733% | 26.7878% | $487.46 | $487.46 | `c:\hades` |
 | 10 | `019e558b-99b3-73a2-b1b0-744e2c7adaf8` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T02:21:00.701000+00:00 | 621,711,391 | 620,254,496 | 605,311,232 | 1,456,895 | 425.74 | 0.2343% | 27.9349% | $421.08 | $421.08 | `c:\hades` |
 | 11 | `019e5249-c70f-7263-880f-3531b581aad4` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T00:17:04.800000+00:00 | 610,793,317 | 608,951,910 | 594,295,296 | 1,841,407 | 330.70 | 0.3015% | 20.1130% | $425.67 | $425.67 | `c:\hades` |
-| 12 | `019e54df-35af-7c60-8da3-67d86a082648` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:41:44.391000+00:00 | 564,611,473 | 562,927,882 | 546,199,040 | 1,683,591 | 334.36 | 0.2982% | 28.2493% | $407.25 | $407.25 | `c:\hades` |
-| 13 | `019e42d0-0f2a-72c2-a688-9241371dd6e4` | gpt-5.5 | xhigh | current_sessions | 2026-05-20T23:54:50.549000+00:00 | 548,201,085 | 546,656,842 | 535,127,040 | 1,544,243 | 354.00 | 0.2817% | 21.9045% | $371.54 | $371.54 | `c:\hades` |
-| 14 | `019e5d19-2023-72e3-b282-e1a65f86f339` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T16:42:58.572000+00:00 | 531,463,900 | 529,706,339 | 510,227,840 | 1,757,561 | 301.39 | 0.3307% | 26.8981% | $405.23 | $405.23 | `c:\hades` |
+| 12 | `019e5d19-2023-72e3-b282-e1a65f86f339` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T19:04:30.489000+00:00 | 579,264,651 | 577,359,818 | 556,203,904 | 1,904,833 | 303.10 | 0.3288% | 27.2164% | $441.03 | $441.03 | `c:\hades` |
+| 13 | `019e54df-35af-7c60-8da3-67d86a082648` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:41:44.391000+00:00 | 564,611,473 | 562,927,882 | 546,199,040 | 1,683,591 | 334.36 | 0.2982% | 28.2493% | $407.25 | $407.25 | `c:\hades` |
+| 14 | `019e42d0-0f2a-72c2-a688-9241371dd6e4` | gpt-5.5 | xhigh | current_sessions | 2026-05-20T23:54:50.549000+00:00 | 548,201,085 | 546,656,842 | 535,127,040 | 1,544,243 | 354.00 | 0.2817% | 21.9045% | $371.54 | $371.54 | `c:\hades` |
 | 15 | `019e480b-c231-7d60-ac6c-130c5f52e788` | gpt-5.5 | xhigh | current_sessions | 2026-05-22T09:05:28.159000+00:00 | 528,011,366 | 526,558,944 | 512,782,336 | 1,452,422 | 362.54 | 0.2751% | 25.0314% | $368.85 | $368.85 | `c:\hades` |
 | 16 | `019e42d6-563e-7d31-ad70-d983432fe8d1` | gpt-5.5 | xhigh | current_sessions | 2026-05-21T15:23:03.424000+00:00 | 523,659,412 | 521,826,682 | 502,747,776 | 1,832,730 | 284.73 | 0.3500% | 26.1494% | $401.75 | $401.75 | `c:\hades` |
 | 17 | `019e1859-0e01-77b2-a8c6-b5586ccc5c8c` | gpt-5.5 | xhigh | backup_cleanup_20260521_194850 | 2026-05-14T10:56:23.755000+00:00 | 518,697,166 | 517,631,477 | 503,886,080 | 1,065,689 | 485.72 | 0.2055% | 30.6934% | $352.64 | $352.64 | `c:\hades` |
@@ -620,18 +655,18 @@ Plan type counts:
 | 5 | `019e3974-b286-7191-a24e-53679b314dd5` | gpt-5.5 | xhigh | backup_cleanup_20260521_194850 | 2026-05-21T00:37:51.363000+00:00 | 2,418,886 | 480,721 | 469,509,921 | 193.10 | 9.04 | 184.06 | 17.9393% | $404.51 | `c:\hades` |
 | 6 | `019e54e5-7e0f-7d61-b2a8-7d3cf00593f8` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T09:48:09.286000+00:00 | 2,282,857 | 576,956 | 822,302,475 | 359.21 | 8.83 | 350.38 | 12.0316% | $569.22 | `c:\hades` |
 | 7 | `019e54e3-0619-7d00-bd04-709b7ec1949e` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T09:51:02.089000+00:00 | 2,225,299 | 605,425 | 892,421,675 | 400.03 | 10.59 | 389.45 | 10.8049% | $617.86 | `c:\hades` |
-| 8 | `019e6137-88ea-7683-aec2-12061e8157bf` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T16:43:57.114000+00:00 | 2,194,100 | 566,097 | 743,842,970 | 338.02 | 9.48 | 328.54 | 12.4129% | $530.28 | `c:\hades` |
+| 8 | `019e6137-88ea-7683-aec2-12061e8157bf` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T17:01:44.226000+00:00 | 2,219,523 | 571,642 | 755,622,806 | 339.44 | 9.41 | 330.03 | 12.3922% | $537.32 | `c:\hades` |
 | 9 | `019e4024-b80b-7c02-8089-6efcb541ca5b` | gpt-5.5 | xhigh | current_sessions | 2026-05-21T00:37:35.372000+00:00 | 1,953,484 | 259,969 | 417,444,229 | 212.69 | 6.69 | 206.00 | 18.0247% | $325.13 | `c:\hades` |
-| 10 | `019e558a-e142-7303-8f57-df6d1d2d75d4` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:25:51.533000+00:00 | 1,886,357 | 505,313 | 690,288,484 | 364.94 | 10.21 | 354.73 | 11.6093% | $487.46 | `c:\hades` |
-| 11 | `019e54e1-c11c-71b0-9b8a-21b8efdcde8c` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:02:22.353000+00:00 | 1,841,768 | 471,934 | 711,109,922 | 385.10 | 9.14 | 375.96 | 11.3776% | $485.63 | `c:\hades` |
-| 12 | `019e5249-c70f-7263-880f-3531b581aad4` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T00:17:04.800000+00:00 | 1,841,407 | 370,362 | 610,793,317 | 330.70 | 7.96 | 322.74 | 12.9776% | $425.67 | `c:\hades` |
-| 13 | `019e42d6-563e-7d31-ad70-d983432fe8d1` | gpt-5.5 | xhigh | current_sessions | 2026-05-21T15:23:03.424000+00:00 | 1,832,730 | 479,247 | 523,659,412 | 284.73 | 10.41 | 274.32 | 13.6856% | $401.75 | `c:\hades` |
-| 14 | `019e3700-e461-7b83-b037-ecaceb36f169` | gpt-5.5 | xhigh | backup_cleanup_20260521_194850 | 2026-05-20T22:25:39.731000+00:00 | 1,779,483 | 486,149 | 504,011,103 | 282.23 | 12.71 | 269.52 | 13.1386% | $406.32 | `c:\hades` |
-| 15 | `019e5488-d058-7152-8dda-15c6e68fd5d5` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T01:31:58.063000+00:00 | 1,771,336 | 409,485 | 502,547,222 | 282.71 | 9.80 | 272.91 | 13.9240% | $381.64 | `c:\hades` |
-| 16 | `019e5d19-2023-72e3-b282-e1a65f86f339` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T16:42:58.572000+00:00 | 1,757,561 | 472,750 | 531,463,900 | 301.39 | 11.08 | 290.30 | 13.0115% | $405.23 | `c:\hades` |
-| 17 | `019dcf19-407b-75f2-99e4-54d0217d9d14` | gpt-5.4 | high | backup_cleanup_20260521_194850 | 2026-04-29T22:03:49.658000+00:00 | 1,686,324 | 528,007 | 408,633,638 | 241.32 | 7.55 | 233.77 | 16.2487% | $311.35 | `c:\hades\Hecton8` |
-| 18 | `019e54df-35af-7c60-8da3-67d86a082648` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:41:44.391000+00:00 | 1,683,591 | 475,603 | 564,611,473 | 334.36 | 9.94 | 324.43 | 12.4021% | $407.25 | `c:\hades` |
-| 19 | `019e63cd-1665-7e03-8f44-597caea9da15` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T16:44:02.753000+00:00 | 1,648,936 | 455,807 | 410,474,290 | 247.93 | 9.85 | 238.09 | 15.1302% | $326.95 | `c:\hades` |
+| 10 | `019e5d19-2023-72e3-b282-e1a65f86f339` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T19:04:30.489000+00:00 | 1,904,833 | 518,427 | 579,264,651 | 303.10 | 11.11 | 292.00 | 12.9573% | $441.03 | `c:\hades` |
+| 11 | `019e558a-e142-7303-8f57-df6d1d2d75d4` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:25:51.533000+00:00 | 1,886,357 | 505,313 | 690,288,484 | 364.94 | 10.21 | 354.73 | 11.6093% | $487.46 | `c:\hades` |
+| 12 | `019e63cd-1665-7e03-8f44-597caea9da15` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T18:21:13.980000+00:00 | 1,846,982 | 509,135 | 458,053,290 | 247.00 | 9.62 | 237.38 | 15.2445% | $363.47 | `c:\hades` |
+| 13 | `019e54e1-c11c-71b0-9b8a-21b8efdcde8c` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:02:22.353000+00:00 | 1,841,768 | 471,934 | 711,109,922 | 385.10 | 9.14 | 375.96 | 11.3776% | $485.63 | `c:\hades` |
+| 14 | `019e5249-c70f-7263-880f-3531b581aad4` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T00:17:04.800000+00:00 | 1,841,407 | 370,362 | 610,793,317 | 330.70 | 7.96 | 322.74 | 12.9776% | $425.67 | `c:\hades` |
+| 15 | `019e42d6-563e-7d31-ad70-d983432fe8d1` | gpt-5.5 | xhigh | current_sessions | 2026-05-21T15:23:03.424000+00:00 | 1,832,730 | 479,247 | 523,659,412 | 284.73 | 10.41 | 274.32 | 13.6856% | $401.75 | `c:\hades` |
+| 16 | `019e3700-e461-7b83-b037-ecaceb36f169` | gpt-5.5 | xhigh | backup_cleanup_20260521_194850 | 2026-05-20T22:25:39.731000+00:00 | 1,779,483 | 486,149 | 504,011,103 | 282.23 | 12.71 | 269.52 | 13.1386% | $406.32 | `c:\hades` |
+| 17 | `019e5488-d058-7152-8dda-15c6e68fd5d5` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T01:31:58.063000+00:00 | 1,771,336 | 409,485 | 502,547,222 | 282.71 | 9.80 | 272.91 | 13.9240% | $381.64 | `c:\hades` |
+| 18 | `019dcf19-407b-75f2-99e4-54d0217d9d14` | gpt-5.4 | high | backup_cleanup_20260521_194850 | 2026-04-29T22:03:49.658000+00:00 | 1,686,324 | 528,007 | 408,633,638 | 241.32 | 7.55 | 233.77 | 16.2487% | $311.35 | `c:\hades\Hecton8` |
+| 19 | `019e54df-35af-7c60-8da3-67d86a082648` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:41:44.391000+00:00 | 1,683,591 | 475,603 | 564,611,473 | 334.36 | 9.94 | 324.43 | 12.4021% | $407.25 | `c:\hades` |
 | 20 | `019e4328-e29d-7163-b59e-f2841cce7c18` | gpt-5.5 | xhigh | current_sessions | 2026-05-21T16:09:09.486000+00:00 | 1,633,890 | 459,231 | 517,149,254 | 315.51 | 11.71 | 303.81 | 12.4768% | $392.86 | `c:\hades` |
 | 21 | `019e559e-fe08-72d2-8a16-4deb504b9a8f` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T03:35:55.207000+00:00 | 1,572,288 | 435,376 | 512,144,428 | 324.73 | 9.19 | 315.54 | 12.8348% | $367.50 | `c:\hades` |
 | 22 | `019e42d0-0f2a-72c2-a688-9241371dd6e4` | gpt-5.5 | xhigh | current_sessions | 2026-05-20T23:54:50.549000+00:00 | 1,544,243 | 338,259 | 548,201,085 | 354.00 | 7.47 | 346.53 | 12.4690% | $371.54 | `c:\hades` |
@@ -648,25 +683,25 @@ Plan type counts:
 | 4 | `019e2099-6961-71b3-abdc-f8fdb0c1576c` | gpt-5.5 | xhigh | backup_cleanup_20260521_194850 | 2026-05-20T01:19:43.715000+00:00 | 2,957,889 | 835,253 | 1,305,764,480 | 440.45 | 13.76 | 426.70 | 9.6114% | $923.24 | `c:\hades` |
 | 5 | `019e54e3-0619-7d00-bd04-709b7ec1949e` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T09:51:02.089000+00:00 | 2,225,299 | 605,425 | 892,421,675 | 400.03 | 10.59 | 389.45 | 10.8049% | $617.86 | `c:\hades` |
 | 6 | `019e54e5-7e0f-7d61-b2a8-7d3cf00593f8` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T09:48:09.286000+00:00 | 2,282,857 | 576,956 | 822,302,475 | 359.21 | 8.83 | 350.38 | 12.0316% | $569.22 | `c:\hades` |
-| 7 | `019e6137-88ea-7683-aec2-12061e8157bf` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T16:43:57.114000+00:00 | 2,194,100 | 566,097 | 743,842,970 | 338.02 | 9.48 | 328.54 | 12.4129% | $530.28 | `c:\hades` |
+| 7 | `019e6137-88ea-7683-aec2-12061e8157bf` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T17:01:44.226000+00:00 | 2,219,523 | 571,642 | 755,622,806 | 339.44 | 9.41 | 330.03 | 12.3922% | $537.32 | `c:\hades` |
 | 8 | `019dcf19-407b-75f2-99e4-54d0217d9d14` | gpt-5.4 | high | backup_cleanup_20260521_194850 | 2026-04-29T22:03:49.658000+00:00 | 1,686,324 | 528,007 | 408,633,638 | 241.32 | 7.55 | 233.77 | 16.2487% | $311.35 | `c:\hades\Hecton8` |
-| 9 | `019e558a-e142-7303-8f57-df6d1d2d75d4` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:25:51.533000+00:00 | 1,886,357 | 505,313 | 690,288,484 | 364.94 | 10.21 | 354.73 | 11.6093% | $487.46 | `c:\hades` |
-| 10 | `019d67a6-6823-7b82-94f9-a3167b8e0286` | gpt-5.4 | high | backup_cleanup_20260521_194850 | 2026-04-09T11:13:03.573000+00:00 | 1,410,960 | 489,347 | 429,064,399 | 303.09 | 14.11 | 288.99 | 12.2435% | $345.73 | `c:\hades\Hecton8` |
-| 11 | `019e3700-e461-7b83-b037-ecaceb36f169` | gpt-5.5 | xhigh | backup_cleanup_20260521_194850 | 2026-05-20T22:25:39.731000+00:00 | 1,779,483 | 486,149 | 504,011,103 | 282.23 | 12.71 | 269.52 | 13.1386% | $406.32 | `c:\hades` |
-| 12 | `019e3974-b286-7191-a24e-53679b314dd5` | gpt-5.5 | xhigh | backup_cleanup_20260521_194850 | 2026-05-21T00:37:51.363000+00:00 | 2,418,886 | 480,721 | 469,509,921 | 193.10 | 9.04 | 184.06 | 17.9393% | $404.51 | `c:\hades` |
-| 13 | `019e42d6-563e-7d31-ad70-d983432fe8d1` | gpt-5.5 | xhigh | current_sessions | 2026-05-21T15:23:03.424000+00:00 | 1,832,730 | 479,247 | 523,659,412 | 284.73 | 10.41 | 274.32 | 13.6856% | $401.75 | `c:\hades` |
-| 14 | `019e54df-35af-7c60-8da3-67d86a082648` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:41:44.391000+00:00 | 1,683,591 | 475,603 | 564,611,473 | 334.36 | 9.94 | 324.43 | 12.4021% | $407.25 | `c:\hades` |
-| 15 | `019e5d19-2023-72e3-b282-e1a65f86f339` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T16:42:58.572000+00:00 | 1,757,561 | 472,750 | 531,463,900 | 301.39 | 11.08 | 290.30 | 13.0115% | $405.23 | `c:\hades` |
-| 16 | `019e54e1-c11c-71b0-9b8a-21b8efdcde8c` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:02:22.353000+00:00 | 1,841,768 | 471,934 | 711,109,922 | 385.10 | 9.14 | 375.96 | 11.3776% | $485.63 | `c:\hades` |
-| 17 | `019e4328-e29d-7163-b59e-f2841cce7c18` | gpt-5.5 | xhigh | current_sessions | 2026-05-21T16:09:09.486000+00:00 | 1,633,890 | 459,231 | 517,149,254 | 315.51 | 11.71 | 303.81 | 12.4768% | $392.86 | `c:\hades` |
-| 18 | `019e63cd-1665-7e03-8f44-597caea9da15` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T16:44:02.753000+00:00 | 1,648,936 | 455,807 | 410,474,290 | 247.93 | 9.85 | 238.09 | 15.1302% | $326.95 | `c:\hades` |
+| 9 | `019e5d19-2023-72e3-b282-e1a65f86f339` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T19:04:30.489000+00:00 | 1,904,833 | 518,427 | 579,264,651 | 303.10 | 11.11 | 292.00 | 12.9573% | $441.03 | `c:\hades` |
+| 10 | `019e63cd-1665-7e03-8f44-597caea9da15` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T18:21:13.980000+00:00 | 1,846,982 | 509,135 | 458,053,290 | 247.00 | 9.62 | 237.38 | 15.2445% | $363.47 | `c:\hades` |
+| 11 | `019e558a-e142-7303-8f57-df6d1d2d75d4` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:25:51.533000+00:00 | 1,886,357 | 505,313 | 690,288,484 | 364.94 | 10.21 | 354.73 | 11.6093% | $487.46 | `c:\hades` |
+| 12 | `019d67a6-6823-7b82-94f9-a3167b8e0286` | gpt-5.4 | high | backup_cleanup_20260521_194850 | 2026-04-09T11:13:03.573000+00:00 | 1,410,960 | 489,347 | 429,064,399 | 303.09 | 14.11 | 288.99 | 12.2435% | $345.73 | `c:\hades\Hecton8` |
+| 13 | `019e3700-e461-7b83-b037-ecaceb36f169` | gpt-5.5 | xhigh | backup_cleanup_20260521_194850 | 2026-05-20T22:25:39.731000+00:00 | 1,779,483 | 486,149 | 504,011,103 | 282.23 | 12.71 | 269.52 | 13.1386% | $406.32 | `c:\hades` |
+| 14 | `019e3974-b286-7191-a24e-53679b314dd5` | gpt-5.5 | xhigh | backup_cleanup_20260521_194850 | 2026-05-21T00:37:51.363000+00:00 | 2,418,886 | 480,721 | 469,509,921 | 193.10 | 9.04 | 184.06 | 17.9393% | $404.51 | `c:\hades` |
+| 15 | `019e42d6-563e-7d31-ad70-d983432fe8d1` | gpt-5.5 | xhigh | current_sessions | 2026-05-21T15:23:03.424000+00:00 | 1,832,730 | 479,247 | 523,659,412 | 284.73 | 10.41 | 274.32 | 13.6856% | $401.75 | `c:\hades` |
+| 16 | `019e54df-35af-7c60-8da3-67d86a082648` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:41:44.391000+00:00 | 1,683,591 | 475,603 | 564,611,473 | 334.36 | 9.94 | 324.43 | 12.4021% | $407.25 | `c:\hades` |
+| 17 | `019e54e1-c11c-71b0-9b8a-21b8efdcde8c` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T10:02:22.353000+00:00 | 1,841,768 | 471,934 | 711,109,922 | 385.10 | 9.14 | 375.96 | 11.3776% | $485.63 | `c:\hades` |
+| 18 | `019e4328-e29d-7163-b59e-f2841cce7c18` | gpt-5.5 | xhigh | current_sessions | 2026-05-21T16:09:09.486000+00:00 | 1,633,890 | 459,231 | 517,149,254 | 315.51 | 11.71 | 303.81 | 12.4768% | $392.86 | `c:\hades` |
 | 19 | `019e559e-fe08-72d2-8a16-4deb504b9a8f` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T03:35:55.207000+00:00 | 1,572,288 | 435,376 | 512,144,428 | 324.73 | 9.19 | 315.54 | 12.8348% | $367.50 | `c:\hades` |
 | 20 | `019d6329-de82-74e2-83ca-450539a61cec` | gpt-5.4 | high | backup_cleanup_20260521_194850 | 2026-04-09T13:02:36.778000+00:00 | 1,516,566 | 425,805 | 490,407,394 | 322.37 | 14.47 | 307.90 | 11.7050% | $388.70 | `c:\hades\Hecton8` |
 | 21 | `019e5488-d058-7152-8dda-15c6e68fd5d5` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T01:31:58.063000+00:00 | 1,771,336 | 409,485 | 502,547,222 | 282.71 | 9.80 | 272.91 | 13.9240% | $381.64 | `c:\hades` |
 | 22 | `019e558b-99b3-73a2-b1b0-744e2c7adaf8` | gpt-5.5 | xhigh | current_sessions | 2026-05-25T02:21:00.701000+00:00 | 1,456,895 | 406,982 | 621,711,391 | 425.74 | 10.26 | 415.48 | 10.3797% | $421.08 | `c:\hades` |
-| 23 | `019e5f29-93db-7422-93dd-94610846c858` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T16:43:27.417000+00:00 | 1,364,164 | 382,710 | 393,662,810 | 287.57 | 9.80 | 277.77 | 13.7683% | $297.24 | `c:\hades` |
-| 24 | `019dcffb-b2d1-7772-81c9-a6715b38b0cd` | gpt-5.4 | high | backup_cleanup_20260521_194850 | 2026-04-29T19:58:22.258000+00:00 | 948,530 | 378,862 | 208,914,865 | 219.25 | 9.81 | 209.44 | 16.3242% | $174.32 | `c:\hades\Hecton8` |
-| 25 | `019e63ba-0634-7250-97fd-12d424b6d428` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T16:43:33.154000+00:00 | 1,260,289 | 372,559 | 399,755,446 | 316.19 | 12.96 | 303.23 | 12.1738% | $310.57 | `c:\hades` |
+| 23 | `019e5f29-93db-7422-93dd-94610846c858` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T17:26:22.168000+00:00 | 1,438,933 | 406,134 | 421,443,562 | 291.89 | 9.80 | 282.09 | 13.6340% | $316.62 | `c:\hades` |
+| 24 | `019e63ba-0634-7250-97fd-12d424b6d428` | gpt-5.5 | xhigh | current_sessions | 2026-05-27T17:26:00.614000+00:00 | 1,302,728 | 385,811 | 415,487,729 | 317.94 | 12.87 | 305.07 | 12.1523% | $321.60 | `c:\hades` |
+| 25 | `019dcffb-b2d1-7772-81c9-a6715b38b0cd` | gpt-5.4 | high | backup_cleanup_20260521_194850 | 2026-04-29T19:58:22.258000+00:00 | 948,530 | 378,862 | 208,914,865 | 219.25 | 9.81 | 209.44 | 16.3242% | $174.32 | `c:\hades\Hecton8` |
 
 ## Price Sources
 - https://developers.openai.com/api/docs/pricing checked 2026-05-27; lines 700-708 list GPT-5.5/GPT-5.4/GPT-5.4-mini standard short-context rates and regional uplift

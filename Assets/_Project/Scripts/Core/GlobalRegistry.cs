@@ -2486,7 +2486,9 @@ namespace Hecton8.Core
         /// </summary>
         public static RegistryBucket<IRegistryEventListener> RegistryEventListeners => _registryEventListeners;
 
-        public static int PendingServiceReboundCount => _pendingServiceReboundCount + _nextFrameServiceReboundCount;
+        public static int PendingServiceReboundCount =>
+            Volatile.Read(ref _pendingServiceReboundCount) +
+            Volatile.Read(ref _nextFrameServiceReboundCount);
 
         /// <summary>
         /// Opens the only sanctioned service-registration window.

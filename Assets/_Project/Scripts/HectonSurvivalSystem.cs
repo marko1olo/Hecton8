@@ -3512,27 +3512,27 @@ namespace Hecton8.Gameplay
             row = default;
             ReadOnlySpan<char> rowSpan = rowLine.AsSpan();
 
-            if (!TryGetRequiredColumnValue(rowSpan, columnLookup, "StableId", out ReadOnlySpan<char> stableId) ||
-                !TryGetRequiredColumnValue(rowSpan, columnLookup, "Hash", out ReadOnlySpan<char> hashToken) ||
-                !TryGetRequiredColumnValue(rowSpan, columnLookup, "MassKg", out ReadOnlySpan<char> massToken) ||
-                !TryGetRequiredColumnValue(rowSpan, columnLookup, "VolumeL", out ReadOnlySpan<char> volumeToken) ||
-                !TryGetRequiredColumnValue(rowSpan, columnLookup, "EnergyDensityMJkg", out ReadOnlySpan<char> energyDensityToken) ||
-                !TryGetRequiredColumnValue(rowSpan, columnLookup, "BaseDurability", out ReadOnlySpan<char> durabilityToken))
+            if (!TryGetRequiredColumnValue(rowSpan, columnLookup, "StableId", out string stableId) ||
+                !TryGetRequiredColumnValue(rowSpan, columnLookup, "Hash", out string hashToken) ||
+                !TryGetRequiredColumnValue(rowSpan, columnLookup, "MassKg", out string massToken) ||
+                !TryGetRequiredColumnValue(rowSpan, columnLookup, "VolumeL", out string volumeToken) ||
+                !TryGetRequiredColumnValue(rowSpan, columnLookup, "EnergyDensityMJkg", out string energyDensityToken) ||
+                !TryGetRequiredColumnValue(rowSpan, columnLookup, "BaseDurability", out string durabilityToken))
             {
                 return false;
             }
 
-            if (!TryParseStableHash(hashToken, out uint stableHash) ||
-                !TryParseSurvivalFloat(massToken, out float massKilograms) ||
-                !TryParseSurvivalFloat(volumeToken, out float volumeLiters) ||
-                !TryParseSurvivalFloat(energyDensityToken, out float energyDensityMegajoulesPerKilogram) ||
+            if (!TryParseStableHash(hashToken.AsSpan(), out uint stableHash) ||
+                !TryParseSurvivalFloat(massToken.AsSpan(), out float massKilograms) ||
+                !TryParseSurvivalFloat(volumeToken.AsSpan(), out float volumeLiters) ||
+                !TryParseSurvivalFloat(energyDensityToken.AsSpan(), out float energyDensityMegajoulesPerKilogram) ||
                 !int.TryParse(durabilityToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out int baseDurability))
             {
                 return false;
             }
 
             row = new SurvivalDatabaseItemParameters(
-                stableId.ToString(),
+                stableId,
                 stableHash,
                 massKilograms,
                 volumeLiters,
@@ -3573,24 +3573,37 @@ namespace Hecton8.Gameplay
             ReadOnlySpan<char> row,
             Dictionary<string, int> columnLookup,
             string columnName,
-            out ReadOnlySpan<char> value)
+            out string value)
         {
-            value = default;
+            value = null;
 
             if (!columnLookup.TryGetValue(columnName, out int columnIndex))
                 return false;
 
-            int tokenCursor = 0;
             int tokenIndex = 0;
-            while (TryReadNextDelimitedToken(row, ref tokenCursor, '|', out ReadOnlySpan<char> token))
+            int tokenCursor = 0;
+            while (tokenCursor <= row.Length)
             {
+                int tokenStart = tokenCursor;
+                int tokenEnd = tokenStart;
+                while (tokenEnd < row.Length && row[tokenEnd] != '|')
+                    tokenEnd++;
+
                 if (tokenIndex == columnIndex)
                 {
-                    value = TrimSurvivalDatabaseSpan(token);
-                    return value.Length > 0;
+                    ReadOnlySpan<char> trimmed = TrimSurvivalDatabaseSpan(row.Slice(tokenStart, tokenEnd - tokenStart));
+                    if (trimmed.Length == 0)
+                        return false;
+
+                    value = trimmed.ToString();
+                    return true;
                 }
 
                 tokenIndex++;
+                if (tokenEnd >= row.Length)
+                    break;
+
+                tokenCursor = tokenEnd + 1;
             }
 
             return false;
@@ -3759,12 +3772,12 @@ namespace Hecton8.Gameplay
             out SurvivalDatabaseItemRecord row)
         {
             row = default;
-            ReadOnlySpan<char> stableId = default;
-            ReadOnlySpan<char> hashToken = default;
-            ReadOnlySpan<char> massToken = default;
-            ReadOnlySpan<char> volumeToken = default;
-            ReadOnlySpan<char> energyDensityToken = default;
-            ReadOnlySpan<char> durabilityToken = default;
+            uint stableIdHash = 0u;
+            uint stableHash = 0u;
+            float massKilograms = 0f;
+            float volumeLiters = 0f;
+            float energyDensityMegajoulesPerKilogram = 0f;
+            int baseDurability = 0;
             bool hasStableId = false;
             bool hasHash = false;
             bool hasMass = false;
@@ -3774,56 +3787,57 @@ namespace Hecton8.Gameplay
             int tokenCursor = 0;
             int tokenIndex = 0;
 
-            while (TryReadNextDelimitedToken(rowLine, ref tokenCursor, '|', out ReadOnlySpan<char> token))
+            while (tokenCursor <= rowLine.Length)
             {
-                ReadOnlySpan<char> trimmedToken = TrimSurvivalDatabaseSpan(token);
+                int tokenStart = tokenCursor;
+                int tokenEnd = tokenStart;
+                while (tokenEnd < rowLine.Length && rowLine[tokenEnd] != '|')
+                    tokenEnd++;
+
+                ReadOnlySpan<char> trimmedToken = TrimSurvivalDatabaseSpan(rowLine.Slice(tokenStart, tokenEnd - tokenStart));
                 if (tokenIndex == columnMap.StableId)
                 {
-                    stableId = trimmedToken;
                     hasStableId = trimmedToken.Length > 0;
+                    if (hasStableId)
+                        stableIdHash = ComputeStableIdHash(trimmedToken);
                 }
                 else if (tokenIndex == columnMap.Hash)
                 {
-                    hashToken = trimmedToken;
-                    hasHash = trimmedToken.Length > 0;
+                    hasHash = trimmedToken.Length > 0 &&
+                              TryParseStableHash(trimmedToken, out stableHash);
                 }
                 else if (tokenIndex == columnMap.MassKilograms)
                 {
-                    massToken = trimmedToken;
-                    hasMass = trimmedToken.Length > 0;
+                    hasMass = trimmedToken.Length > 0 &&
+                              TryParseSurvivalFloat(trimmedToken, out massKilograms);
                 }
                 else if (tokenIndex == columnMap.VolumeLiters)
                 {
-                    volumeToken = trimmedToken;
-                    hasVolume = trimmedToken.Length > 0;
+                    hasVolume = trimmedToken.Length > 0 &&
+                                TryParseSurvivalFloat(trimmedToken, out volumeLiters);
                 }
                 else if (tokenIndex == columnMap.EnergyDensityMegajoulesPerKilogram)
                 {
-                    energyDensityToken = trimmedToken;
-                    hasEnergyDensity = trimmedToken.Length > 0;
+                    hasEnergyDensity = trimmedToken.Length > 0 &&
+                                       TryParseSurvivalFloat(trimmedToken, out energyDensityMegajoulesPerKilogram);
                 }
                 else if (tokenIndex == columnMap.BaseDurability)
                 {
-                    durabilityToken = trimmedToken;
-                    hasDurability = trimmedToken.Length > 0;
+                    hasDurability = trimmedToken.Length > 0 &&
+                                    int.TryParse(trimmedToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out baseDurability);
                 }
 
                 tokenIndex++;
+                if (tokenEnd >= rowLine.Length)
+                    break;
+
+                tokenCursor = tokenEnd + 1;
             }
 
             if (!hasStableId || !hasHash || !hasMass || !hasVolume || !hasEnergyDensity || !hasDurability)
                 return false;
 
-            if (!TryParseStableHash(hashToken, out uint stableHash) ||
-                !TryParseSurvivalFloat(massToken, out float massKilograms) ||
-                !TryParseSurvivalFloat(volumeToken, out float volumeLiters) ||
-                !TryParseSurvivalFloat(energyDensityToken, out float energyDensityMegajoulesPerKilogram) ||
-                !int.TryParse(durabilityToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out int baseDurability))
-            {
-                return false;
-            }
-
-            if (ComputeStableIdHash(stableId) != stableHash)
+            if (stableIdHash != stableHash)
                 return false;
 
             row.StableHash = stableHash;

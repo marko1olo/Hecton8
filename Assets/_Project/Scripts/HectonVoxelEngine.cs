@@ -10769,7 +10769,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return;
 
         NativeMemorySentinel.UnregisterNativeArray(array);
-        array.Dispose(default);
+        array.Dispose();
         array = default;
     }
 

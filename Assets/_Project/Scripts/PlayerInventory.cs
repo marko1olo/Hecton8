@@ -1289,7 +1289,7 @@ namespace Hecton8.Inventory
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(default);
+            array.Dispose();
             array = default;
         }
 

@@ -269,3 +269,98 @@ Cinematic Cheats used: none in verification.
 Exact Microseconds saved: no runtime claim.
 
 Verification: JSON report parsed. `git diff --check` passed for new shader/compute/docs with CRLF warnings only. Build errors did not reference touched 13GPU files. Shader compiler was not available.
+
+---
+
+Date: 2026-05-27
+Status: STATIC VERIFIED / COMPILE GATE BLOCKED BY HOST CONTENTION
+
+What was wrong: `Hecton_KelpMaster.shader` non-GPUI forward pass already had continuous quality/finiteness in baseline, but shadow and depth passes still used raw vertex, normal, UV, `_Time`, sway, AUP offset, prop-wash, and submarine wash data before visual deformation.
+
+What was done: added `_H8GlobalQualityWeight`, finite ingress guards, safe normalize, sanitized sway/time/AUP values, and smooth motion/interaction gates to shadow and depth kelp deformation paths.
+
+Cinematic Cheats used: preserved shader-side kelp sway and prop-wash as visual fake motion. No CPU simulation, no readback, no new buffer.
+
+Exact Microseconds saved: PENDING PROFILE. Static estimate: 4-12 us only during malformed kelp shadow/depth payload frames.
+
+Verification: `git diff --check` passed with CRLF warning only. Hot-path scan found no C# upload/readback/draw/allocation patterns. Shader compiler was not available.
+
+---
+
+Date: 2026-05-27
+Status: STATIC VERIFIED / COMPILE GATE BLOCKED BY HOST CONTENTION
+
+What was wrong: `Hecton_CoralMaster.shader` non-GPUI shadow pass sanitized position but still transformed raw normals through shadow bias.
+
+What was done: added finite normal fallback and zero-length guard before `TransformObjectToWorldNormal` in the shadow caster pass.
+
+Cinematic Cheats used: none beyond preserving existing coral shadow caster path.
+
+Exact Microseconds saved: PENDING PROFILE. Static estimate: 2-6 us only during malformed coral shadow payload frames.
+
+Verification: `git diff --check` passed with CRLF warning only. Shader compiler was not available.
+
+---
+
+Date: 2026-05-27
+Status: STATIC VERIFIED / COMPILE GATE BLOCKED BY HOST CONTENTION
+
+What was wrong: `Hecton_ProceduralBio.shader` low LOD branch read `input.positionWS` while the varying was compiled out under `_MATH_LOD_LOW`. The shader also lacked continuous `_H8GlobalQualityWeight` shaping for low matcap/emission and high blend sharpness.
+
+What was done: made `positionWS` available in all variants, added `_H8GlobalQualityWeight` helpers, sanitized vertex color, shaped low matcap/emission and high triplanar sharpness continuously.
+
+Cinematic Cheats used: retained low-tier matcap as cheap fake flora shading instead of forcing triplanar sampling on weak hardware.
+
+Exact Microseconds saved: PENDING PROFILE. Static estimate: 3-10 us only by preventing bad low-variant fallback/debug churn.
+
+Verification: `git diff --check` passed with CRLF warning only. Shader compiler was not available.
+
+---
+
+Date: 2026-05-27
+Status: STATIC VERIFIED / COMPILE GATE BLOCKED BY HOST CONTENTION
+
+What was wrong: compile proof could not be rerun without violating host policy.
+
+What was done: after a 30 second wait CPU was `34`, but active `dotnet` PID `8372` and active `VBCSCompiler` PID `31136` remained; no new build was launched. Prior legal build blocker remains MSBuild circular `ResolveProjectReferences` in Unity editor package projects.
+
+Cinematic Cheats used: none in verification.
+
+Exact Microseconds saved: no runtime claim.
+
+Verification: static checks only. No touched 13GPU shader was compiled by Unity shader compiler in this shell.
+## 2026-05-27 - 13GPU Sargassum/Wake Compute Pass
+
+What was wrong:
+- `Hecton_SargassumCutMask.compute` trusted `_TexelSize`, `_ScrollUvOffset`, `_Recovery`, and stamp vectors/strength before UV sampling, radius math, and final mask writes.
+- `Hecton_SargassumDampingFacade.compute` trusted facade output dimensions, density/cut world rects, drift offset, pow exponents, and visual scales.
+- `SargassumCrestDampingController` dispatched facade masks with fixed wave/oil scale, so the visual fake did not consume continuous `HomeostasisBrain.GlobalQualityWeight`.
+- `Hecton_VegetationWakeTrailSim.compute` trusted raw wake stamp count despite a 4-entry owner buffer, and consumed raw stamp/time/scroll/texel/damping/curl/wave/fade values before noise, sample, velocity, and displacement math.
+
+What was done:
+- Added finite/fallback guards to sargassum cut-mask recovery, stamp, sample, and output paths.
+- Added shared output-dimension clamp and finite rect/drift/pow/scale guards to the sargassum wave/oil facade compute.
+- Added owner-side smooth `GlobalQualityWeight` scaling for sargassum wave/oil facade intensity only; no gameplay truth, DTO, save, or ownership route changed.
+- Added wake-trail stamp-cap enforcement, finite sample/texel/time/stamp/runtime-param guards, and fail-closed velocity/displacement output.
+
+Cinematic cheats used:
+- Kept sargassum wave damping, oil film, cut masks, and wake trails as deterministic texture fakes.
+- Rejected physical wave/flora simulation and GPU readback validation.
+
+Exact microseconds saved:
+- Cut-mask corruption containment: estimated 2-8 us only during malformed stamp frames.
+- Sargassum facade corruption containment: estimated 3-9 us only during malformed facade dispatches.
+- Wake-trail corruption containment: estimated 4-14 us only during malformed wake dispatches.
+- Normal valid frames: no profiler-backed saving claim; benefit is deterministic fail-closed GPU presentation and continuous visual-budget shaping.
+
+Verification:
+- `git diff --check` passed for touched files with CRLF warnings only.
+- Static scan found no added `SetData`, `GetData`, `DrawMeshInstanced`, `MaterialPropertyBlock`, LINQ, or hot array allocation patterns in the four touched files.
+- SHA256:
+  - `Hecton_SargassumCutMask.compute`: `65B248B0A459903850BAF63E1A708CAD7CC612EF664FB28BB1F84DBFFDDE965C`
+  - `Hecton_SargassumDampingFacade.compute`: `F55690F09295FDE81DEF3208B08F43494A5327D0DF7BF300B460ECAC50E67CFB`
+  - `Hecton_VegetationWakeTrailSim.compute`: `939AFDE998DC80C07E536A9EEDEC3B8030B4326C5ED57D1C600339EE0639D498`
+  - `SargassumCrestDampingController.cs`: `C16D90EDFA4876B21024D55A819B6FDD22EFDA9FEF4A5365AB6C160ECC6995BA`
+
+Build gate:
+- Not run. Initial CPU was `100` with active `VBCSCompiler` PID `31136`; after 30 seconds CPU was `26`, but the same compiler process remained active. Project policy forbids a competing `dotnet build`.

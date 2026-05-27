@@ -220,9 +220,9 @@ namespace Hecton8.AI
             {
                 const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
                 return new double3(
-                    (slotData.AupCell.x * cellSize) + slotData.LocalOffset.x,
-                    (slotData.AupCell.y * cellSize) + slotData.LocalOffset.y,
-                    (slotData.AupCell.z * cellSize) + slotData.LocalOffset.z);
+                    (slotData.GridX * cellSize) + slotData.LocalOffset.x,
+                    (slotData.GridY * cellSize) + slotData.LocalOffset.y,
+                    (slotData.GridZ * cellSize) + slotData.LocalOffset.z);
             }
 
             private static void WriteAbsolutePosition(ref PoolSlotData slotData, double3 absolutePosition)
@@ -235,10 +235,9 @@ namespace Hecton8.AI
                 long gridY = (long)math.floor(absolutePosition.y / cellSize);
                 long gridZ = (long)math.floor(absolutePosition.z / cellSize);
 
-                slotData.AupCell = new int3(
-                    ClampToInt(gridX),
-                    ClampToInt(gridY),
-                    ClampToInt(gridZ));
+                slotData.GridX = gridX;
+                slotData.GridY = gridY;
+                slotData.GridZ = gridZ;
                 slotData.LocalOffset = new float3(
                     (float)(absolutePosition.x - (gridX * cellSize)),
                     (float)(absolutePosition.y - (gridY * cellSize)),

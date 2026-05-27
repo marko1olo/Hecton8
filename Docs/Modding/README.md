@@ -25,7 +25,7 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 
 ## Current Contract Snapshot
 
-- Schema revision: `57`
+- Schema revision: `60`
 - Source `ISignal` structs: `173`
 - Mod-projected `SignalBus<T>` lanes: `2`
 - Denied-by-default `ISignal` structs: `171`
@@ -35,10 +35,13 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 - Public event methods: `7`
 - Native event kinds: `2`
 - SDK builder manifest parity: `ModBuilderWindow.ModManifestData` emits the same `9` manifest fields required by `ModLoader`, including `RequiredAPIVersion` and `ModPriority`; `Validate_Mod_API_Static.ps1` fails if this source parity drifts.
+- Manifest byte cap: loader rejects missing, empty, or `>32768` byte `mod.json` files before `File.ReadAllText`.
+- Manifest discovery cap: loader enumerates `mod.json` lazily and caps discovery at `64` manifests before candidate allocation.
 - Canonical mod IDs: loader and SDK builder require lowercase letters/digits separated by single `.`, `_`, or `-`; IDs and dependency IDs cannot use leading/trailing/repeated separators, whitespace, or reserved filesystem device segments.
 - Scope owner proof: `ModExecutionScope` cannot synthesize an anonymous active owner; active scope requires a non-empty mod id and non-zero owner hash.
 - SaveState owner proof: public mod save payloads require active `ModExecutionScope`; engine-owned mod-world payloads use an explicit `hecton.internal.` store route, not key-hash owner synthesis.
-- Reserved managed assembly identities blocked: loader and SDK builder reject `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, and `netstandard` names by file name or assembly metadata identity. The loader scans every top-level package DLL for this cold identity gate, and the SDK builder deletes stale output DLLs not selected for the current package build.
+- Reserved managed assembly identities blocked: loader and SDK builder reject `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, and `netstandard` names by file name or assembly metadata identity. The loader scans every accepted top-level package DLL up to the `32` DLL cap and disables over-cap packages; the SDK builder deletes stale output DLLs not selected for the current package build.
+- Top-level package file caps: managed DLL discovery is capped at `32`, legacy AssetBundle discovery at `4`, and legacy localization discovery at `16`.
 - Sandbox control plane: `FutureCommandSandboxValidator`, `MockModQueue` static methods, `MockModQueue` queue handles, and `MockModQueue` instance control methods are internal-only; runtime mods only submit `FutureCommandEnvelope` through `HectonAPI.Commands.RequestFuture`.
 - Direct dispatcher/hooks: `ModCommandDispatcher` static helpers and `HectonModHooks` publication methods are internal-only; public mods route through `HectonAPI.Commands` and `HectonAPI.Events`.
 - Loader diagnostics: `ModRuntimeInfo` and its package-path members are internal-only engine UI diagnostics, not SDK DTOs.

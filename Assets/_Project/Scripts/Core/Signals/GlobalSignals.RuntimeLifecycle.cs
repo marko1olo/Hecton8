@@ -847,7 +847,8 @@ namespace Hecton8.Core
             SignalBus<MacroCollisionSignal>.EnsureInitialized();
             SignalBus<WakeRequestSignal>.Configure(16, maxFrameSignals: 16, lowTierFrameSignals: 8, laneHash: ComputeStableSignalLaneHash(nameof(WakeRequestSignal)));
             SignalBus<WakeRequestSignal>.EnsureInitialized();
-            SignalBus<TetherTensionSignal>.ConfigureCacheLineCritical(128, laneHash: ComputeStableSignalLaneHash(nameof(TetherTensionSignal)));
+            // Wide endpoint telemetry: keep normal cadence until this splits into compact truth plus visual sidecar.
+            SignalBus<TetherTensionSignal>.Configure(128, maxFrameSignals: 128, lowTierFrameSignals: 32, laneHash: ComputeStableSignalLaneHash(nameof(TetherTensionSignal)));
             SignalBus<TetherTensionSignal>.EnsureInitialized();
             SignalBus<TetherSnappedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(TetherSnappedSignal)));
             SignalBus<TetherSnappedSignal>.EnsureInitialized();

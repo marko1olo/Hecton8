@@ -2720,9 +2720,15 @@ namespace Hecton8.SaveSystem
 
             NativeMemorySentinel.UnregisterNativeArray(array);
             if (deferDisposal)
-                array.Dispose(dependency);
+            {
+                JobHandle disposeHandle = array.Dispose(dependency);
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            }
             else
+            {
                 array.Dispose();
+            }
+
             array = default;
         }
 

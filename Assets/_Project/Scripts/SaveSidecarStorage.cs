@@ -396,7 +396,7 @@ namespace Hecton8.SaveSystem
         }
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        private struct SidecarWriter
+        private ref struct SidecarWriter
         {
             private readonly byte* _buffer;
             private readonly int _capacity;
@@ -495,7 +495,7 @@ namespace Hecton8.SaveSystem
         }
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        private struct SidecarReader
+        private ref struct SidecarReader
         {
             private readonly byte* _buffer;
             private readonly int _length;

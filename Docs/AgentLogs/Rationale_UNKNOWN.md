@@ -1469,3 +1469,147 @@ Rejected Alternatives: Deleting the locked `obj` tree was rejected because other
 Scalability potential: No runtime behavior change. The final audit now separates borrowed job/struct telemetry views from persistent ownership debt across all target tiers.
 
 Hardware Impact: Runtime microseconds saved claimed: `0`; final tool proof only. Final audit warnings moved `245 -> 155`; declared-only telemetry ring warnings moved to `0`.
+
+## Decision 117 - Do Not Patch Full-Solution Third-Party Build Wall In This Core Pass
+
+Problem: The escalated `Hecton8.slnx` build reached C# and failed with `365` errors across generated/plugin/package projects, while the touched SignalBus CLI and DTO files had `0` hits.
+
+Solution: Record the build wall and top project buckets, then keep this pass scoped to core SignalBus/tooling work.
+
+Rejected Alternatives: Editing MapMagic, MeshBaker, Bakery, ShaderGraph, Astar, Technie, EasySave, Candice, or broad Odin attribute fallout was rejected because those are separate plugin/generated/project-graph ownership problems. Claiming green integration was rejected because the build is not green.
+
+Scalability potential: No runtime behavior change. Clear build-wall ownership avoids mixing core signal architecture work with package graph repair.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; build boundary only.
+
+## Decision 118 - Bound Sector Override Commit Work Instead Of Allocating A Snapshot
+
+Problem: `PersistentWorldRegistry.RunSectorOverrideCommitAsync()` used `_dueSectorOverrideCommitWork.ToArray()` on a scheduled sector override commit route. The route is slow-cadence, but it still allocated a managed array and could commit an unbounded number of sector files in one pass.
+
+Solution: Replace the list snapshot with a cold-owned `SectorOverrideCommitWork[16]` buffer and process at most `16` due commits per pass.
+
+Rejected Alternatives: Keeping `ToArray()` was rejected because the audit correctly flagged a runtime allocation surface. Dynamically resizing a work array was rejected because it moves the same allocation to a different line. Removing async commit was rejected because file I/O must stay off the main thread.
+
+Scalability potential: Low-tier devices get bounded commit work and no managed snapshot allocation. Middle, high, and ultra tiers keep identical sector override persistence behavior across repeated passes.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. Static audit proof removed `ZERO_GC_HOT_PATH_ENUMERATION_REVIEW`.
+
+## Decision 119 - Declassify Wide Tether Tension As Non-Critical Until Split
+
+Problem: `TetherTensionSignal` was configured as cache-line-critical but its layout is 192 bytes because it carries two `AbsoluteUniversePosition` endpoints plus tension state.
+
+Solution: Preserve the payload and lane capacity, but configure it as a normal bounded lane. The correct future optimization is a split into compact gameplay tension truth plus visual endpoint sidecar when a consumer/profiler proof exists.
+
+Rejected Alternatives: Padding is impossible because the payload is already wider than the accepted 64/128-byte critical stride. Dropping one AUP endpoint was rejected because no consumer proof exists. Renaming the signal was rejected because producers already use the public contract.
+
+Scalability potential: Low-tier devices no longer classify this wide telemetry lane as cache-line-critical. Higher tiers can still consume full endpoint telemetry if a visual sidecar route is later proven.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; static contract correction only.
+
+## Decision 120 - Rename Local Mock Carriers Instead Of Touching Authoritative Signals
+
+Problem: The audit still reported duplicate signal-like names for sandbox/UI/TBDR local carriers that collided with unrelated DTOs or Core signal contracts.
+
+Solution: Rename only clean, owner-local types: `SandboxMockAcousticSignal`, `GlitchMockDepthSignal`, and `TBDRMockQualityWeightSignal`.
+
+Rejected Alternatives: Renaming `Core.Contracts.MockQualityWeightSignal` was rejected because it is the authoritative signal contract. Editing dirty `HectonFluidEngine.cs` was rejected because another agent owns that file. Broad atmosphere/thermal/structural telemetry renames were deferred because they are larger cross-domain changes.
+
+Scalability potential: No runtime behavior change. Low/mid/high/ultra builds get clearer static ownership and fewer false cross-domain signal-name collisions.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; naming/contract hygiene only.
+
+## Decision 121 - Do Not Chase Full Project Compile Errors In This Pass
+
+Problem: The user explicitly said not to fix overall project compile errors because another agent owns that work.
+
+Solution: Restrict proof to static source checks and `SignalBusContractAuditCli` rechecks from the already-built tool binary.
+
+Rejected Alternatives: Launching/fixing the full solution build was rejected by user instruction and would mix generated/plugin graph repair into a core/signal cleanup pass.
+
+Scalability potential: No runtime behavior change. The work stays isolated for concurrent agents.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; scope control only.
+
+## Decision 122 - Move Mod Cull Telemetry To Vault Ownership
+
+Problem: `ModEventProjectionBridge._cullTelemetry` was still a persistent local blackbox ring in the production route. It had sentinel registration, but mod projection state is a cross-boundary bridge surface and should not be a silent local heap when `GlobalDataVault` is available.
+
+Solution: Add `BufferID.ShinobuModProjectionCullTelemetryRing` and open the ring through `IDataVault.EnsureGenerationHandle<ModCullTelemetryEntry>()`. Release the handle with `IDataVault.ReleaseBuffer()` on shutdown. Keep a local sentinel fallback only for Vault-unavailable bootstrap/failure cases.
+
+Rejected Alternatives: Removing the blackbox was rejected because crash/debug telemetry is required. Keeping local production ownership was rejected because the domain already has a DataVault route and this bridge can be observed outside one local owner. Polling `GlobalRegistry` hot was rejected; the Vault reference is cached during install.
+
+Scalability potential: Low-tier devices keep one bounded shared native owner instead of another persistent local ring. Middle, high, and ultra tiers keep the same 300-frame blackbox fidelity without changing gameplay truth.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The fix removes ownership ambiguity and release risk, not a measured frame-time cost.
+
+## Decision 123 - Release TBDR DataVault Handles On Dispose
+
+Problem: TBDR runtime and vertex-budget buffers were opened through `VaultGenerationHandle` routes, but dispose only reset local `NativeArray` views or fallback arrays. That leaves the owner route unclear and can keep Vault generation handles alive longer than intended.
+
+Solution: Add explicit `ReleaseVaultBuffers()` in `TBDRPipelineSurgeonRuntime` and `TBDRVertexBudgetVault.Dispose(IDataVault)` for vertex budgets, tile warnings, transparent counters, telemetry ring, culling scratch, frustum planes, HZB mask, mock signals, and indirect draw args.
+
+Rejected Alternatives: Disposing Vault-owned `NativeArray` views locally was rejected because DataVault owns those allocations. Leaving reset-only behavior was rejected because one fact must have one owner and one release route.
+
+Scalability potential: Low-tier devices avoid leaked or stale native capacity across scene/runtime teardown. Middle, high, and ultra tiers can scale culling capacity without changing ownership semantics.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; lifetime correctness only. Static audit moved TBDR telemetry buffers from non-Vault warning to Vault alias info before final CLI rebuild.
+
+## Decision 124 - Treat NativeMemoryBridgeLifetime As Bounded Owner-Local Telemetry
+
+Problem: The audit still flagged `TBDRPipelineTelemetryRecorder.Ring` as registered non-Vault even though the source registers it through `NativeMemoryTrackingBridge` with session lifetime and local dump ownership.
+
+Solution: Extend `SignalBusContractAuditCli.IsOwnerLocalTelemetryRing()` so `NativeMemoryBridgeLifetime` is accepted alongside scene/session native allocation lifetimes.
+
+Rejected Alternatives: Moving the recorder ring to DataVault was rejected because it is a bounded owner-local dump recorder, not shared state authority. Suppressing all non-Vault telemetry warnings was rejected because true bridge/global rings still need review.
+
+Scalability potential: Low-tier devices avoid unnecessary global indirection for dump-only local telemetry. Higher tiers keep the same blackbox depth and cleaner evidence.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; scanner correctness only. Final rebuilt audit reports `LOCAL_NATIVE_TELEMETRY_RING_REGISTERED_NON_VAULT=0`.
+
+## Decision 125 - Do Not Rewrite Residual IO, SRP, Or Duplicate DTOs Without Owner Proof
+
+Problem: The fresh audit still reports `RUNTIME_SYNC_FILE_IO_REVIEW=65`, `SRP_BATCHER_HOT_PATH_MATERIAL_REVIEW=69`, and `DUPLICATE_SIGNAL_LIKE_NAME_REVIEW=8`. These counts include persistence, setup, dump/fault routes, graphics/UI surfaces, and cross-domain telemetry names.
+
+Solution: Inspect representative hits and fix only the proven core/memory ownership defects in this pass. Leave cross-domain SRP/material, file IO, and duplicate telemetry renames to owner passes with source/profiler proof.
+
+Rejected Alternatives: Bulk-renaming dirty atmosphere/ocean/thermal/structural DTOs was rejected as cross-domain churn. Rewriting cold file I/O was rejected because it could break persistence/dump semantics without a hot-path proof. Treating every material warning as a core defect was rejected because most hits are graphics/UI owned.
+
+Scalability potential: Low-tier devices benefit from real ownership fixes without destabilizing unrelated routes. Middle, high, and ultra tiers preserve visual systems until their owners can prove the correct MPB/material/data route.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; this is scope control and evidence quality, not measured optimization.
+
+## Decision 126 - Keep Late-Frame Tick Registration Stable During Dispatcher Iteration
+
+Problem: `ConnectionSplineBatchRenderer.LateFrameTick()` called `GlobalRegistry.UnregisterLateFrameTickable(...)` after it detected no renderable batch work. That mutates registry/dispatcher ownership from the dispatcher phase itself.
+
+Solution: Add a dormant registered state. When the last dirty removal has been flushed, the service stays registered but returns after a bounded five-batch work scan. Cold unregister remains in disable, shutdown, and dispatcher replacement routes.
+
+Rejected Alternatives: Calling a helper from `LateFrameTick()` was rejected because it only hides the same hot registry mutation. Fully unregistering on every empty refresh was rejected because the same mutation can be reached from runtime link churn without stronger phase proof.
+
+Scalability potential: Low-tier devices pay a tiny bounded idle scan after the renderer has been used. Middle, high, and ultra tiers keep identical visual output and avoid dispatcher list mutation during frame traversal.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. The expected benefit is stability and predictable dispatcher ownership, not measured frame time.
+
+## Decision 127 - Cache Mod API Input Service Outside Public Getter
+
+Problem: `HectonAPI.Input.GetButtonMask()` read `GlobalRegistry.Input` directly. Managed mods can call this getter every frame, so it is a hot registry polling surface in a public mod API accessor.
+
+Solution: Cache `IInputService` in `HectonAPI`. `ModLoader` binds the cache in cold bootstrap/game-ready phases, and `ModEventProjectionBridge` refreshes it from `IGlobalRegistryHotSwapListener`.
+
+Rejected Alternatives: Lazy lookup or listener registration inside `GetButtonMask()` was rejected because read accessors must not mutate global state or poll the registry. Changing the public API was rejected because mods already depend on the button-mask contract.
+
+Scalability potential: Low-tier devices avoid repeated registry reads from mod polling. Middle, high, and ultra tiers preserve mod input behavior while dependency ownership remains explicit.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. This is architecture compliance and stability work.
+
+## Decision 128 - Cache Legacy Mod Command Runtime Dependencies
+
+Problem: Legacy `ModCommandDispatcher` flow and acoustic command execution read `GlobalRegistry.AbyssalFlowGpu` and `GlobalRegistry.Audio` from command execution paths.
+
+Solution: Add cached `IAbyssalFlowGpuReadModel` and `IAudioService` fields. `ModLoader` cold-binds them, and `ModEventProjectionBridge` updates them from registry hot-swap events.
+
+Rejected Alternatives: Keeping registry reads was rejected because command execution is a runtime route. Removing legacy command handlers was rejected because the surface is quarantined but still compiled and returns controlled responses.
+
+Scalability potential: Low-tier devices avoid dependency polling when legacy mod commands are processed. Higher tiers keep the same flow/acoustic response semantics without adding global lookups.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. The fix removes a global-route stability risk.

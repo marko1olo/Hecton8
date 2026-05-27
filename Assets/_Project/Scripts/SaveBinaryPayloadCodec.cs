@@ -3779,7 +3779,7 @@ namespace Hecton8.SaveSystem
         private delegate bool WriteItemDelegate<T>(ref BufferWriter writer, in T value);
         private delegate bool ReadItemDelegate<T>(ref BufferReader reader, out T value);
 
-        private struct BufferWriter
+        private ref struct BufferWriter
         {
             private readonly byte* _buffer;
             private readonly int _capacity;
@@ -3971,7 +3971,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private struct BufferReader
+        private ref struct BufferReader
         {
             private readonly byte* _buffer;
             private readonly int _length;

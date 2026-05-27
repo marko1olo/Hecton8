@@ -2,6 +2,11 @@
 
 Evidence class: static source/tooling, final CLI build/audit verified.
 
+## Supersession Note
+
+Later same-day residual cleanup moved the current static SignalBus audit to `warnings=148`, `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT=0`, `ZERO_GC_HOT_PATH_ENUMERATION_REVIEW=0`, and `DUPLICATE_SIGNAL_LIKE_NAME_REVIEW=8`.
+See `UNITY_SIGNAL_RESIDUAL_CONTRACT_CLEANUP_UNKNOWN_20260527.md`.
+
 ## What Was Wrong
 
 - `SignalBusContractAuditCli` checked `ConfigureCacheLineCritical<T>()` payload size only against structs declared in the same file as the configure call.
@@ -50,6 +55,17 @@ The CPU guard later dropped to `42%` with no active compiler processes.
 The first `UnknownCheck` build attempt hit `CS2012` access denied on the existing `obj` output.
 The verified build used a separate `UnknownFinal` configuration and completed with `0` warnings and `0` errors.
 
+## Full Solution Build Boundary
+
+- First `Hecton8.slnx` build attempt hit sandbox/output access denial in root `obj`.
+- Escalated `Hecton8.slnx` build reached C# compile and failed:
+  - Log: `Docs/Reports/BUILD_UNKNOWN_SIGNAL_LAYOUT_ALIAS_FULL_SOLUTION_ESCALATED_20260527.log`
+  - Summary: `3141 Warning(s)`, `365 Error(s)`.
+  - Touched-file hits: `0` for `SignalBusContractAuditCli`, `FaunaDirector.cs`, and `VocalWarningSystem.cs`.
+  - Error buckets: `Hecton8.Core.csproj=133`, `MeshBakerCore.csproj=70`, `Assembly-CSharp-Editor.csproj=69`, `MapMagic.csproj=21`, `AstarPathfindingProject.csproj=21`, `BakeryEditorAssembly.csproj=14`, `Hecton8.Bootstrap.Contracts.csproj=12`, `Unity.ShaderGraph.Editor.csproj=10`.
+- This is not a green integration build.
+  It is also not evidence that the SignalBus classifier or the two DTO layout edits failed compilation.
+
 ## Residual Real Debt
 
 - `TetherTensionSignal` remains the only verified cache-line-critical stride debt from the final audited build.
@@ -60,3 +76,8 @@ The verified build used a separate `UnknownFinal` configuration and completed wi
 - Non-target warning debt in the final audit remains real review work: `SRP_BATCHER_HOT_PATH_MATERIAL_REVIEW=69`, `RUNTIME_SYNC_FILE_IO_REVIEW=65`, `DUPLICATE_SIGNAL_LIKE_NAME_REVIEW=14`, `ZERO_GC_HOT_PATH_ENUMERATION_REVIEW=1`.
 
 Runtime microseconds saved: `0` claimed. This pass removed false work and locked layout contracts; no profiler/player run was performed.
+
+## Documentation Gates
+
+- `Tools/VerifyDocStructure.py`: `pass=true`, `activeDocCount=692`, `encodingWithoutUtf8Sig=0`.
+- `Tools/OOP_Doc_Scanner.py`: `finalPass=true`, `activeFileCount=692`, `sourceSyncPass=true`, `wordReductionPercent=31.353138780085825`.

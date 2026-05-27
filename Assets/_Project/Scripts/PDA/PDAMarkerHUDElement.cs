@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;

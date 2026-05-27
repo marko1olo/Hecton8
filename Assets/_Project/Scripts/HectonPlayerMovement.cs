@@ -2844,7 +2844,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _playerKinematicsNativeState.WriteKinematicSnapshot(position3, velocity3, intendedMovement);
+            _playerKinematicsNativeState.WriteKinematicSnapshot(_dataVault, position3, velocity3, intendedMovement);
         }
 
         private Vector3 ResolvePlayerKinematicsBurstDragVelocity(
@@ -2859,13 +2859,16 @@ namespace Hecton8.Gameplay
 
             EnsurePlayerKinematicsNativeState();
             WritePlayerKinematicsSnapshot(ResolveBodyRuntimePosition(), velocity, intendedMovement);
-            if (!_playerKinematicsNativeState.DragSolvedVelocities.IsCreated)
+            if (!_playerKinematicsNativeState.TryResolveDragArrays(
+                    _dataVault,
+                    out NativeArray<float3> kinematicVelocities,
+                    out NativeArray<float3> dragSolvedVelocities))
                 return velocity;
 
             PlayerKinematicsLinearDragJob dragJob = new PlayerKinematicsLinearDragJob
             {
-                Velocities = _playerKinematicsNativeState.Velocities,
-                SolvedVelocities = _playerKinematicsNativeState.DragSolvedVelocities,
+                Velocities = kinematicVelocities,
+                SolvedVelocities = dragSolvedVelocities,
                 DragCoefficient = dragCoefficient,
                 WaterDensityScale = waterDensityScale,
                 DeltaTime = fixedDeltaTime
@@ -2873,7 +2876,7 @@ namespace Hecton8.Gameplay
             // HOT SCALAR CONTROL KERNEL: same-frame player velocity is consumed immediately; Execute removes the synchronous job runner without a fake schedule fence.
             dragJob.Execute();
 
-            float3 solvedVelocity = _playerKinematicsNativeState.DragSolvedVelocities[0];
+            float3 solvedVelocity = dragSolvedVelocities[0];
             if (!math.all(math.isfinite(solvedVelocity)))
             {
                 DumpPlayerKinematicsBlackBox(_playerKinematicsNaNHash);
@@ -3311,7 +3314,10 @@ namespace Hecton8.Gameplay
 
         private void DumpPlayerKinematicsBlackBox(uint anomalyHash)
         {
-            if (_playerKinematicsTelemetryDumpedThisFault || !_playerKinematicsNativeState.TelemetryRing.IsCreated)
+            if (_playerKinematicsTelemetryDumpedThisFault ||
+                !_playerKinematicsNativeState.TryResolveTelemetryRing(
+                    _dataVault,
+                    out NativeArray<PlayerKinematicsTelemetryEntry> telemetryRing))
                 return;
 
             _playerKinematicsTelemetryDumpedThisFault = true;
@@ -3335,9 +3341,9 @@ namespace Hecton8.Gameplay
             {
                 writer.Write(_playerKinematicsNativeState.TelemetryFrameSequence);
                 writer.Write(_playerKinematicsNativeState.TelemetryWriteIndex);
-                for (int i = 0; i < _playerKinematicsNativeState.TelemetryRing.Length; i++)
+                for (int i = 0; i < telemetryRing.Length; i++)
                 {
-                    PlayerKinematicsTelemetryEntry entry = _playerKinematicsNativeState.TelemetryRing[i];
+                    PlayerKinematicsTelemetryEntry entry = telemetryRing[i];
                     writer.Write(entry.Position.x);
                     writer.Write(entry.Position.y);
                     writer.Write(entry.Position.z);
@@ -4856,7 +4862,7 @@ namespace Hecton8.Gameplay
             _fallbackWaterSurfaceY -= shiftOffset.y;
             _dynamicWaterSurfaceY -= shiftOffset.y;
             float3 shiftOffset3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
-            _playerKinematicsNativeState.ApplyOriginShift(shiftOffset3);
+            _playerKinematicsNativeState.ApplyOriginShift(_dataVault, shiftOffset3);
 
             if (_abyssalThermalFlowSample.IsCableZone != 0)
                 _abyssalThermalFlowSample.CableAnchorWS -= shiftOffset;
@@ -9118,6 +9124,7 @@ namespace Hecton8.Gameplay
             bodyRuntimePosition = ResolveBodyRuntimePosition();
             WritePlayerKinematicsSnapshot(bodyRuntimePosition, safeVelocity, _lastPlayerKinematicsIntendedMovement);
             _playerKinematicsNativeState.WriteTelemetry(
+                _dataVault,
                 _lastPlayerKinematicsDragCoefficient,
                 _lastPlayerKinematicsWaterDensityScale,
                 ResolvePlayerKinematicsTelemetryFlags());

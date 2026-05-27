@@ -939,7 +939,7 @@ namespace Hecton8.World
                 out quantizedHeightmap);
         }
 
-        private static bool TryResolveHybridTerrainScratchBuffers(
+        private bool TryResolveHybridTerrainScratchBuffers(
             int hybridPlanCount,
             int sampleCount,
             bool needsNormals,
@@ -1003,7 +1003,7 @@ namespace Hecton8.World
                    (!needsNormals || (normals.IsCreated && normals.Length >= sampleCount));
         }
 
-        private static bool TryResolveBaselineHeights(TerrainApplyState state, out NativeArray<float> baselineHeights)
+        private bool TryResolveBaselineHeights(TerrainApplyState state, out NativeArray<float> baselineHeights)
         {
             baselineHeights = default;
             if (state == null ||
@@ -1873,7 +1873,7 @@ namespace Hecton8.World
             return state.patchBuffer;
         }
 
-        private static void RefreshTerrainBaseline(
+        private void RefreshTerrainBaseline(
             TerrainApplyState state,
             UnityEngine.Terrain terrain,
             UnityEngine.TerrainData terrainData,

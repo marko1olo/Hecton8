@@ -1239,3 +1239,96 @@ Final closure:
 - `BUILD_UNKNOWN_SIGNAL_CLI_LAYOUT_ALIAS_FINAL2_20260527.log`: `UnknownFinal` build succeeded with `0` warnings and `0` errors.
 - `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_FINAL.json`: `errors=0`, `confirmedErrors=0`, `warnings=155`, `infos=1171`.
 - Important movement: `warnings 245 -> 155`, `LOCAL_NATIVE_TELEMETRY_RING_DECLARED_ONLY 1 -> 0`, `SIGNAL_LAYOUT_REVIEW 0`, `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT 1`.
+
+Build and docs closure:
+- `VerifyDocStructure.py`: `pass=true`, `activeDocCount=692`, `encodingWithoutUtf8Sig=0`.
+- `OOP_Doc_Scanner.py`: `finalPass=true`, `activeFileCount=692`, `sourceSyncPass=true`, `wordReductionPercent=31.353138780085825`.
+- `BUILD_UNKNOWN_SIGNAL_LAYOUT_ALIAS_FULL_SOLUTION_20260527.log`: first full build failed before C# compile on root `obj` access denied.
+- `BUILD_UNKNOWN_SIGNAL_LAYOUT_ALIAS_FULL_SOLUTION_ESCALATED_20260527.log`: escalated full build failed with `3141` warnings and `365` errors.
+- Touched-file build hits: `0` for `SignalBusContractAuditCli`, `FaunaDirector.cs`, and `VocalWarningSystem.cs`.
+- Top error buckets: `Hecton8.Core.csproj=133`, `MeshBakerCore.csproj=70`, `Assembly-CSharp-Editor.csproj=69`, `MapMagic.csproj=21`, `AstarPathfindingProject.csproj=21`.
+
+## 2026-05-27 - Signal Residual Contract Cleanup
+
+What was wrong:
+- `PersistentWorldRegistry.RunSectorOverrideCommitAsync()` still allocated via `List<T>.ToArray()`.
+- `TetherTensionSignal` was incorrectly configured as cache-line-critical while its payload is 192 bytes.
+- Clean local mock carriers duplicated signal-like names across sandbox/UI/TBDR and unrelated contracts.
+
+What was done:
+- Replaced the sector override commit list snapshot with a fixed `SectorOverrideCommitWork[16]` buffer.
+- Changed `TetherTensionSignal` to normal `SignalBus<T>.Configure(...)` with preserved capacity.
+- Renamed local carriers: `SandboxMockAcousticSignal`, `GlitchMockDepthSignal`, `TBDRMockQualityWeightSignal`.
+
+Cinematic cheats used:
+- None. This was SignalBus/DTO contract cleanup, not simulation.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof has run.
+
+Proof:
+- Final static audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TBDR_UI_SANDBOX_TETHER_SECTOR_RECHECK.json`.
+- Audit result: `errors=0`, `confirmedErrors=0`, `warnings=148`, `infos=1169`.
+- Closed counts: `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT=0`, `ZERO_GC_HOT_PATH_ENUMERATION_REVIEW=0`.
+- Duplicate signal-like warnings reduced: `14 -> 8`.
+- Full project compile errors were not fixed or chased by explicit user instruction.
+- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=693 encodingWithoutUtf8Sig=0`; `OOP_Doc_Scanner.py finalPass=true activeFileCount=693 sourceSyncPass=true wordReductionPercent=31.34291167072261`.
+
+## 2026-05-27 - Core Memory Signal Domain Deep Pass
+
+What was wrong:
+- `ModEventProjectionBridge._cullTelemetry` was still a local persistent telemetry ring in the production route.
+- TBDR runtime and vertex-budget DataVault buffers opened generation handles but did not release them on dispose.
+- `SignalBusContractAuditCli` did not recognize `NativeMemoryBridgeLifetime` as a bounded owner-local telemetry lifetime.
+
+What was done:
+- Added `BufferID.ShinobuModProjectionCullTelemetryRing = 70921`.
+- Moved mod projection cull telemetry to `GlobalDataVault` generation handle ownership, with sentinel local fallback only when the Vault is unavailable.
+- Added explicit `ReleaseBuffer` paths for TBDR runtime and vertex-budget Vault handles.
+- Patched the SignalBus audit classifier for `NativeMemoryBridgeLifetime`.
+
+Cinematic cheats used:
+- None. This was ownership/lifetime/tooling work, not simulation.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof has run.
+
+Proof:
+- Before audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_DEEP_DOMAIN_RECHECK.json`, `errors=0`, `confirmedErrors=0`, `warnings=148`, `infos=1169`.
+- After source changes with existing audit binary: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_DEEP_DOMAIN_RECHECK_PREBUILD.json`, `errors=0`, `confirmedErrors=0`, `warnings=146`, `infos=1171`.
+- `LOCAL_NATIVE_TELEMETRY_RING_REGISTERED_NON_VAULT` moved `3 -> 1`; `LOCAL_NATIVE_TELEMETRY_RING_VAULT_ALIAS` moved `3 -> 5`.
+- Final CLI build: `BUILD_UNKNOWN_SIGNAL_CLI_DEEP_DOMAIN_RECHECK_20260527.log`, `0` warnings, `0` errors.
+- Final audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_DEEP_DOMAIN_RECHECK_FINAL.json`, `errors=0`, `confirmedErrors=0`, `warnings=145`, `infos=1172`.
+- Final ownership movement: `LOCAL_NATIVE_TELEMETRY_RING_REGISTERED_NON_VAULT 3 -> 0`, `LOCAL_NATIVE_TELEMETRY_RING_VAULT_ALIAS 3 -> 5`, `LOCAL_NATIVE_TELEMETRY_RING_OWNER_LOCAL 7 -> 8`.
+- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=694 encodingWithoutUtf8Sig=0`; `OOP_Doc_Scanner.py finalPass=true activeFileCount=694 sourceSyncPass=true wordReductionPercent=31.331236932292995`.
+- Full project compile errors were intentionally not fixed by user instruction.
+
+## 2026-05-27 - Global Route Stability Pass
+
+What was wrong:
+- `ConnectionSplineBatchRenderer.LateFrameTick()` unregistered from `GlobalRegistry` inside the dispatcher late-frame route.
+- `HectonAPI.Input.GetButtonMask()` directly read `GlobalRegistry.Input` from a public mod getter.
+- Legacy `ModCommandDispatcher` flow/acoustic execution directly read `GlobalRegistry.AbyssalFlowGpu` and `GlobalRegistry.Audio`.
+
+What was done:
+- Replaced late-frame self-unregister with a dormant registered state.
+- Added cold/hot-swap cache for `HectonAPI` input service.
+- Added cold/hot-swap cache for legacy mod command flow/audio dependencies.
+
+Cinematic cheats used:
+- None. This was global-route stability work, not simulation.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof has run.
+
+Proof:
+- Scoped hot scanner now reports only two intentional residuals:
+  `SignalBusRuntime.FlushPostSimulation` fault kill-switch and
+  `SignalCorridorRuntime.FlushPostSimulation` legacy bridge.
+- Full static audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_GLOBAL_ROUTE_RECHECK.json`.
+- Audit result: `scannedFiles=2442`, `shaderFilesScanned=71`, `errors=0`,
+  `confirmedErrors=0`, `warnings=145`, `infos=1172`.
+- `git diff --check` on touched files passed with line-ending warnings only.
+- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=695 encodingWithoutUtf8Sig=0`;
+  `OOP_Doc_Scanner.py finalPass=true activeFileCount=695 sourceSyncPass=true`.
+- Full project compile errors were intentionally not fixed by user instruction.

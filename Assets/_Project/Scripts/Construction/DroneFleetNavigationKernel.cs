@@ -1317,7 +1317,7 @@ namespace Hecton8.Construction
         public int NodeIndex;
     }
 
-    internal struct DroneNativeMinHeap
+    internal ref struct DroneNativeMinHeap
     {
         public NativeArray<DroneNativeMinHeapNode> Nodes;
         public int BaseOffset;
@@ -1413,7 +1413,7 @@ namespace Hecton8.Construction
         }
     }
 
-    internal struct DroneTaskNativeMinHeap
+    internal ref struct DroneTaskNativeMinHeap
     {
         public NativeArray<DroneAssignmentTaskDTO> Nodes;
         public int Count;

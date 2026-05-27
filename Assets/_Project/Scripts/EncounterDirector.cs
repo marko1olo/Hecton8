@@ -632,6 +632,9 @@ namespace Hecton8.Systems.AI
             DisposeNativeArray(ref _predatorAupUpload, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _blackBox, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _blackBoxHead, ref disposeHandle, ref hasDependency);
+            if (hasDependency)
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+
             ReleasePredatorAupBuffer();
         }
 

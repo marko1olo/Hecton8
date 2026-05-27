@@ -36,6 +36,7 @@ namespace Hecton8.Modding
         private bool _bootstrapListenerRegistered;
         private bool _hotSwapRegistered;
         private ISaveService _saveService;
+        private IObjectPoolService _objectPoolService;
 
         /// <summary>
         /// Save order for mod world payloads.
@@ -144,6 +145,7 @@ namespace Hecton8.Modding
             _recordIndexByHash.Clear();
             _liveEntitiesByHash.Clear();
             _restorePending = false;
+            _objectPoolService = null;
             if (_serviceRegistered)
             {
                 if (ReferenceEquals(GlobalRegistry.ModWorldPersistence, this))
@@ -160,6 +162,12 @@ namespace Hecton8.Modding
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
+            {
+                _objectPoolService = currentService as IObjectPoolService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Save)
                 return;
 
@@ -190,7 +198,7 @@ namespace Hecton8.Modding
                 return null;
             }
 
-            IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
+            IObjectPoolService pool = _objectPoolService;
             if (pool == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -248,7 +256,7 @@ namespace Hecton8.Modding
             RemoveRecord(marker.SpawnId);
             _liveEntitiesByHash.Remove(marker.SpawnHash);
 
-            IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
+            IObjectPoolService pool = _objectPoolService;
             if (pool != null)
                 pool.Despawn(instance);
             else
@@ -382,7 +390,7 @@ namespace Hecton8.Modding
                     continue;
                 }
 
-                IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
+                IObjectPoolService pool = _objectPoolService;
                 if (pool == null)
                     continue;
 
@@ -565,6 +573,7 @@ namespace Hecton8.Modding
         private void RefreshColdRegistryDependencies()
         {
             _saveService = GlobalRegistry.Save;
+            _objectPoolService = GlobalRegistry.ObjectPoolService;
         }
 
         private void TryRegisterHotSwapListener()

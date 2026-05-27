@@ -364,9 +364,10 @@ namespace Hecton8.UI
             for (int i = 0; i < safeCount; i++)
             {
                 SpatialAudioImpactEmitterSample sample = _impactEmitterSamples[i];
-                float3 listenerRelativePosition = AupPrecisionMath.LocalDeltaFloat3(
+                float3 listenerRelativePosition = AupPrecisionMath.LocalDeltaFloat3Clamped(
                     sample.PositionAup.ToAbsoluteDouble3(),
                     listenerAup.ToAbsoluteDouble3(),
+                    AupPrecisionMath.DefaultMaxLocalCastMeters,
                     float3.zero);
                 _projectionInputs[i] = new AcousticRadarBlipInput
                 {

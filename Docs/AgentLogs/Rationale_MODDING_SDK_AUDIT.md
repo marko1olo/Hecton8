@@ -530,3 +530,51 @@ Rejected Alternatives: Keeping the key-hash fallback was rejected because it let
 Scalability potential: Low tier uses the same cold save data with no frame work and deterministic owner proof. Middle tier can keep internal mod-world persistence without synthetic mod ids. High tier can add richer engine save payloads under the same `hecton.internal.` route. Ultra tier can add overkill diagnostics or migration tooling without changing mod save identity or public DTO shape.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Added cost is cold-path branch/string prefix validation during save/load only. No SignalBus lane, NativeQueue, Burst job, DataVault hot path, packet layout, or frame cadence changed.
+
+## Decision 45 - Mod manifests need a pre-read byte cap
+
+Problem: `ModLoader.TryReadManifest` called `File.ReadAllText(manifestPath)` before any file-size validation. `mod.json` is cold package ingress, but it is still untrusted filesystem input. A malicious oversized manifest could allocate a large managed string before canonical id, dependency, EntryAssembly, API version, or reserved assembly validation ran.
+
+Solution: Add `MaxManifestBytes = 32768` and `TryValidateManifestFileSize`. The loader now rejects missing, empty, or oversized `mod.json` before JSON read/parse. Schema revision 58 records `manifestMaxBytes` and `manifestByteCapEnforcedBeforeRead`; the static validator proves source order, schema snapshot, loader/save audit, spec, and runtime playbook evidence.
+
+Rejected Alternatives: Validating after JSON parse was rejected because it preserves the allocation spike. Relying on `ModBuilderWindow` was rejected because runtime package discovery reads arbitrary directories, not only packages made by the current SDK UI. Raising the cap to a large arbitrary value was rejected because the active manifest has 9 small fields and richer authored data belongs in separate bounded binary/manifest artifacts.
+
+Scalability potential: Low tier avoids cold-load memory spikes from hostile manifests. Middle tier gets deterministic package rejection before any asset or DLL path scan. High tier and Ultra tier can still use richer SDK/workbench metadata by placing it in separate bounded artifacts with explicit validators, not by growing the runtime `mod.json` read.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Added cost is one cold `FileInfo` allocation and two length branches per discovered manifest. Removed risk is a large managed string allocation during mod discovery.
+
+## Decision 46 - Static validator must distinguish SDK forbidden facades from root cold infrastructure
+
+Problem: Concurrent source drift changed `MockModQueue` to `internal ref struct`, renamed `MockAcousticSignal` to `SandboxMockAcousticSignal`, and added root `HectonAPI` cold registry cache hooks. The source still preserved the SDK boundary, but `Validate_Mod_API_Static.ps1` treated the old `partial struct : IDisposable` shape and every root `internal static` method as part of the internal-forbidden public facade count.
+
+Solution: Keep the source changes intact and tighten the validator around the actual contract. `MockModQueue` passes if the queue handle and control methods remain non-public, whether disposal is explicit `IDisposable.Dispose` or internal pattern `Dispose`. FutureCommand output signal checks now track `SandboxMockAcousticSignal`. Root cold registry cache hooks are excluded from the internal-forbidden facade method count because they are first-party infrastructure on the containing `HectonAPI` class, not public nested facade methods.
+
+Rejected Alternatives: Reverting the concurrent source change was rejected because it would interfere with another agent and was not required for the SDK boundary. Inflating `API_Surface_Audit_Matrix.md` with `BindRegistryServicesCold`, `ResetRegistryCacheCold`, and `OnGlobalRegistryServiceReplaced` was rejected because those are not mod-facing forbidden facade methods. Dropping `MockModQueue` proof was rejected because the native queue handle must remain non-public.
+
+Scalability potential: Low tier keeps `HectonAPI.Input` away from hot `GlobalRegistry` polling while preserving the mod facade inventory. Middle tier can hot-swap the input service through cold cache hooks. High and Ultra tiers can add richer registry hot-swap infrastructure without turning root first-party methods into SDK promises.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 from this validator-only patch is 0 us/frame measured/claimed. It preserves proof accuracy for another source change that reduces facade service lookup risk; no new runtime work is introduced by the validator update.
+
+## Decision 47 - Manifest discovery must be bounded before candidate allocation
+
+Problem: `ModLoader.DiscoverAndLoadMods` used recursive `Directory.GetFiles(modsRoot, ManifestFileName, SearchOption.AllDirectories)`. The loader now capped manifest bytes before JSON read, but a hostile or broken Mods tree could still allocate an unbounded `string[]` of manifest paths and then size the candidate list from that array before per-manifest validation.
+
+Solution: Add `MaxDiscoveredManifestCount = 64`, collect manifests with lazy `Directory.EnumerateFiles`, stop when the cap is reached, and allocate `List<ModCandidate>` from the bounded path count. Schema revision 59 and `Validate_Mod_API_Static.ps1` now prove the lazy enumeration route, the cap value, the removal of recursive `Directory.GetFiles` for discovery, and the ordering before candidate allocation.
+
+Rejected Alternatives: A post-allocation cap was rejected because it still allocates the full path array. SDK-only package count limits were rejected because runtime discovery reads arbitrary directories, not only SDK-built packages. Unlimited discovery was rejected even though it is cold-path because untrusted filesystem ingress must be bounded before managed allocations scale with attacker-controlled file count.
+
+Scalability potential: Low tier avoids cold-load memory spikes and long package scans from polluted Mods folders. Middle tier keeps predictable diagnostics with a fixed package ceiling. High tier can layer curated workbench/package catalogs over the same loader contract. Ultra tier can add richer SDK discovery UI and package previews without making runtime recursive crawl unbounded.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Cold-path impact is bounded allocation: worst-case manifest path collection is capped at 64 strings plus one bounded list, instead of a full recursive path array sized by filesystem contents.
+
+## Decision 48 - Top-level package file discovery must be bounded and fail closed
+
+Problem: After recursive manifest discovery was capped, `ModLoader` still used `Directory.GetFiles` for top-level managed DLL identity scan, legacy AssetBundle fallback, and legacy localization fallback. Those arrays were cold-path but still untrusted filesystem ingress. Worse, managed DLL identity discovery could fail or exceed a reasonable package envelope without disabling the package, leaving an ambiguous partial-trust state.
+
+Solution: Add `CollectTopLevelFiles` with lazy top-level `Directory.EnumerateFiles`, deterministic sort after bounded collection, and explicit caps: `32` managed assemblies, `4` bundles, `16` localization files. Managed assembly cap overflow or discovery failure now sets the manifest contract error and disables the package before load. Schema revision 60 and `Validate_Mod_API_Static.ps1` prove the source caps, removal of old `Directory.GetFiles` calls, docs, runtime playbook, and last validation snapshot.
+
+Rejected Alternatives: Capping after `Directory.GetFiles` was rejected because it still allocates the attacker-sized path array. Silently skipping managed assembly identity scan on discovery failure was rejected because reserved/friend-assembly spoofing must fail closed. Removing bundle/localization fallback entirely in this pass was rejected because envelope-only quarantine already disables runtime ingestion, and the narrow defect was unbounded cold discovery in existing source.
+
+Scalability potential: Low tier avoids cold-load allocation spikes from polluted package folders. Middle tier gets predictable package rejection and bounded diagnostics. High tier can use curated SDK catalogs and richer package previews over the same caps. Ultra tier can add visual-overkill workbench analysis without making runtime package discovery unbounded or partially trusted.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Added work is cold bounded list allocation and sort for at most 32 DLL paths, 4 bundle paths, or 16 localization paths. Removed risk is unbounded top-level path-array allocation and ambiguous package trust after failed DLL identity discovery.

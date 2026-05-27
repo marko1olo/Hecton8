@@ -1137,6 +1137,7 @@ namespace Hecton8.World
             _freeHandleTail = 0;
             _freeHandleCount = 0;
             JobHandle.ScheduleBatchedJobs();
+            DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
         }
 
         private JobHandle CancelPendingJobsForTeardown()

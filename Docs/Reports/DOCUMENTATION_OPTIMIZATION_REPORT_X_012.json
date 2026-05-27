@@ -1,13 +1,13 @@
 ﻿{
   "schema": "hecton8.documentation_actuality_scan.x012.v1",
-  "generatedUtc": "2026-05-27T17:13:55.205568+00:00",
+  "generatedUtc": "2026-05-27T18:59:55.945108+00:00",
   "repoRoot": "C:\\hades\\Hecton8",
   "scope": "repository root approved text anchors plus Docs/**/*.md/txt",
   "checks": {
-    "activeFileCount": 692,
-    "activeWordCount": 1437688,
-    "inventoryFileCount": 5334,
-    "inventoryWordCount": 36908591,
+    "activeFileCount": 695,
+    "activeWordCount": 1439392,
+    "inventoryFileCount": 5344,
+    "inventoryWordCount": 36938270,
     "rootTextDocs": [
       "AGENTS.md",
       "BUILD_PLAYTEST_ISSUES.md",
@@ -33,11 +33,11 @@
     "sourceSyncPass": true,
     "wordReduction": {
       "method": "current active words plus X_012 archived report/root words minus concise replacement anchor words",
-      "activeWordCountAfter": 1437688,
-      "reconstructedActiveWordCountBefore": 2094414,
-      "retiredActiveWords": 656726,
-      "reductionRatio": 0.3135607382303594,
-      "reductionPercent": 31.356073823035942,
+      "activeWordCountAfter": 1439392,
+      "reconstructedActiveWordCountBefore": 2095881,
+      "retiredActiveWords": 656489,
+      "reductionRatio": 0.31322818423374227,
+      "reductionPercent": 31.322818423374226,
       "reductionPass": true,
       "archivedRootFiles": 2,
       "archivedReportFiles": 160,
@@ -45,13 +45,13 @@
       "archivedArchitectureDiffFiles": 2,
       "currentRootAnchorWords": 582,
       "currentBinaryPayloadLedgerWords": 154,
-      "currentActualityLedgerWords": 1508,
-      "currentArchitectureReplacementWords": 1662,
-      "architectureRetiredWords": 117359
+      "currentActualityLedgerWords": 1745,
+      "currentArchitectureReplacementWords": 1899,
+      "architectureRetiredWords": 117122
     },
     "architecture": {
       "activeArchitectureFileCount": 182,
-      "activeArchitectureWordCount": 156063,
+      "activeArchitectureWordCount": 156294,
       "markerHits": {
         "staleDocBoundaryRefreshMarkers": 0,
         "staleBoundary51Boilerplate": 0,
@@ -61,33 +61,8 @@
       "longNarrativeParagraphsOver180Words": [],
       "longNarrativeParagraphCount": 0,
       "strictUnstructuredParagraphThresholdWords": 27,
-      "strictUnstructuredParagraphsOverThreshold": [
-        {
-          "path": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
-          "paragraph": 25,
-          "wordCount": 28,
-          "preview": "`BiomeMatrixDirector.EvaluateMatrix` must not repair player references while playing. Player transform and movement rebinding belongs to cold setup or the `Glob"
-        },
-        {
-          "path": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
-          "paragraph": 103,
-          "wordCount": 30,
-          "preview": "`RefreshColdRuntimeDependencies` may run during cold lifecycle and deferred startup bootstrap. `SlowTick` and `IMapMagicTerrainTileEventListener` callbacks must"
-        },
-        {
-          "path": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
-          "paragraph": 110,
-          "wordCount": 30,
-          "preview": "`SlowTick`, thermal-diamond voxel-face placement, and meteor-impact crater application must consume cached player, MapMagic, vegetation, and voxel references. R"
-        },
-        {
-          "path": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
-          "paragraph": 125,
-          "wordCount": 28,
-          "preview": "Owner phases schedule Burst jobs and store short-lived job state. Dispatcher swap windows only publish completed DataVault snapshots after `JobHandle.IsComplete"
-        }
-      ],
-      "strictUnstructuredParagraphCount": 4,
+      "strictUnstructuredParagraphsOverThreshold": [],
+      "strictUnstructuredParagraphCount": 0,
       "strictUnstructuredSentenceThresholdWords": 27,
       "strictUnstructuredSentencesOverThreshold": [],
       "strictUnstructuredSentenceCount": 0,
@@ -101,9 +76,9 @@
       "strictNonContractTextFileCount": 0,
       "tutorialMarkerHits": [],
       "tutorialMarkerHitCount": 0,
-      "pass": false
+      "pass": true
     },
     "activeParameterSyncPass": true,
-    "finalPass": false
+    "finalPass": true
   }
 }

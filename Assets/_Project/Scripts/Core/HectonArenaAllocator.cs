@@ -829,7 +829,7 @@ namespace Hecton8.Core
         /// Raw cache-line-aligned arena slice. Frame lifetime only.
         /// </summary>
         [StructLayout(LayoutKind.Explicit, Size = 32)]
-        public readonly struct NativeArenaSlice<T> where T : unmanaged
+        public readonly ref struct NativeArenaSlice<T> where T : unmanaged
         {
             [FieldOffset(0)]
             internal readonly void* Ptr;

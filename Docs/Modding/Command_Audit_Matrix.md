@@ -35,7 +35,7 @@ Current static future-envelope allowlist:
 | `0xF7023ACD` | `AssetReference` | `ModAssetReferenceSignal` after CRC/size gate | static source only, runtime proof pending |
 | `0xBBFBD0A6` | `ModMemoryRead` | lease/range validation then DevNull | unsupported simulation only |
 | `0xE9C540EF` | `ModMemoryWrite` | sandbox-owned byte scratch write after lease/range gate | static source only, no gameplay authority |
-| `0xCC5BAC8D` | `FaunaAcousticStimulus` | `MockAcousticSignal` | static source only, runtime proof pending |
+| `0xCC5BAC8D` | `FaunaAcousticStimulus` | `SandboxMockAcousticSignal` | static source only, runtime proof pending |
 | `0x1B7770D3` | `FaunaDamageStimulus` | `MockDamageSignal` | static source only, runtime proof pending |
 
 reserved subtitle alias note: `TriggerSubtitleCue` is a subtitle/localization alias for `SubtitleCue`. It must stay out of `allowed_opcodes.csv`, `GenerateEmergencyMockOpcodes()`, and the editor runtime opcode tuner until the localization owner provides token proof, zero-GC subtitle path proof, quota telemetry, rejection behavior, unload behavior, and runtime playbook evidence.

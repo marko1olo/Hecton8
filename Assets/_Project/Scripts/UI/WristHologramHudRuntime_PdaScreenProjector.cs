@@ -1668,11 +1668,6 @@ namespace Hecton8.UI
         }
 #endif
 
-        private static float TriangleWaveSigned(float phase)
-        {
-            return math.abs(math.frac(phase) * 2f - 1f) * 2f - 1f;
-        }
-
         private static void CompilePdaProjectionMatrices(
             NativeArray<PdaProjectionInputDTO> inputs,
             NativeArray<PdaStateDTO> states,
@@ -1688,9 +1683,10 @@ namespace Hecton8.UI
             quaternion rotation = NormalizePdaProjectionQuaternion(input.WristRotation, out uint rotationFlags);
             flags |= rotationFlags;
 
-            float3 localDelta = AupPrecisionMath.LocalDeltaFloat3(
+            float3 localDelta = AupPrecisionMath.LocalDeltaFloat3Clamped(
                 input.WristAup,
                 input.CameraAup,
+                AupPrecisionMath.DefaultMaxLocalCastMeters,
                 MakeFloat3(0f, -0.08f, 0.54f));
             if (!math.all(math.isfinite(localDelta)))
             {

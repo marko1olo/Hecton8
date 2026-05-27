@@ -5403,7 +5403,9 @@ namespace Hecton8.AI
 
         private static void WritePoolSlotPosition(ref PoolSlotData slotData, in AbsoluteUniversePosition position)
         {
-            slotData.AupCell = new int3((int)position.GridX, (int)position.GridY, (int)position.GridZ);
+            slotData.GridX = position.GridX;
+            slotData.GridY = position.GridY;
+            slotData.GridZ = position.GridZ;
             slotData.LocalOffset = new float3(position.LocalX, position.LocalY, position.LocalZ);
         }
 
@@ -5411,9 +5413,9 @@ namespace Hecton8.AI
         {
             return new AbsoluteUniversePosition
             {
-                GridX = slotData.AupCell.x,
-                GridY = slotData.AupCell.y,
-                GridZ = slotData.AupCell.z,
+                GridX = slotData.GridX,
+                GridY = slotData.GridY,
+                GridZ = slotData.GridZ,
                 LocalX = slotData.LocalOffset.x,
                 LocalY = slotData.LocalOffset.y,
                 LocalZ = slotData.LocalOffset.z

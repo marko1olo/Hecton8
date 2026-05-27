@@ -236,6 +236,14 @@ AGENT_1333_GPU_WRITTEN_BUFFER_FIELDS = {
         "_particleBufferA",
         "_particleBufferB",
     },
+    "Assets/_Project/Scripts/Construction/DroneFleetManager.cs": {
+        "s_DroneVisibleMatrixBuffer",
+        "s_DroneVisibleInstanceBuffer",
+        "s_DroneVisibleIndexBuffer",
+        "s_DroneProceduralArgsBuffer",
+        "s_PhantomDroneMatrixBuffer",
+        "s_PhantomDroneColorBuffer",
+    },
 }
 AGENT_1333_PAYLOAD_OWNER_QUERY_CONTRACTS = {
     "Assets/_Project/Scripts/HectonFluidEngine.cs": (
@@ -460,6 +468,7 @@ AGENT_1333_HIGH_RESOURCE_COMPUTE_API_GUARD_CONTRACTS = {
     ),
     "Assets/_Project/Scripts/Construction/DroneFleetManager.cs": (
         "HardwareTierDetector.AllowHighResourceComputeShaders",
+        "s_PhantomDronesCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders",
     ),
     "Assets/_Project/Scripts/HectonBoidController.cs": (
         "HardwareTierDetector.AllowHighResourceComputeShaders",

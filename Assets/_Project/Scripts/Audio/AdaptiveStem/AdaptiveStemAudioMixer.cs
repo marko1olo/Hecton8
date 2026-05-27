@@ -964,7 +964,7 @@ namespace Hecton8.Audio
 
         private void RefreshGlobalQualitySnapshotCold()
         {
-            if (!TryResolveScalabilityState(out NativeArray<ScalabilityStateDTO> scalabilityState) ||
+            if (!TryResolveScalabilityState(out NativeArray<ScalabilityStateDTO>.ReadOnly scalabilityState) ||
                 scalabilityState.Length == 0)
                 return;
 

@@ -361,7 +361,9 @@ namespace Hecton8.World
         //  SINGLETON
         // ----------------------------------------------------------
 
-        public static DepthZoneDirector Instance => GlobalRegistry.DepthZone;
+        private static DepthZoneDirector s_activeRuntimeInstance;
+
+        public static DepthZoneDirector Instance => s_activeRuntimeInstance;
 
         // ----------------------------------------------------------
         //  PRIVATE STATE
@@ -403,7 +405,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            DepthZoneDirector registered = GlobalRegistry.DepthZone;
+            DepthZoneDirector registered = s_activeRuntimeInstance ?? GlobalRegistry.DepthZone;
             if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
@@ -872,7 +874,7 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            DepthZoneDirector registered = GlobalRegistry.DepthZone;
+            DepthZoneDirector registered = s_activeRuntimeInstance ?? GlobalRegistry.DepthZone;
             if (registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
@@ -881,6 +883,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterDepthZoneRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.DepthZone, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -890,6 +894,9 @@ namespace Hecton8.World
 
             if (ReferenceEquals(GlobalRegistry.DepthZone, this))
                 GlobalRegistry.UnregisterDepthZoneRuntime(this);
+
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
 
             _serviceRegistered = false;
         }

@@ -2485,7 +2485,7 @@ namespace Hecton8.Building
                                     math.all(math.isfinite(local)) &&
                                     math.all(math.isfinite(rotatedNormal)) &&
                                     math.all(math.isfinite(rotatedOffset));
-                SocketStateDTO socket;
+                SocketStateDTO socket = default;
                 socket.LocalOffset = new double3(local.x, local.y, local.z);
                 socket.NormalDirection = finiteSocket ? rotatedNormal : float3.zero;
                 socket.AllowedConnectionBitmask = ShinobuSocketConstructionRuntime.PackAllowedConnectionBitmask(
@@ -2495,10 +2495,6 @@ namespace Hecton8.Building
                 socket.ConnectionStatus = finiteSocket
                     ? 0u
                     : ConstructionSocketFlags.NonFinite | ConstructionSocketFlags.CollisionBlocked;
-                socket._pad0 = 0u;
-                socket._pad1 = 0u;
-                socket._pad2 = 0u;
-                socket._pad3 = 0u;
                 views.GhostSocketStates[i] = socket;
                 views.GhostSocketAups[i] = (socket.ConnectionStatus & ConstructionSocketFlags.NonFinite) == 0u
                     ? ghostRootAup + new double3(rotatedOffset.x, rotatedOffset.y, rotatedOffset.z)
@@ -2589,7 +2585,7 @@ namespace Hecton8.Building
                                     math.all(math.isfinite(rotatedNormal)) &&
                                     math.all(math.isfinite(rotatedOffset));
 
-                SocketStateDTO socket;
+                SocketStateDTO socket = default;
                 socket.LocalOffset = new double3(local.x, local.y, local.z);
                 socket.NormalDirection = finiteSocket ? rotatedNormal : float3.zero;
                 socket.AllowedConnectionBitmask = ShinobuSocketConstructionRuntime.PackAllowedConnectionBitmask(
@@ -2599,10 +2595,6 @@ namespace Hecton8.Building
                 socket.ConnectionStatus = finiteSocket
                     ? (socketIndex == consumedSocketIndex ? ConstructionSocketFlags.Connected : 0u)
                     : ConstructionSocketFlags.NonFinite | ConstructionSocketFlags.CollisionBlocked;
-                socket._pad0 = 0u;
-                socket._pad1 = 0u;
-                socket._pad2 = 0u;
-                socket._pad3 = 0u;
                 views.SocketStates[socketWrite] = socket;
                 views.SocketAups[socketWrite] = rootAup + new double3(rotatedOffset.x, rotatedOffset.y, rotatedOffset.z);
                 socketWrite++;
@@ -3035,7 +3027,7 @@ namespace Hecton8.Building
             hash = ShinobuSocketConstructionRuntime.FoldHash(hash, targetModuleHash);
             hash = ShinobuSocketConstructionRuntime.FoldHash(hash, ghostModuleHash);
 
-            SocketConnectionPairDTO pair;
+            SocketConnectionPairDTO pair = default;
             pair.TargetSocketIndex = targetSocketIndex;
             pair.GhostSocketIndex = ghostSocketIndex;
             pair.TargetModuleHash = targetModuleHash;
@@ -3043,7 +3035,6 @@ namespace Hecton8.Building
             pair.ConnectionKind = 0u;
             pair.Flags = ConstructionSocketFlags.ValidSnap;
             pair.ResultHash = hash;
-            pair._pad0 = 0u;
             views.Connections[connectionIndex] = pair;
             views.Counters[4] = connectionIndex + 1;
             return true;
@@ -3276,8 +3267,6 @@ namespace Hecton8.Building
             sipBudget.StructuralWarningRatio = 1f;
             sipBudget.BaseHash = moduleHash;
             sipBudget.Flags = 0u;
-            sipBudget._pad0 = 0u;
-            sipBudget._pad1 = 0u;
             return true;
         }
 
@@ -4242,8 +4231,6 @@ namespace Hecton8.Building
             flora.Frame = CaptureShinobuFrameId();
             flora.Operation = FloraExclusionSignal.OperationApply;
             flora.Flags = 0;
-            flora._pad0 = 0;
-            flora._pad1 = 0u;
             SignalBus<FloraExclusionSignal>.TryPushTracked(in flora, ref s_x001PlayerBuilderSignalPushDropCount);
         }
 

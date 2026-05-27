@@ -307,7 +307,7 @@ namespace Hecton8.Economy
         [FieldOffset(56)] public ulong Reserved2;
     }
 
-    public partial struct MockPlayerInventory
+    public ref partial struct MockPlayerInventory
     {
         public NativeArray<uint> ItemHashes;
         public NativeArray<int> Quantities;
@@ -564,7 +564,7 @@ namespace Hecton8.Economy
         }
     }
 
-    internal struct MarauderNativeMinHeap
+    internal ref struct MarauderNativeMinHeap
     {
         public NativeArray<MarauderNativeMinHeapNode> Nodes;
         public int Count;

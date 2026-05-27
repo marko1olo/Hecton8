@@ -2076,8 +2076,7 @@ namespace Hecton8.PDA
             if (!_cartographyVaultReady || _cartographyVault == null || !_cartographyHandles.IsCoreCreated())
                 return false;
 
-            CartographyVaultHandles handles = _cartographyHandles;
-            return TryReadPinnedCartographyBuffers(_cartographyVault, ref handles, pinnedMask, out buffers);
+            return TryReadPinnedCartographyBuffers(_cartographyVault, in _cartographyHandles, pinnedMask, out buffers);
         }
 
         private bool TryReadLegacyExplorationBuffers(
@@ -2148,13 +2147,12 @@ namespace Hecton8.PDA
             if (vault == null)
                 return false;
 
-            CartographyVaultHandles handles = _cartographyHandles;
-            return TryResolvePinnedCartographyBuffers(vault, ref handles, pinnedMask, out buffers);
+            return TryResolvePinnedCartographyBuffers(vault, in _cartographyHandles, pinnedMask, out buffers);
         }
 
         private static bool TryResolvePinnedCartographyBuffers(
             IDataVault vault,
-            ref CartographyVaultHandles handles,
+            scoped in CartographyVaultHandles handles,
             ulong pinnedMask,
             out CartographyVaultBuffers buffers)
         {
@@ -2185,7 +2183,7 @@ namespace Hecton8.PDA
 
         private static bool TryReadPinnedCartographyBuffers(
             IDataVault vault,
-            ref CartographyVaultHandles handles,
+            scoped in CartographyVaultHandles handles,
             ulong pinnedMask,
             out CartographyVaultReadBuffers buffers)
         {
@@ -2273,7 +2271,7 @@ namespace Hecton8.PDA
 
             try
             {
-                if (!TryResolvePinnedCartographyBuffers(vault, ref _cartographyHandles, pinnedMask, out CartographyVaultBuffers buffers))
+                if (!TryResolvePinnedCartographyBuffers(vault, in _cartographyHandles, pinnedMask, out CartographyVaultBuffers buffers))
                     return false;
 
                 if (!CartographyLayoutVerifier.ValidateRuntimeLayouts())

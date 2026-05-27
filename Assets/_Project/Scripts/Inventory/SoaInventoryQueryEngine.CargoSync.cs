@@ -449,12 +449,6 @@ namespace Hecton8.Inventory
                    OffsetOf<CargoRuntimeSelfAuditDTO>(nameof(CargoRuntimeSelfAuditDTO.OverflowCounterBufferID)) == 100;
         }
 
-        private static int OffsetOf<T>(string fieldName) where T : struct
-        {
-            FieldInfo field = typeof(T).GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
-        }
-
         public static bool TryAuditCargoRuntime(out CargoRuntimeSelfAuditDTO audit)
         {
             audit = default;

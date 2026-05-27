@@ -1,7 +1,7 @@
 # Rationale_13GPU
 
 Date: 2026-05-27
-Status: STATIC VERIFIED / COMPILE BLOCKED BY PROJECT GRAPH
+Status: STATIC VERIFIED / COMPILE GATE BLOCKED BY HOST CONTENTION; prior project graph blocker remains
 
 ## Decision 001: Identity and Batch Mismatch
 
@@ -338,3 +338,99 @@ Rejected Alternatives: Repeated build retries were rejected because the same ext
 Scalability potential: No runtime change.
 
 Hardware Impact: No runtime change. Compile proof remains blocked externally; static shader/compute proof is limited to diff/pattern/JSON checks.
+
+## Decision 029: Kelp Non-GPUI Shadow/Depth Motion Contract
+
+Problem: `Hecton_KelpMaster.shader` forward pass already consumed `_H8GlobalQualityWeight`, but shadow and depth passes still carried the older raw motion path. They read vertex position, normal, UV height, `_Time`, sway params, AUP offset, prop-wash and submarine wash data before shadow/depth deformation, so malformed data could poison shadow caster/depth output even when the forward pass was safe.
+
+Solution: Added `_H8GlobalQualityWeight` to shadow and depth passes, finite ingress guards for position/normal/UV/time/sway/AUP values, finite `HectonKelpSafeNormalize`, and smooth motion/interaction gates matching the forward pass. Shadow/depth deformation remains a shader-side visual fake.
+
+Rejected Alternatives: Disabling kelp shadow/depth deformation was rejected because it would visibly desync silhouettes from forward motion. CPU-side material or mesh validation was rejected because the shader is the final cheap barrier and hot flora presentation must not add readback or upload routes.
+
+Scalability potential: Low keeps bounded, cheap kelp silhouettes and depth; Middle restores moderate fake sway; High/Ultra keep richer motion and prop-wash response continuously without changing gameplay truth or instance ownership.
+
+Hardware Impact: Estimated 4-12 us avoided only during malformed kelp shadow/depth payload frames by preventing NaN propagation and bad shadow bias/depth deformation. Normal valid frames pay scalar finite checks; no profiler-backed saving claim.
+
+## Decision 030: Coral Non-GPUI Shadow Normal Guard
+
+Problem: `Hecton_CoralMaster.shader` forward pass already had the ripple/quality gates in baseline, but its shadow pass sanitized only `positionOS` and still transformed raw `input.normalOS` through `TransformObjectToWorldNormal` and shadow bias.
+
+Solution: Added finite normal fallback and non-zero length guard before the shadow bias path. This keeps malformed coral mesh payloads from poisoning shadow caster output.
+
+Rejected Alternatives: Dropping coral shadows or trusting authoring data was rejected. The fix is local, zero-buffer, and does not change material or draw ownership.
+
+Scalability potential: Low/Middle/High/Ultra all keep deterministic coral shadow casters. Quality scaling remains in the forward ripple/parallax path; invalid shadow normals fail closed.
+
+Hardware Impact: Estimated 2-6 us avoided only during malformed coral shadow payload frames. Main gain is deterministic shadow/depth safety, not normal-frame speed.
+
+## Decision 031: Procedural Bio Low-Variant Varying Contract
+
+Problem: `Hecton_ProceduralBio.shader` low LOD branch read `input.positionWS` for ambient, but `positionWS` was wrapped in `#if !defined(_MATH_LOD_LOW)`. The low variant could therefore compile with a missing varying. The shader also had no continuous `_H8GlobalQualityWeight` shaping for low-tier matcap/emission and high-tier blend sharpness.
+
+Solution: Moved `positionWS` outside the `_MATH_LOD_LOW` conditional, added `_H8GlobalQualityWeight` helpers, sanitized vertex color, used continuous quality to damp low matcap/emission and high triplanar sharpness. Kept the low shader path instead of forcing triplanar sampling on weak hardware.
+
+Rejected Alternatives: Removing `_MATH_LOD_LOW` in this pass was rejected because it can force additional texture samples on MX350 without a terrain/flora material contract review. Leaving the missing varying was rejected because it is a real low-variant compile contract violation.
+
+Scalability potential: Low keeps the matcap fake but with continuous energy shaping; Middle blends out excessive cheap matcap; High/Ultra sharpen triplanar projection smoothly in the high variant without binary visual jumps inside the active variant.
+
+Hardware Impact: No normal-frame saving claim. Estimated 3-10 us avoided only by preventing bad low-variant fallback/debug churn; primary gain is compile-contract and visual scalability hygiene.
+
+## Decision 032: Non-GPUI Flora Build Gate Respect
+
+Problem: After the non-GPUI flora pass, compile verification was required. A 30 second wait dropped CPU to `34`, but active compiler processes remained: `dotnet` PID `8372` and `VBCSCompiler` PID `31136`.
+
+Solution: Did not launch `dotnet build`. Kept verification to `git diff --check`, targeted text scans, SHA-256 hashes, and documented the existing prior MSBuild project graph blocker.
+
+Rejected Alternatives: Launching a competing build would violate the shared-host rule and interfere with another active agent.
+
+Scalability potential: No runtime change.
+
+Hardware Impact: Prevented additional host contention on the shared low-end target.
+
+## Decision 033: Sargassum Cut-Mask Compute Fail-Closed Writes
+
+Problem: `Hecton_SargassumCutMask.compute` trusted authored texel size, scroll offset, recovery, and stamp payloads before normalized UV sampling and mask writes. A malformed stamp could push NaN/Inf into radius math or leave an over-strength cut mask.
+
+Solution: Added finite guards for texel size, scroll offset, recovery, stamp vectors, radius, strength, sampled current value, and final output. The kernel derives a fallback texel size from the real result texture dimensions and caps stamp iteration to the existing fixed capacity.
+
+Rejected Alternatives: CPU-side readback validation was rejected because the compute kernel is the last cheap write barrier. Editing `SargassumCutManager` was rejected in this pass because its runtime ownership is broader and not necessary for the confirmed shader-local defect.
+
+Scalability potential: Low keeps cheap cut-mask recovery deterministic; Middle/High/Ultra can keep more active sargassum cuts without malformed stamps corrupting the visual mask.
+
+Hardware Impact: Estimated 2-8 us avoided only during malformed cut-mask stamp frames. Normal frames pay scalar finite checks and keep the same dispatch shape.
+
+## Decision 034: Sargassum Facade Quality And Dimension Contract
+
+Problem: `Hecton_SargassumDampingFacade.compute` trusted density/cut world rects, drift offset, output texture dimensions, and pow exponents/scales. `SargassumCrestDampingController` sent fixed wave/oil facade scale, so the visual fake did not consume continuous `GlobalQualityWeight`.
+
+Solution: The compute kernel now clamps to the shared valid wave/oil output dimensions, sanitizes rects/drift, clamps pow exponents/scales, and writes finite outputs. The owner now resolves `HomeostasisBrain.GlobalQualityWeight` and scales only visual wave/oil facade intensity through a smooth continuous curve.
+
+Rejected Alternatives: Crest shader mutation and physical wave damping simulation were rejected. The facade is a deterministic visual fake; gameplay truth, save identity, DTO layout, and ownership route remain unchanged.
+
+Scalability potential: Low keeps readable but cheaper wave damping/oil film masks; Middle blends facade intensity smoothly; High/Ultra spend visual budget on stronger sargassum wave/oil presentation without adding simulation.
+
+Hardware Impact: Estimated 3-9 us avoided only during malformed facade dispatches. Normal-frame impact is visual budget shaping, not a profiler-backed CPU saving.
+
+## Decision 035: Vegetation Wake-Trail Compute Stamp Contract
+
+Problem: `Hecton_VegetationWakeTrailSim.compute` looped over raw `_HectonWakeTrailStampCount` and used raw stamp vectors, simulation time, scroll offset, texel size, damping, curl, diffusion, wave, fade, and sampled pixels before noise, velocity, and displacement math. The C# owner buffer capacity is 4, but the shader did not enforce it.
+
+Solution: Added a shader-local capacity cap of 4, finite guards for all stamp fields and runtime parameters, fallback texel size from real texture dimensions, finite sample defaults, and fail-closed velocity/displacement output. The existing shader fake remains the presentation path.
+
+Rejected Alternatives: CPU wake simulation, GPU readback validation, and editing the dirty `FloraInteractionManager.cs` quality-resolution path were rejected. Dirty owner code remains a residual target for a later no-collision pass.
+
+Scalability potential: Low keeps bounded wake cues with cheap diffusion; Middle/High/Ultra can use richer stamp energy/curl from the existing owner without malformed inputs corrupting the full wake texture.
+
+Hardware Impact: Estimated 4-14 us avoided only during malformed wake-trail dispatches. Normal frames pay scalar finite checks; no profiler-backed saving is claimed.
+
+## Decision 036: Sargassum/Wake Pass Build Gate Respect
+
+Problem: Compile verification was required after the sargassum/wake pass, but the shared-host rules forbid build launch while CPU is over 50% or any `dotnet`/`csc`/`VBCSCompiler` process is active. Initial CPU was `100` with `VBCSCompiler` PID `31136`; after 30 seconds CPU was `26`, but the compiler process remained active.
+
+Solution: Did not launch `dotnet build`. Kept verification to JSON parse, `git diff --check`, targeted hot-path scan, SHA-256 hashes, and recorded the existing prior MSBuild project graph blocker.
+
+Rejected Alternatives: Launching a competing build while `VBCSCompiler` was active was rejected because it violates project policy and can interfere with other agents.
+
+Scalability potential: No runtime change.
+
+Hardware Impact: Prevented additional build contention on the shared low-end target.

@@ -10,7 +10,7 @@ namespace Hecton8.Graphics.Culling
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct MockQualityWeightJob : IJob
     {
-        [NoAlias] public NativeArray<MockQualityWeightSignal> QualitySignal;
+        [NoAlias] public NativeArray<TBDRMockQualityWeightSignal> QualitySignal;
         public uint Frame;
         public uint SeedSalt;
 
@@ -19,7 +19,7 @@ namespace Hecton8.Graphics.Culling
             if (!QualitySignal.IsCreated || QualitySignal.Length == 0)
                 return;
 
-            MockQualityWeightSignal signal = QualitySignal[0];
+            TBDRMockQualityWeightSignal signal = QualitySignal[0];
             uint seed = signal.Seed ^ SeedSalt ^ (Frame * 747796405u + 2891336453u);
             seed = seed * 1664525u + 1013904223u;
             float random01 = (seed & 0x00FFFFFFu) * (1.0f / 16777215.0f);
@@ -212,7 +212,7 @@ namespace Hecton8.Graphics.Culling
         [NoAlias] public VertexBudgetDTO* BudgetPtr;
 
         [ReadOnly, NoAlias]
-        public NativeArray<MockQualityWeightSignal> QualitySignal;
+        public NativeArray<TBDRMockQualityWeightSignal> QualitySignal;
 
         [ReadOnly, NoAlias]
         public NativeArray<MockCameraMatrix> CameraData;

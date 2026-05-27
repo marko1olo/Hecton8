@@ -296,6 +296,8 @@ namespace Hecton8.Modding
         private static int _kernelCount;
         private static int _modCount;
         private static bool _modMaskSignalConfigured;
+        private static IAbyssalFlowGpuReadModel _abyssalFlowGpu;
+        private static IAudioService _audioService;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -430,6 +432,28 @@ namespace Hecton8.Modding
             if (notifyShutdown)
                 NotifyMemorySentinelModMask(ModdedGameMaskSignal.FlagLifecycleShutdown);
             _modMaskSignalConfigured = false;
+            _abyssalFlowGpu = null;
+            _audioService = null;
+        }
+
+        internal static void BindRegistryServicesCold()
+        {
+            _abyssalFlowGpu = GlobalRegistry.AbyssalFlowGpu;
+            _audioService = GlobalRegistry.Audio;
+        }
+
+        internal static void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+            {
+                _abyssalFlowGpu = currentService as IAbyssalFlowGpuReadModel;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+                _audioService = currentService as IAudioService;
         }
 
         internal static uint ComputeModHash(string modId)
@@ -1086,7 +1110,7 @@ namespace Hecton8.Modding
                 return;
             }
 
-            IAbyssalFlowGpuReadModel fluidFlow = GlobalRegistry.AbyssalFlowGpu;
+            IAbyssalFlowGpuReadModel fluidFlow = _abyssalFlowGpu;
             if (fluidFlow == null ||
                 !fluidFlow.TrySampleModAbyssalFlow(runtimePosition, out float3 flowVector))
             {
@@ -1118,7 +1142,7 @@ namespace Hecton8.Modding
             }
 
             float normalizedIntensity = math.saturate(intensity01);
-            IAudioService audioManager = GlobalRegistry.Audio;
+            IAudioService audioManager = _audioService;
             if (audioManager == null || !audioManager.TryEmitModAcousticPing(runtimePosition, normalizedIntensity))
             {
                 RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.AcousticUnavailable);

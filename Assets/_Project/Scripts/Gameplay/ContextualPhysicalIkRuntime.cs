@@ -1725,6 +1725,7 @@ namespace Hecton8.Gameplay
             DisposeNativeArray(ref _nativeBuffers.FootCurrentPos, dependency);
             DisposeNativeArray(ref _nativeBuffers.TelemetryRing, dependency);
             JobHandle.ScheduleBatchedJobs();
+            DispatcherJobFence.TryComplete(ref _disposeHandle, forceComplete: true);
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
         }

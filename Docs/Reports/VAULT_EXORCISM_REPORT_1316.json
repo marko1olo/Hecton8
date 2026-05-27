@@ -1,13 +1,13 @@
 {
   "agentId": "1316",
-  "task": "1316_PURGE_LOOP80",
+  "task": "1316_PURGE_LOOP81",
   "status": "PENDING_UNITY_COMPILER_PROFILER_PROOF",
-  "scannedFiles": 276,
+  "scannedFiles": 1,
   "failedGates": [
-    "Loop80 build not run: CPU measured 100 and active dotnet/csc processes were present; AGENTS.md forbids launching dotnet build above 50 CPU or during active compiler work",
+    "Loop81 build/scanner not run: CPU measured 92-96 and active dotnet/VBCSCompiler processes were present; AGENTS.md forbids launching dotnet build above 50 CPU or during active compiler work",
     "Unity profiler/GC allocation proof absent",
-    "Seven-file hotpath audit still reports 373 managed-risk object creations; static audit does not prove runtime 0B GC",
-    "Unity compiler proof absent for the Loop80 source edits"
+    "Loop81 uses targeted text proof only; last full World Roslyn and seven-file hotpath audits remain Loop80 baselines",
+    "Unity compiler proof absent for the Loop81 source edits"
   ],
   "totalNativeFieldDeclarations": 1115,
   "persistentNativeFieldsRemaining": 0,
@@ -80,7 +80,7 @@
   "absoluteAupCastsFound": 0,
   "compactionAwareLocksProven": true,
   "telemetryRingIntegrated": true,
-  "verificationHashSha256": "8f276415cdacb167e03e8cce8ab0243939658d0ee549b30e742ac19b6b5fbd20",
+  "verificationHashSha256": "6c5baeb001f2e4852cf0386e5b55946f79d9364b2d6ef5eb0fece4c711406a7b",
   "roslynNativeAliasAudit": {
     "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1316_WORLD_LOOP80.json",
     "hash": "32a990d78d46da3962bef1c7e1e897a7904c64e097f74f2c36cd9d9c50cfb28a",
@@ -104,34 +104,41 @@
     "interpolatedStrings": 0,
     "stringConcatSuspects": 0
   },
+  "loop81TargetedTextAudit": {
+    "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+    "oldTryResolveTokens": 0,
+    "managedCollectionTokens": 0,
+    "stringHotTextTokens": 0,
+    "jobScheduleTokens": 0,
+    "directUnsafeReadHelperTokens": 0,
+    "tempOrPersistentAllocatorTokens": 0,
+    "tryAcquireWriteCalls": 8,
+    "releaseWriteLockCalls": 9,
+    "tryReadCalls": 14,
+    "compactionFenceChecks": 5,
+    "diffCheck": "CRLF warnings only"
+  },
   "buildAudit": {
     "command": "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
-    "loop80Status": "not_run_guard_blocked",
-    "cpuLoadPercentAfterScanner": 100,
+    "loop81Status": "not_run_guard_blocked",
+    "cpuLoadPercentAfterScanner": 92,
     "activeProcessesAfterScanner": [
       "dotnet",
-      "csc"
+      "VBCSCompiler"
     ],
     "lastAttemptExitCode": null,
     "lastAttemptPrimaryErrors": []
   },
-  "loop80TouchedSourceFiles": [
-    "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-    "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
-    "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
-    "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1316_WORLD_LOOP80.json",
-    "Docs/Reports/VEGETATION_RUNTIME_HOTPATH_AUDIT_1316_LOOP80.json"
+  "loop81TouchedSourceFiles": [
+    "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs"
   ],
   "notes": [
-    "Loop80 supersedes Loop79 for current disk state.",
+    "Loop81 supersedes Loop80 for current disk state.",
     "The workspace does not contain Assets/_Project/Scripts/World/Vegetation; actual vegetation partials live directly under Assets/_Project/Scripts/World.",
-    "WorldSpatialHashGrid dictionary metadata is replaced by fixed open-address arrays and dense handle/value storage.",
-    "SargassumGlobalDragManager density dictionaries are replaced by a fixed open-address map.",
-    "Touched AUP runtime reductions now use explicit runtime-origin AUPMath routes.",
-    "HectonIndirectVegetationRenderer, SargassumGlobalDragManager, and FloraInteractionManager now check IsCompactionFenceActive before and after touched Vault resolve/read/write-lock operations.",
-    "Targeted lock-window scan over the three Loop80 source files reports every TryAcquireWriteLock window contains IsCompactionFenceActive and ReleaseWriteLock.",
-    "Seven-file hotpath audit reports zero string.Format, ToString, LINQ, foreach, interpolation, and concat hits after removing HectonIndirectVegetationRenderer telemetry dump interpolation.",
-    "Whole-World Roslyn native alias audit remains green for persistent native fields.",
-    "verificationHashSha256 covers Loop80 touched source files, status/rationale/log files, and scanner artifacts; it intentionally excludes this self-referential JSON report."
+    "FloraAmbientSwayRuntime Vault routes now use read-only reads or write-lock writes with pre/post compaction-fence checks.",
+    "Telemetry ring/cursor writes and CSV profile import release acquired write locks through finally on every early return path inspected in Loop81.",
+    "ProceduralCoralVault.TryScheduleGenerationPipeline has no runtime call sites under Assets/_Project/Scripts; coral TryResolveViews call sites found in this pass are editor/debug windows only, so no coral runtime rewrite was performed.",
+    "Last full World Roslyn native alias audit remains Loop80 and remains the latest broad persistent-native-field baseline.",
+    "verificationHashSha256 covers the Loop81 touched source file plus status/rationale/log files; it intentionally excludes this self-referential JSON report."
   ]
 }

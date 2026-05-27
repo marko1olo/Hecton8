@@ -3086,7 +3086,7 @@ namespace Hecton8.Gameplay
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(default);
+            array.Dispose();
             array = default;
         }
 

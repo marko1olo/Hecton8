@@ -132,3 +132,20 @@ Solution: Recheck official OpenAI pricing/cache/reasoning pages, regenerate the 
 Rejected Alternatives: Treating `xhigh` as a separate price row was rejected because official docs define it as reasoning effort, with reasoning tokens billed as output. Staging paths containing `1334` was rejected because the operator explicitly forbade touching that agent's files.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; audit evidence remains reproducible and future full checkpoints can preserve explicit ownership exclusions.
 Hardware Impact: 0 us runtime gain.
+
+## Decision 25 - 2026-05-27 velocity and burn-rate accounting
+
+Problem: The token audit had totals and previous-snapshot deltas, but the operator asked what speed the project is moving at in tokens, code, and money.
+Solution: Add generated velocity fields under `previous_snapshot_delta.velocity`, render them in both the dated report and stable ledger, and keep code burn-rate ratios tied to net primary C# code growth from the same window.
+Rejected Alternatives: Reporting velocity only in chat was rejected because it would be unreproducible after the next JSONL write. Dividing by all-time LOC was rejected for velocity because it hides the current window's code-growth burn-rate.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; future audits can compare production cadence windows without rebuilding spreadsheet logic.
+Hardware Impact: 0 us runtime gain.
+
+
+## Decision 21 - 2026-05-27 explicit code-density economics
+
+Problem: Code-density rows had tokens per character and dollars per character, but the requested units are line and 1000 code characters.
+Solution: Add explicit tokens-per-1k-character and dollars-per-1k-character fields to scope economics and show them in the dated report, ledger, and agent log.
+Rejected Alternatives: Leaving users to multiply per-character values manually was rejected because it invites inconsistent reporting.
+Scalability potential: Future audits can compare code scopes without spreadsheet conversion.
+Hardware Impact: 0 us runtime gain.

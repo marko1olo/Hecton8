@@ -213,7 +213,13 @@ namespace Hecton8.World
                                       AbyssalNavNodeTypesHandle.BufferID != 0u ||
                                       AbyssalPathSnapshotHandle.BufferID != 0u ||
                                      PredatorFearNodesSnapshotHandle.BufferID != 0u ||
-                                     HlodRegistrySnapshotHandle.BufferID != 0u;
+                                     HlodRegistrySnapshotHandle.BufferID != 0u ||
+                                     VisibleHlodSnapshotHandle.BufferID != 0u ||
+                                     SurfaceDefragMovesHandle.BufferID != 0u ||
+                                     UnderwaterDefragMovesHandle.BufferID != 0u ||
+                                     SurfaceAggregateCopyRecordsHandle.BufferID != 0u ||
+                                     UnderwaterAggregateCopyRecordsHandle.BufferID != 0u ||
+                                     MegaWreckStreamSnapshotHandle.BufferID != 0u;
 
             public void Dispose()
             {
@@ -222,6 +228,35 @@ namespace Hecton8.World
 
             public void Dispose(JobHandle dependency)
             {
+                DensityQueryChunksHandle = default;
+                DensityQueryGridHandle = default;
+                ThreatAttractorGridHandle = default;
+                EcosystemThreatGridHandle = default;
+                EcosystemThreatGridCompressedHandle = default;
+                EcosystemThreatVoxelHandle = default;
+                EcosystemThreatEchoHandle = default;
+                EcosystemFlowFieldHandle = default;
+                AbyssalThermalGridHandle = default;
+                AbyssalFlowVolumeHandle = default;
+                CanopyHeightGridHandle = default;
+                TerrainHoleRecordsHandle = default;
+                TerrainHoleStreamingRecordsHandle = default;
+                ArtificialStructureRecordsHandle = default;
+                AbyssalAnchorPositionsHandle = default;
+                AbyssalAnchorAupPositionsHandle = default;
+                AbyssalNavNodeSnapshotHandle = default;
+                AbyssalNavConduitVectorsHandle = default;
+                AbyssalNavConduitStrengthsHandle = default;
+                AbyssalNavNodeTypesHandle = default;
+                AbyssalPathSnapshotHandle = default;
+                PredatorFearNodesSnapshotHandle = default;
+                HlodRegistrySnapshotHandle = default;
+                VisibleHlodSnapshotHandle = default;
+                SurfaceDefragMovesHandle = default;
+                UnderwaterDefragMovesHandle = default;
+                SurfaceAggregateCopyRecordsHandle = default;
+                UnderwaterAggregateCopyRecordsHandle = default;
+                MegaWreckStreamSnapshotHandle = default;
             }
         }
 

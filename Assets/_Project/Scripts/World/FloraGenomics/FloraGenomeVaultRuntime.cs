@@ -85,7 +85,7 @@ namespace Hecton8.World
     /// <summary>
     /// Stateless-facing facade over Vault-owned flora genome buffers. No Unity Update loop and no private NativeArray ownership.
     /// </summary>
-    public sealed unsafe class FloraGenomeVaultRuntime
+    public sealed class FloraGenomeVaultRuntime
     {
         private static int s_x001FloraGenomeVaultRuntimeSignalPushDropCount;
         private const SystemID OwnerSystem = SystemID.FloraGenomics;
@@ -526,7 +526,7 @@ namespace Hecton8.World
             }
         }
 
-        private static void WriteBlackBoxDump(string path, NativeArray<FloraGenomeBlackBoxEntry> blackBox)
+        private static unsafe void WriteBlackBoxDump(string path, NativeArray<FloraGenomeBlackBoxEntry> blackBox)
         {
             using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
             void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);

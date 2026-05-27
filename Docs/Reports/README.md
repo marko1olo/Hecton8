@@ -36,6 +36,9 @@ Evidence class: STATIC_DOC
 - signal safe-rename, job-carrier, executable-carrier classifier rechecks
 - signal telemetry ownership classifier rechecks
 - signal layout, cache-line stride, and native alias classifier rechecks
+- signal residual contract cleanup reports
+- core memory and SignalBus ownership deep-pass reports
+- global route stability and registry hot-path reports
 - SignalBus hot-path audits
 - documentation structure scans
 

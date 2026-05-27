@@ -410,3 +410,277 @@ Verification:
 Exact Microseconds saved:
 - Runtime: 0 us measured, 0 us claimed.
 - Static ledger impact: 85 fewer persistent native alias candidates in official all-scripts scanner.
+
+## 2026-05-27 23:05 +04 - Micro Carrier Stack-Only Pass And Encounter Fence
+
+What was wrong:
+- Several remaining ledger candidates were stack-only native alias helpers but still plain structs: dispatcher context, Burst callback writer, auxiliary telemetry pass, mock scatter/spatial buffers, A*/assignment heap helpers, frame arena slice, binary save reader, subtitle pointer phases, and a mock inventory view.
+- `EncounterDirector.Dispose()` chained native disposals to an active job dependency and then dropped the final dispose handle before releasing GPU sidecar buffers.
+
+What was done:
+- Converted to stack-only byref-like contracts: `DispatcherJobContext`, `BurstCallbackQueue.ParallelEventWriter`, `RecordAuxiliaryTelemetryPass`, `MockScatterBuffer`, `MockSpatialHashGrid`, `NativeMinHeap`, `MarauderNativeMinHeap`, `DroneNativeMinHeap`, `DroneTaskNativeMinHeap`, `NativeArenaSlice<T>`, `BufferReader`, `EvaluateSubtitleCuesPhase`, `ClearSubtitleCueFlagsPhase`, and `MockPlayerInventory`.
+- Added final forced completion of the chained `EncounterDirector` native dispose handle before predator AUP GPU buffer release.
+- Left persistent owners untouched: combat runtime, scatter working memory, foveated manager, signal/event buses, UI state store, pending streamed chunks, batch renderer state, ring buffers, and DataVault-backed runtime owners.
+
+Cinematic Cheats used:
+- None. This pass changes ownership contracts and teardown fencing only; no simulation or visual algorithm changed.
+
+Verification:
+- Storage grep found no field/array/`List<T>` storage for converted helper types.
+- Declaration grep confirms all target helpers are `ref struct` or `readonly ref struct`.
+- Scoped `git diff --check` reports only existing LF/CRLF warnings.
+- Fresh official Roslyn ledger/build proof blocked: external `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` PID 8372 and `VBCSCompiler` PID 31136 active; CPU sampled 54-82%.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Claimed frame-time gain: 0 us.
+- Risk reduction: stale native alias heap storage becomes compile-forbidden for converted helpers; Encounter teardown no longer drops a scheduled native dispose handle.
+
+## 2026-05-27 23:35 +04 - Dependency-Scheduled Dispose Fence Sweep
+
+What was wrong:
+- Multiple native teardown helpers used `Dispose(dependency)` and discarded the returned `JobHandle`.
+- Several no-dependency helpers used `Dispose(default)` instead of immediate `Dispose()`.
+- `ContextualPhysicalIkRuntime.DisposeBuffers()` accumulated `_disposeHandle` but never completed it; `HectonSpatialHash.Dispose()` scheduled query scratch disposal and dropped the final handle.
+
+What was done:
+- Patched immediate/no-dependency disposal in `PlayerInventory`, `ContextualPhysicalIkRig`, `HectonVoxelEngine`, and `VoxelDeltaProcessor`.
+- Patched dependency-scheduled disposal to retain and complete the returned handle in `GlobalTelemetryBus`, `SaveManager`, `VoxelDeltaProcessor`, `HectonFluidEngine`, `HectonMapMagicVegetationBridge`, and `ScatterEvaluator`.
+- Patched `InventoryGrid.Dispose(JobHandle)` to chain all native array disposals and complete the final dispose handle.
+- Patched `ContextualPhysicalIkRuntime.DisposeBuffers()` and `HectonSpatialHash.Dispose()` to complete their accumulated teardown disposal handles.
+- Left valid returned-handle routes unchanged: save binary deferred write disposal, voxel dynamic nav obstacle snapshots, Hecton world generator pending chunk arrays, BRG vegetation culling visibility mask, H8Memory owner job registration, UIStateStore final fence, and JobFenceManager returned handle.
+
+Cinematic Cheats used:
+- None. This pass changes native teardown fencing only.
+
+Verification:
+- Targeted `rg` for `Dispose(default)` and `Dispose(dependency)` now leaves either patched/completed sites, returned-handle sites, owner-registered sites, or one false positive custom call `_grid.Dispose(default)`.
+- Scoped `git diff --check` over 12 edited source files reports only existing LF/CRLF warnings.
+- No build, Unity import, Play Mode, profiler, or official ledger rerun: `VBCSCompiler` PID 31136 remained active and CPU sampled 62%.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Claimed frame-time gain: 0 us.
+- Risk reduction: dependency-scheduled native disposal is no longer dropped in the patched teardown helper sites.
+
+## 2026-05-28 00:31 +04 - Stack-Only Carriers, Player Handle Purge, Verification Wall
+
+What was wrong:
+- Several transient native view contracts were still ordinary structs: native query wrappers, terrain height payload DTOs, save binary/sidecar pointer writers, and a mock queue wrapper.
+- `HectonPlayerMovement` stored `PlayerKinematicsNativeState`, and that struct embedded five live `NativeArray<T>` aliases. This was a hidden MonoBehaviour native alias that the direct Roslyn MonoBehaviour counter could not see.
+- `VegetationNativeMemory.Dispose(JobHandle)` was a no-op despite many `VaultGenerationHandle<T>` descriptor fields, and `IsCreated` omitted several tail handles.
+
+What was done:
+- Converted `NativeQuery<T>`, `NativeSelectQuery<TSource,TResult>`, `MapMagicBridge.QuantizedHeightmapPayload`, `TerrainHeightSamplePayloadDTO`, `BufferWriter`, `SidecarWriter`, `SidecarReader`, and `MockModQueue` to stack-only `ref struct`/`readonly ref struct` contracts.
+- Reworked `PlayerKinematicsNativeState` to store only `VaultGenerationHandle<T>` descriptors plus telemetry counters. `HectonPlayerMovement` now resolves arrays only for the active snapshot, drag job, telemetry write, blackbox dump, and origin-shift phase.
+- Fixed `VegetationNativeMemory.IsCreated` and made `Dispose(JobHandle)` clear every handle.
+- Left explicit-layout pointer DTOs and real owners unchanged: `ThermodynamicsHazardGridPointers`, `BlackboxRingBufferDTO`, ring buffers, `PendingChunk`, combat runtime, scatter working memory, save/IK/TBDR owner sets, signal/event buses.
+
+Cinematic Cheats used:
+- None. This pass changes native lifetime contracts and descriptor hygiene only.
+
+Verification:
+- Storage grep found no field/array/list storage for the converted transient carriers.
+- Grep found no remaining direct `_playerKinematicsNativeState` access to `Positions`, `Velocities`, `IntendedMovements`, `DragSolvedVelocities`, or `TelemetryRing`.
+- `git diff --check` over edited source files reports only existing LF/CRLF warnings.
+- Official scanner artifact `VAULT_NATIVE_ALIAS_LEDGER_AUDIT_NATIVE_STATE_AFTER_POINTER_REFSTRUCT_4.json`: `scannedFiles=2442`, `parseFailures=0`, `forbiddenMonoBehaviourCandidates=0`, `forbiddenPersistentCandidates=349`, `stackOnlyRefStructViewFields=787`.
+- Official scanner artifact `VAULT_NATIVE_ALIAS_LEDGER_AUDIT_NATIVE_STATE_AFTER_HANDLE_PURGE_5.json`: `scannedFiles=2442`, `parseFailures=0`, `forbiddenMonoBehaviourCandidates=0`, `forbiddenPersistentCandidates=343`, `stackOnlyRefStructViewFields=788`, `totalNativeFieldDeclarations=6676`.
+- One legal guarded `dotnet build .\Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 /nr:false /p:UseSharedCompilation=false` ran for 00:08:27 and failed. Visible failures are pre-existing/vendor/editor graph errors in AmplifyImpostors, MapMagic duplicate `CellExpose`, MeshBaker missing companion types, Unity ShaderGraph editor/importer APIs, and Technie PhysicsCreator obsolete `MeshCollider` members. No Unity import, Play Mode, profiler, or GC proof exists.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Claimed frame-time gain: 0 us.
+- Static ledger impact since `VIEW_REFSTRUCT_3`: forbidden persistent candidates `386 -> 343` and stack-only ref-struct views `744 -> 788`.
+- Risk reduction: player kinematics no longer caches DataVault native aliases inside a MonoBehaviour-held state struct; transient terrain/query/save writers cannot be heap-stored.
+
+## 2026-05-27 22:28 +04 - Foveated Prune And Native/Byref Compile-Correctness Pass
+
+What was wrong:
+- `FoveatedSimulationManager` allocated and registered deferred surface probe native buffers with no current scheduler, writer, reader, or consumer path.
+- A few previous native hardening changes crossed into invalid C# byref territory: job-local world sampler data was byref-like, cartography pinned helpers used `ref` handles with byref-like buffer outputs, a `NativeArray` indexer expression was passed by `in`, and survival CSV span parsing tripped escape analysis.
+- The full project still does not have green compile/import/profiler proof.
+
+What was done:
+- Removed dead foveated deferred probe buffer IDs, `NativeArray` fields, Vault handles, alias clearing, release, allocation, and memory-budget registration.
+- Restored `GlobalWorldSamplerData` to ordinary `struct` because job struct methods return it.
+- Changed cartography pinned helper inputs to `scoped in CartographyVaultHandles` because helpers do not mutate the handle carrier.
+- Copied boid blackbox entries from `NativeArray` into a local before passing by `in`.
+- Reworked cold survival CSV row parsing so token spans do not escape loop-local helper boundaries.
+- Stopped compile chasing after three guarded attempts once the remaining 31 errors were outside NativeArray/MonoBehaviour ownership.
+
+Cinematic Cheats used:
+- None. This pass removed dead native memory and repaired language/lifetime contracts only.
+
+Verification:
+- Source grep found no remaining removed foveated deferred probe symbols.
+- Official scanner artifact `VAULT_NATIVE_ALIAS_LEDGER_AUDIT_NATIVE_STATE_AFTER_FOVEATED_PRUNE_6.json`: `scannedFiles=2442`, `parseFailures=0`, `totalNativeFieldDeclarations=6674`, `forbiddenMonoBehaviourCandidates=0`, `forbiddenPersistentCandidates=341`, `stackOnlyRefStructViewFields=788`.
+- Official scanner artifact `VAULT_NATIVE_ALIAS_LEDGER_AUDIT_NATIVE_STATE_AFTER_COMPILE_FIX_7.json`: `scannedFiles=2442`, `parseFailures=0`, `totalNativeFieldDeclarations=6674`, `forbiddenMonoBehaviourCandidates=0`, `forbiddenPersistentCandidates=353`, `stackOnlyRefStructViewFields=776`.
+- Targeted `Hecton8.Core.csproj` build attempts reduced errors `127 -> 48 -> 31`; the native/byref cluster was cleared.
+- Remaining compile failures are outside this domain: voxel dirty blend smoke tester, survival kinematics contact job, fauna compatibility, internal flood waterline, gas dynamics snapshot/padding, terrain chunk pager mock flag, persistent world registry API drift, procedural wreck uint/int, flora genome unsafe async, and world runtime reference utility/interface assembly drift.
+- No Unity import, Play Mode, profiler, or GC proof exists.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Claimed frame-time gain: 0 us.
+- Static ledger impact of foveated prune: `343 -> 341` forbidden persistent candidates.
+- Honest post-compile-fix ledger: `341 -> 353` forbidden persistent candidates because `GlobalWorldSamplerData` had to be compilable as an ordinary job carrier. Direct MonoBehaviour native candidates remain `0`.
+- Memory risk reduced by removing unused foveated persistent buffers; compile risk reduced by eliminating native/byref escape-analysis failures in the audited files.
+
+## 2026-05-27 22:45 +04 - Foveated Deferred Probe Shell Removal
+
+What was wrong:
+- After deleting the unused native deferred surface-probe buffers, `FoveatedSimulationManager` still had a dead managed queue shell: owner arrays, pending arrays, ring counters, a schedule flag, helper accessors, and an unused completion parameter.
+- There was still no producer/consumer path. This was no longer a NativeArray leak, but it was still stale architecture and cold managed memory.
+
+What was done:
+- Removed the managed deferred surface-probe owner arrays, queue counters, scheduling flag, stale helper methods, and unused `includeDeferredSurfaceProbes` parameter.
+- Simplified `TryCompleteFrameJobsInternal` call sites to the actual remaining behavior: complete interpolation and importance jobs.
+- Left live foveated cadence, telemetry ring, DataVault native buffers, Doppler smoothing, origin-shift, and blackbox dump routes unchanged.
+
+Cinematic Cheats used:
+- None. This pass removes dead route state only.
+
+Verification:
+- `rg` reports no remaining `DeferredSurfaceProbe`, `deferredSurfaceProbe`, `MaxDeferredProbeSlots`, `_deferredProbe`, `_queuedDeferred`, or `_pendingDeferred` symbols in `FoveatedSimulationManager`.
+- Scoped `git diff --check` on `FoveatedSimulationManager.cs` reports only existing LF/CRLF warning.
+- Official scanner artifact `VAULT_NATIVE_ALIAS_LEDGER_AUDIT_NATIVE_STATE_AFTER_FOVEATED_DEAD_QUEUE_8.json`: `scannedFiles=2442`, `parseFailures=0`, `totalNativeFieldDeclarations=6674`, `forbiddenMonoBehaviourCandidates=0`, `forbiddenPersistentCandidates=353`, `stackOnlyRefStructViewFields=776`.
+- No compile/import/profiler proof; compile wall remains the 31 non-domain Hecton8.Core errors recorded in the prior entry.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Static native ledger impact: 0, because this was managed dead state after the native buffers were already removed.
+- Cold memory risk reduced by removing unused object/int arrays and stale queue state from the foveated director.
+
+## 2026-05-27 23:05 +04 - TBDR Hidden Vault Alias Isolation
+
+What was wrong:
+- `TBDRPipelineSurgeonRuntime` had already moved its direct native arrays behind a managed buffer owner, but still held `public TBDRVertexBudgetVault Vault`.
+- `TBDRVertexBudgetVault` is a struct with four `NativeArray<T>` fields. That is a hidden MonoBehaviour native alias aggregate; the direct Roslyn MonoBehaviour counter does not catch it.
+
+What was done:
+- Added private `VertexBudgetVaultOwner` and moved the struct-backed vault storage there.
+- Replaced the public field with `public ref TBDRVertexBudgetVault Vault => ref _vaultOwner.Vault;` so existing runtime code still works against owner-backed storage.
+- Updated initialization and CSV polling to use local `ref TBDRVertexBudgetVault` variables instead of ref-passing the property directly.
+- Kept `TBDRVertexBudgetVault` itself as a struct to avoid a wider public API migration.
+
+Cinematic Cheats used:
+- None. This pass is hidden native alias isolation only.
+
+Verification:
+- `rg` finds no `public TBDRVertexBudgetVault Vault` field in `TBDRPipelineSurgeonRuntime`.
+- The only `TBDRVertexBudgetVault Vault;` field in that file is inside private managed `VertexBudgetVaultOwner`.
+- Scoped `git diff --check` on `TBDRPipelineSurgeonRuntime.cs` reports only existing LF/CRLF warning.
+- Official scanner artifact `VAULT_NATIVE_ALIAS_LEDGER_AUDIT_NATIVE_STATE_AFTER_TBDR_VAULT_OWNER_9.json`: `scannedFiles=2442`, `parseFailures=0`, `totalNativeFieldDeclarations=6674`, `forbiddenMonoBehaviourCandidates=0`, `forbiddenPersistentCandidates=353`, `stackOnlyRefStructViewFields=776`.
+- No compile/import/profiler proof; compile wall remains outside this domain.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Static native ledger impact: 0, because this was a hidden aggregate alias, not a direct native field declaration on the MonoBehaviour.
+- Risk reduction: TBDR runtime no longer stores a native-array struct directly on a MonoBehaviour.
+
+## 2026-05-27 23:18 +04 - Hidden Struct Alias Tail Classification
+
+What was wrong:
+- Direct MonoBehaviour-native scanner count is `0`, but direct syntax is not enough.
+- Heuristic scan for forbidden native owner structs in MonoBehaviour files found three hits.
+- Two are not current MonoBehaviour storage problems: `SignalThreadLocalWriteContext` is inside `SignalThreadLocalWriter64`, and `TBDRVertexBudgetVault` is now inside private `VertexBudgetVaultOwner`.
+- One real tail remains: `HectonWorldGenerator` stores `List<PendingChunk>`, and `PendingChunk` is a struct with seven `NativeArray<T>` fields.
+
+What was done:
+- Classified the tail instead of applying a fake fix.
+- Rejected `PendingChunk` `struct -> class` conversion because it would add managed allocation per streamed chunk.
+- Recorded the required direction: pooled pending chunk slots or SoA owner storage, not heap objects.
+
+Cinematic Cheats used:
+- None.
+
+Verification:
+- Struct-hidden scan result: `SignalThreadLocalWriteContext`, `TBDRVertexBudgetVault`, `PendingChunk`.
+- `TBDRVertexBudgetVault` direct MonoBehaviour field already removed in prior entry.
+- `PendingChunk` remains a documented residual owner-shape risk.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Static ledger impact: 0.
+- Residual risk remains intentionally open because the safe fix is larger than a single-field wrapper and must preserve zero-GC streaming.
+
+## 2026-05-27 - PendingChunk Overflow Dispose Fence
+
+What was wrong:
+- `HectonWorldGenerator.ScheduleChunkJob` had a pending-list overflow fallback that disposed a freshly created `PendingChunk` with `pc.DisposeArrays(pc.combinedHandle)`.
+- The returned scheduled-disposal `JobHandle` was discarded.
+- That is not a frame-time optimization. It is a native lifetime proof hole: the arrays are scheduled for release after jobs, but the owner no longer has a fence to finalize or force-complete during stop/teardown.
+
+What was done:
+- Added `_pendingChunkOverflowDisposeHandle` and `_pendingChunkOverflowDisposeActive` to the world generator owner.
+- Overflow disposal now flows through `AccumulatePendingChunkOverflowDisposal`.
+- `LateFrameTick` drains completed overflow disposals without blocking.
+- `StopStreaming` force-completes the overflow fence after pending chunk job teardown.
+- Did not convert `PendingChunk` to a managed class. That would add GC allocation to world streaming and would be the wrong fix.
+
+Cinematic Cheats used:
+- None. This is native lifecycle determinism, not visual simulation.
+
+Verification:
+- Targeted grep confirms the only overflow `pc.DisposeArrays(pc.combinedHandle)` call now stores the returned handle.
+- Targeted grep confirms `DrainPendingChunkOverflowDisposals(false)` in `LateFrameTick` and `DrainPendingChunkOverflowDisposals(true)` in `StopStreaming`.
+- Scoped `git diff --check -- Assets/_Project/Scripts/HectonWorldGenerator.cs` reports only the existing LF/CRLF warning.
+- No fresh Roslyn scanner/build/import/profiler proof: CPU sampled `94%` and external `dotnet` PID `61052` was active.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Static ledger impact: expected 0, because this is a retained JobHandle fence, not a field-shape change.
+- Risk reduction: one dropped scheduled native-dispose handle removed from the world streaming saturation path.
+
+## 2026-05-27 - DepthZone GlobalRegistry Hot Accessor Tail Removed
+
+What was wrong:
+- `DepthZoneDirector.Instance` still returned `GlobalRegistry.DepthZone`.
+- That was the final direct `Instance => GlobalRegistry` route found by the owner-route grep.
+- It is not a native-array leak, but it violates the same global-systems rule: read accessors should be pure owner-local reads, not hot registry polling.
+
+What was done:
+- Added `s_activeRuntimeInstance` to `DepthZoneDirector`.
+- `Instance` now returns the owner-local active runtime.
+- Duplicate detection still uses `s_activeRuntimeInstance ?? GlobalRegistry.DepthZone` as a cold bootstrap fallback.
+- Successful registration publishes `s_activeRuntimeInstance = this`; unregister clears it if this component owns it.
+- `DepthZoneDirector.cs` is not UTF-8 clean, so the edit was byte-preserving and touched only exact ASCII fragments.
+
+Cinematic Cheats used:
+- None. This is route ownership cleanup.
+
+Verification:
+- `rg "Instance\\s*=>\\s*GlobalRegistry|ActiveRuntimeInstance\\s*=>\\s*GlobalRegistry|TryGetInstance\\s*\\([^)]*\\)\\s*=>\\s*GlobalRegistry" Assets/_Project/Scripts -g "*.cs"` returns no hits.
+- `rg` confirms `s_activeRuntimeInstance` is assigned after service registration and cleared on unregister.
+- Scoped `git diff --check -- Assets/_Project/Scripts/World/DepthZoneDirector.cs` reports only the existing LF/CRLF warning.
+- No compile/import/profiler proof; external compiler lane/CPU guard remains active.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Static ledger impact: 0.
+- Risk reduction: final direct runtime singleton route through `GlobalRegistry` removed from the audited grep class.
+
+## 2026-05-27 - GlobalRegistry Rebound Count Read Hardened
+
+What was wrong:
+- `GlobalRegistry.PendingServiceReboundCount` directly summed two mutable counters.
+- `SystemDispatcher.FlushCoreEventsArtery` reads that property for core late-frame queue-depth reporting.
+- This was not a native ownership leak, but it was weaker than the existing global read pattern used elsewhere in `GlobalRegistry`.
+
+What was done:
+- Changed the accessor to use `Volatile.Read(ref _pendingServiceReboundCount)` plus `Volatile.Read(ref _nextFrameServiceReboundCount)`.
+- No locking, allocation, queue mutation, or dispatch behavior was added.
+
+Cinematic Cheats used:
+- None.
+
+Verification:
+- `rg` confirms both counter reads now go through `Volatile.Read`.
+- `rg` confirms the only current source consumer remains `SystemDispatcher.FlushCoreEventsArtery`.
+- Scoped `git diff --check -- Assets/_Project/Scripts/Core/GlobalRegistry.cs` reports only the existing LF/CRLF warning.
+- No compile/import/profiler proof: CPU sampled `91%` and external `dotnet` PID `61052` remained active.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Static ledger impact: 0.
+- Risk reduction: late-frame global rebound telemetry now uses the same volatile read discipline as other registry state accessors.

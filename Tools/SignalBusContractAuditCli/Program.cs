@@ -992,7 +992,7 @@ internal static class Program
             var escaped = BuildNativeFieldAliasPattern(rawText, fieldName, "Array");
             var hasBoundedLifetimeRegistration = Regex.IsMatch(
                 rawText,
-                @"RegisterNativeArray\s*\([^;]*" + escaped + @"[^;]*(NativeAllocationLifetime\.Scene|NativeAllocationLifetime\.Session|NativeMemoryLifetime)",
+                @"RegisterNativeArray\s*\([^;]*" + escaped + @"[^;]*(NativeAllocationLifetime\.Scene|NativeAllocationLifetime\.Session|NativeMemoryLifetime|NativeMemoryBridgeLifetime)",
                 RegexOptions.Singleline);
             var hasHelperBoundedLifetimeRegistration =
                 IsAssignedByArrayAllocatorHelper(rawText, escaped) &&

@@ -412,15 +412,15 @@ namespace Hecton8.Input
             {
                 return false;
             }
-            catch (ArgumentException)
-            {
-                return false;
-            }
             catch (NotSupportedException)
             {
                 return false;
             }
             catch (EncoderFallbackException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
             {
                 return false;
             }
@@ -486,13 +486,6 @@ namespace Hecton8.Input
 #endif
                 ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
             }
-            catch (ArgumentException)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
-#endif
-                ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
-            }
             catch (NotSupportedException)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -504,6 +497,13 @@ namespace Hecton8.Input
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to decode options.h8cfg.");
+#endif
+                ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
+            }
+            catch (ArgumentException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
 #endif
                 ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
             }

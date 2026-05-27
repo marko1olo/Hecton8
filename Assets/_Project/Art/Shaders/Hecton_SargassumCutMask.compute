@@ -16,36 +16,69 @@ float4 _ScrollUvOffset;
 float _Recovery;
 float4 _TexelSize;
 
+bool HectonFinite1(float value)
+{
+    return isfinite(value);
+}
+
+bool HectonFinite2(float2 value)
+{
+    return all(isfinite(value));
+}
+
+bool HectonFinite4(float4 value)
+{
+    return all(isfinite(value));
+}
+
+float HectonFiniteOr(float value, float fallbackValue)
+{
+    return HectonFinite1(value) ? value : fallbackValue;
+}
+
+float2 HectonFinite2Or(float2 value, float2 fallbackValue)
+{
+    return HectonFinite2(value) ? value : fallbackValue;
+}
+
 [numthreads(8, 8, 1)]
 void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
     uint width;
     uint height;
     _Result.GetDimensions(width, height);
-    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+    if (width == 0 || height == 0 || dispatchThreadId.x >= width || dispatchThreadId.y >= height)
         return;
 
-    float2 uv = (dispatchThreadId.xy + 0.5) * _TexelSize.xy;
-    float2 sourceUv = uv + _ScrollUvOffset.xy;
+    float2 resultTexelSize = rcp(float2(max(width, 1u), max(height, 1u)));
+    float2 authoredTexelSize = HectonFinite2(_TexelSize.xy) && min(_TexelSize.x, _TexelSize.y) > 0.0
+        ? _TexelSize.xy
+        : resultTexelSize;
+    float2 uv = HectonFinite2Or((dispatchThreadId.xy + 0.5) * authoredTexelSize, (dispatchThreadId.xy + 0.5) * resultTexelSize);
+    float2 sourceUv = uv + HectonFinite2Or(_ScrollUvOffset.xy, float2(0.0, 0.0));
     float current = 0.0;
     if (sourceUv.x >= 0.0 && sourceUv.x <= 1.0 && sourceUv.y >= 0.0 && sourceUv.y <= 1.0)
-        current = _MainTex.SampleLevel(sampler_MainTex, sourceUv, 0).r;
+        current = HectonFiniteOr(_MainTex.SampleLevel(sampler_MainTex, sourceUv, 0).r, 0.0);
 
-    current = max(0.0, current - _Recovery);
+    current = max(0.0, current - max(HectonFiniteOr(_Recovery, 0.0), 0.0));
 
     int stampCount = min(max(_StampCount, 0), HectonStampCommandCapacity);
     [loop]
     for (int stampIndex = 0; stampIndex < stampCount; stampIndex++)
     {
         float4 command = _StampCommands[stampIndex].UvRadiusStrength;
+        if (!HectonFinite4(command))
+            continue;
+
         float radius = max(command.z, 0.0001);
         float2 delta = uv - command.xy;
         float radiusSq = radius * radius;
         float invRadiusSq = rcp(max(radiusSq, 0.00000001));
         float normalized = saturate(1.0 - dot(delta, delta) * invRadiusSq);
-        float stamp = normalized * normalized * command.w;
+        float stamp = normalized * normalized * saturate(command.w);
         current = max(current, stamp);
     }
 
+    current = HectonFiniteOr(saturate(current), 0.0);
     _Result[dispatchThreadId.xy] = float4(current, current, current, 1.0);
 }

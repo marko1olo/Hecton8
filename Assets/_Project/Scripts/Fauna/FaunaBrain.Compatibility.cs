@@ -14,6 +14,14 @@ namespace Hecton8.AI
 {
     public partial class FaunaBrain
     {
+        internal static HectonMapMagicVegetationBridge s_compatibilityVegetationBridge;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCompatibilityStaticState()
+        {
+            s_compatibilityVegetationBridge = null;
+        }
+
         private CreatureArchetypeData _archetype;
         private Vector3 _spawnPoint;
         private float _currentHealth = 1f;
@@ -693,7 +701,13 @@ namespace Hecton8.AI
                 out float packCommitDistance,
                 out float aggressionMultiplier);
 
-            HectonMapMagicVegetationBridge vegetationBridge = _vegetationBridge;
+            HectonMapMagicVegetationBridge vegetationBridge = FaunaBrain.s_compatibilityVegetationBridge;
+            if (vegetationBridge == null || !vegetationBridge.isActiveAndEnabled)
+            {
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
+                FaunaBrain.s_compatibilityVegetationBridge = vegetationBridge;
+            }
+
             if (vegetationBridge != null && vegetationBridge.HasPermanentThreatEcho(context.SelfPosition))
                 chemicalSignal01 = math.max(chemicalSignal01, 0.35f);
 

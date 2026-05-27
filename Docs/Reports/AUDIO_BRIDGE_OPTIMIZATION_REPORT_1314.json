@@ -3,7 +3,7 @@
   "role": "AUDIO_MASTER_BUS_ALIGNMENT_REPAIRER",
   "report": "AUDIO_BRIDGE_OPTIMIZATION_REPORT_1314",
   "generatedBy": "codex_static_source_validation",
-  "status": "FAIL_STATIC_STALE_WINDOWS_DLL_AND_MASTER_MIXER_EFFECT_NOT_AUTHORED_COMPILE_NOT_RUN",
+  "status": "FAIL_STATIC_STALE_WINDOWS_DLL_MASTER_MIXER_ANDROID_PACKAGING_COMPILE_NOT_RUN",
   "staticPass": false,
   "strictPromptTask08HotRingInsideGlobalDataVault": false,
   "strictPromptTask08Limitation": "Authoritative hot telemetry ring is stable H8Memory raw memory; GlobalDataVault owns only the cold BufferID.AudioFrameRingTelemetry mirror because its current public mutation routes are write-lock or relocation-pin based.",
@@ -11,12 +11,12 @@
   "liveFuzzerProof": "NOT_RUN_OUTSIDE_UNITY_EDITOR_DATAVAULT_CONTEXT",
   "writeIndexByteOffset": 8,
   "requiredAlignmentBytes": 8,
-  "filesScanned": 11,
+  "filesScanned": 12,
   "failedChecks": 6,
   "releaseBlockers": [
     "Assets/Plugins/x86_64/HectonAudioKernel.dll is older than NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp and BuildHectonSensoryKernel.bat. Unity loads the stale DLL, so current native source repairs are not proven in the binary. NativePluginMatrixValidator now also rejects this stale DLL during Windows player build preflight.",
     "Assets/_Project/MasterMixer.mixer has empty m_Effects lists and no Hecton Sensory Kernel effect entry. Descriptor registration alone cannot invoke the native ProcessCallback.",
-    "Assets/Plugins/Android/arm64-v8a/libHectonAudioKernel.so and Assets/Plugins/Android/libs/arm64-v8a/libHectonAudioKernel.so are both absent. Android/Quest audio kernel packaging is blocked.",
+    "Assets/Plugins/Android/arm64-v8a/libHectonAudioKernel.so and Assets/Plugins/Android/libs/arm64-v8a/libHectonAudioKernel.so are both absent. Android/Quest audio kernel packaging is blocked. NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernelAndroid.bat now provides the reproducible arm64 NDK build route but was not launched in this pass.",
     "Assets/_Project/Plugins/Android arm64 LZ4 plugin paths are absent. Android/Quest native plugin matrix is blocked before player build.",
     "Assets/_Project/Plugins/Windows/x86_64/liblz4.dll.meta is GUID-only, not a proven PluginImporter metadata asset.",
     "Native rebuild was not launched because prior CPU samples were above the project 50% compiler gate; this pass did not run build tooling by user instruction."
@@ -91,14 +91,16 @@
   },
   "androidNativeRoute": {
     "bridgeCompileGate": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:155 includes UNITY_ANDROID in the P/Invoke route.",
-    "buildMatrixGate": "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs:90-95 requires Assets/Plugins/Android/arm64-v8a/libHectonAudioKernel.so or Assets/Plugins/Android/libs/arm64-v8a/libHectonAudioKernel.so.",
+    "buildMatrixGate": "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs requires Assets/Plugins/Android/arm64-v8a/libHectonAudioKernel.so or Assets/Plugins/Android/libs/arm64-v8a/libHectonAudioKernel.so.",
+    "androidBuildScriptProof": "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernelAndroid.bat targets aarch64-linux-android24-clang++, emits -shared -fPIC C++11 with hidden visibility, function/data sections, --gc-sections, no exceptions, no RTTI, and outputs Assets\\Plugins\\Android\\arm64-v8a\\libHectonAudioKernel.so.",
+    "androidFreshnessBuildGate": "NativePluginMatrixValidator now calls RequireAnyCompatiblePluginFreshness for Android libHectonAudioKernel.so candidates against Plugin_HectonSensoryKernel.cpp and BuildHectonSensoryKernelAndroid.bat. If a compatible Android .so exists but is older than either reference, Android player build preflight hard-fails.",
     "playerBuildHardFailGate": "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs:25 calls Validate(report.summary.platform, strictBuild: true), so actual player builds fail on missing native plugin blockers; only the editor menu scan is advisory.",
     "pluginImporterGate": "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs validates AssetImporter.GetAtPath(assetPath) as PluginImporter plus importer.GetCompatibleWithPlatform(target). Raw files with GUID-only .meta are not accepted as release-ready native plugins.",
     "windowsImporterMeta": "Assets/Plugins/x86_64/HectonAudioKernel.dll.meta now contains PluginImporter, Any disabled, Windows Editor enabled for OS Windows/CPU x86_64, Standalone Win disabled, Standalone Win64 enabled for CPU x86_64, and Linux/macOS disabled.",
     "windowsImporterSectionProof": "OOP_AudioBridge_Scanner.cs validates PluginImporter platformData section bodies, not loose file-level tokens: Any enabled:0; Editor enabled:1 CPU:x86_64 OS:Windows; Standalone Win enabled:0; Standalone Win64 enabled:1 CPU:x86_64; Linux64/OSXUniversal enabled:0.",
     "windowsFreshnessBuildGate": "NativePluginMatrixValidator now calls RequirePluginFreshness for Assets/Plugins/x86_64/HectonAudioKernel.dll against NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp and NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernel.bat. File probes use ToProjectAbsolutePath(Application.dataPath/..) so the check does not depend on the editor process current working directory. Windows player builds fail if the packaged DLL timestamp is older than either reference.",
-    "currentPackagedBinaryScan": "Only Assets/Plugins/x86_64/HectonAudioKernel.dll is present and its .meta is section-scoped PluginImporter-configured for Windows editor and Standalone Win64 x86_64 only. That DLL is stale: DLL UTC 2026-04-24T18:13:13.9632833Z, native source UTC 2026-05-27T09:57:55.5551300Z, build script UTC 2026-05-27T06:32:46.7320745Z. Android arm64 audio kernel binary is still missing. Build preflight reports missing binaries, invalid plugin importer routing, and stale Windows audio DLL freshness.",
-    "limitation": "No Android or Windows native rebuild was run in this pass. Windows rebuild is required before binary/runtime claims; Android/Quest remains blocked until an arm64 .so exists and is tested."
+    "currentPackagedBinaryScan": "Only Assets/Plugins/x86_64/HectonAudioKernel.dll is present and its .meta is section-scoped PluginImporter-configured for Windows editor and Standalone Win64 x86_64 only. That DLL is stale: DLL UTC 2026-04-24T18:13:13.9632833Z, native source UTC 2026-05-27T09:57:55.5551300Z, build script UTC 2026-05-27T06:32:46.7320745Z. Android arm64 audio kernel binary is still missing; the new Android build script is source proof only until it is run and Unity imports the .so. Build preflight reports missing binaries, invalid plugin importer routing, stale Windows audio DLL freshness, and stale Android .so freshness when a compatible .so exists.",
+    "limitation": "No Android or Windows native rebuild was run in this pass. Windows rebuild is required before binary/runtime claims; Android/Quest remains blocked until the arm64 .so is built/imported and tested."
   },
   "masterMixerNativeEffectBinding": {
     "currentAssetScan": "Assets/_Project/MasterMixer.mixer currently contains empty m_Effects lists and no Hecton Sensory Kernel effect text.",
@@ -107,11 +109,11 @@
     "remainingAction": "Author the Hecton Sensory Kernel effect on MasterMixer through the Unity Editor after the DLL is rebuilt/imported. Manual YAML insertion was rejected because AudioMixerEffectController is internal Unity serialization."
   },
   "nativeBuildScriptProof": {
-    "previousDefect": "BuildHectonSensoryKernel.bat compiled AudioPluginUtil.cpp, which contained Unity sample heap helper code not reached by HectonSensoryKernel but still present at source/object level.",
-    "fixLines": "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernel.bat:22-29",
-    "flags": "/Gy /Gw plus /link /OPT:REF /OPT:ICF",
-    "effect": "BuildHectonSensoryKernel.bat now compiles Plugin_HectonSensoryKernel.cpp only. The heap-using Unity sample utility files were removed from the Hecton native kernel directory, so a future wildcard native build cannot casually reattach the alternate utility export route. The checked-in Windows DLL has not been rebuilt after this source/script change, so the scanner now fails stale-binary freshness until the DLL timestamp is newer than both files.",
-    "scannerGuards": "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs native_build_excludes_sample_utility_cpp, native_utility_cpp_removed, native_utility_header_removed, native_plugin_list_removed, native_unity_effect_export_local, native_effect_definition_local_fill, native_build_function_data_sections, native_build_dead_code_elimination, native_plugin_matrix_importer_probe, native_plugin_matrix_project_root_file_probe, and native_plugin_matrix_audio_kernel_freshness_gate checks"
+    "previousDefect": "BuildHectonSensoryKernel.bat compiled AudioPluginUtil.cpp, and the Android/Quest side had a packaging gate but no reproducible arm64 native build script or source/script freshness gate.",
+    "fixLines": "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernel.bat:22-29 and NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernelAndroid.bat",
+    "flags": "Windows: /Gy /Gw plus /link /OPT:REF /OPT:ICF. Android: -shared -fPIC -fvisibility=hidden -ffunction-sections -fdata-sections -Wl,--gc-sections -fno-exceptions -fno-rtti.",
+    "effect": "Windows build compiles Plugin_HectonSensoryKernel.cpp only. Android build now has an explicit NDK arm64 route to Assets\\Plugins\\Android\\arm64-v8a\\libHectonAudioKernel.so. The heap-using Unity sample utility files were removed from the native kernel directory, so future wildcard builds cannot casually reattach the alternate utility export route. The checked-in Windows DLL has not been rebuilt and Android .so is absent, so scanner/build preflight remain failed until binaries are produced and imported.",
+    "scannerGuards": "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs native_build_excludes_sample_utility_cpp, native_android_build_uses_arm64_clang, native_android_build_shared_library, native_android_build_pic, native_android_build_hidden_visibility, native_android_build_function_data_sections, native_android_build_dead_code_elimination, native_android_build_output_binary, native_android_build_excludes_sample_utility_cpp, native_utility_cpp_removed, native_utility_header_removed, native_plugin_list_removed, native_unity_effect_export_local, native_effect_definition_local_fill, native_build_function_data_sections, native_build_dead_code_elimination, native_plugin_matrix_importer_probe, native_plugin_matrix_project_root_file_probe, native_plugin_matrix_audio_kernel_freshness_gate, and native_plugin_matrix_android_audio_kernel_freshness_gate checks"
   },
   "nativeUtilityBuildExclusion": {
     "previousDefect": "AudioPluginUtil.cpp is a Unity sample utility file with FFT/analyzer/test helper paths that still contain source-level heap allocation. Depending on linker dead stripping to hide that file was not a release-grade proof.",

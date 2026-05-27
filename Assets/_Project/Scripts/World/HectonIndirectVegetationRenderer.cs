@@ -2007,6 +2007,12 @@ namespace Hecton8.World
             return math.saturate(math.min(math.min(maxDensity, minimumStepKeep01), math.min(qualityKeep01, stressKeep01)));
         }
 
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
+        }
+
         private static float ResolveVegetationQualityWeight01(float fallback01)
         {
             float fallback = math.saturate(math.select(1f, fallback01, math.isfinite(fallback01)));

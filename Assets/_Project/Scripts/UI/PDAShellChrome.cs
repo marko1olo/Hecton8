@@ -399,8 +399,9 @@ namespace Hecton8.UI
                     (BufferID)DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw,
                     out VaultGenerationHandle<byte> acquired) ||
                 !IsVaultHandleCreated(in acquired) ||
-                !vault.TryResolveHandle(in acquired, out NativeArray<byte> glitchTable) ||
-                !glitchTable.IsCreated ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in acquired, out NativeArray<byte>.ReadOnly glitchTable) ||
+                vault.IsCompactionFenceActive ||
                 glitchTable.Length < DiegeticGlitchSurgeonRuntime.GlitchTableCapacity)
             {
                 return;
@@ -411,7 +412,7 @@ namespace Hecton8.UI
 
             unsafe
             {
-                byte* table = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(glitchTable);
+                byte* table = (byte*)glitchTable.GetUnsafeReadOnlyPtr();
                 if (table == null || !GlitchTable.IsValidGlyphTable(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity))
                     ClearGlitchTableBinding();
             }
@@ -421,17 +422,19 @@ namespace Hecton8.UI
         {
             table = null;
             tableLength = 0;
-            if (!_glitchTableHandleReady || _glitchVault == null)
+            if (!_glitchTableHandleReady ||
+                _glitchVault == null ||
+                _glitchVault.IsCompactionFenceActive)
                 return false;
 
-            if (!_glitchVault.TryResolveHandle(in _glitchTableHandle, out NativeArray<byte> glitchTable) ||
-                !glitchTable.IsCreated ||
+            if (!_glitchVault.TryReadOnlyHandle(in _glitchTableHandle, out NativeArray<byte>.ReadOnly glitchTable) ||
+                _glitchVault.IsCompactionFenceActive ||
                 glitchTable.Length < DiegeticGlitchSurgeonRuntime.GlitchTableCapacity)
             {
                 return false;
             }
 
-            table = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(glitchTable);
+            table = (byte*)glitchTable.GetUnsafeReadOnlyPtr();
             if (table == null)
                 return false;
 

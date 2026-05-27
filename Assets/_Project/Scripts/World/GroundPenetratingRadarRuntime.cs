@@ -73,7 +73,6 @@ namespace Hecton8.World
         private IEcosystemDirectorService _ecosystemDirector;
         private IWorldResourceSpawnerReadModel _worldResourceSpawnerReadModel;
         private IWorldResourceSpawnerReadDependencySink _worldResourceSpawnerReadDependencySink;
-        private JobHandle _scanJobHandle;
         private Bounds _drawBounds;
         private int _activeGprPings;
         private int _gprSequence;
@@ -84,8 +83,6 @@ namespace Hecton8.World
         private int _registeredLateFrame;
         private int _registeredRenderable;
         private int _hotSwapRegistered;
-        private bool _scanJobScheduled;
-        private bool _scanSdfSnapshotLocked;
         private int _scanJobBufferLockCount;
         private bool _gprReadSnapshotsValid;
         private bool _pendingDataVaultRebind;
@@ -172,20 +169,7 @@ namespace Hecton8.World
             _ecosystemDirector = null;
             _playerContext = null;
             _submarineState = null;
-            if (_scanJobScheduled)
-            {
-                if (DispatcherJobFence.TryComplete(ref _scanJobHandle, forceComplete: true))
-                {
-                    _scanJobScheduled = false;
-                    ReleaseScanSdfSnapshotLock();
-                    ReleaseScanJobBufferLocks();
-                }
-            }
-            if (!_scanJobScheduled)
-            {
-                ReleaseScanSdfSnapshotLock();
-                ReleaseScanJobBufferLocks();
-            }
+            ReleaseScanJobBufferLocks();
             _voxelSdfReadModel = null;
             _voxelSdfReadLeaseModel = null;
 
@@ -222,7 +206,7 @@ namespace Hecton8.World
 
         private void AdvanceRadarFrameState(float deltaTime)
         {
-            if (_scanJobScheduled || _pendingDataVaultRebind || !_gprReadSnapshotsValid)
+            if (_pendingDataVaultRebind || !_gprReadSnapshotsValid)
                 return;
 
             bool scannerActive = TryResolveScannerActive(out int scannerSequence);
@@ -254,26 +238,7 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             AdvanceRadarFrameState(SystemDispatcher.CurrentFrameDeltaTime);
-
-            if (!_scanJobScheduled)
-                TryApplyPendingDataVaultRebind();
-
-            if (!_scanJobScheduled)
-                return;
-
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _scanJobHandle))
-                return;
-
-            _scanJobScheduled = false;
-            try
-            {
-                CommitCompletedScan();
-            }
-            finally
-            {
-                ReleaseScanSdfSnapshotLock();
-                ReleaseScanJobBufferLocks();
-            }
+            TryApplyPendingDataVaultRebind();
         }
 
         public void Render(float deltaTime)
@@ -319,16 +284,29 @@ namespace Hecton8.World
         {
             copiedCount = 0;
             if (!destination.IsCreated ||
-                _activeGprPings <= 0 ||
-                !TryReadGprPingGpu(out NativeArray<float4>.ReadOnly pingGpu))
+                _activeGprPings <= 0)
             {
                 return false;
             }
 
-            copiedCount = math.min(destination.Length, _activeGprPings);
-            for (int i = 0; i < copiedCount; i++)
-                destination[i] = pingGpu[i];
-            return copiedCount > 0;
+            IDataVault vault = _dataVault;
+            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarPingGpu))
+                return false;
+
+            try
+            {
+                if (!TryReadGprPingGpu(out NativeArray<float4>.ReadOnly pingGpu))
+                    return false;
+
+                copiedCount = math.min(destination.Length, _activeGprPings);
+                for (int i = 0; i < copiedCount; i++)
+                    destination[i] = pingGpu[i];
+                return copiedCount > 0;
+            }
+            finally
+            {
+                vault?.TryUnlockBuffer(BufferID.GroundRadarPingGpu, SystemID.WorldStreaming);
+            }
         }
 
         public void SetOreFilterType(int oreType)
@@ -599,8 +577,6 @@ namespace Hecton8.World
             if (!TryLockScanJobBuffers())
                 return;
 
-            bool scanJobBuffersClaimed = false;
-            bool sdfSnapshotClaimed = false;
             bool sdfSnapshotLocked = false;
             try
             {
@@ -629,9 +605,8 @@ namespace Hecton8.World
                 NativeArray<float3>.ReadOnly orePositions = default;
                 NativeArray<int>.ReadOnly oreTypes = default;
                 int oreCount = 0;
-                IWorldResourceSpawnerReadDependencySink oreReadDependencySink = null;
                 if (scanDue)
-                    TryResolveOreSource(out orePositions, out oreTypes, out oreCount, out oreReadDependencySink);
+                    TryResolveOreSource(out orePositions, out oreTypes, out oreCount, out _);
 
                 float qualityWeight01 = ReadGlobalQualityWeight01();
                 maxSignalStrength[0] = 0f;
@@ -665,21 +640,13 @@ namespace Hecton8.World
                             (hasShift ? GroundRadarConstants.AupShiftFlag : 0u)
                 };
 
-                _scanJobHandle = job.Schedule();
-                _scanSdfSnapshotLocked = sdfSnapshotLocked;
-                sdfSnapshotClaimed = true;
-
-                if (scanDue && oreCount > 0 && oreReadDependencySink != null)
-                    oreReadDependencySink.RegisterOreReadDependency(_scanJobHandle);
-                _scanJobScheduled = true;
-                scanJobBuffersClaimed = true;
+                job.Run();
+                CommitCompletedScan();
             }
             finally
             {
-                if (!sdfSnapshotClaimed)
-                    UnlockSdfSnapshotBuffer(ref sdfSnapshotLocked);
-                if (!scanJobBuffersClaimed)
-                    ReleaseScanJobBufferLocks();
+                UnlockSdfSnapshotBuffer(ref sdfSnapshotLocked);
+                ReleaseScanJobBufferLocks();
             }
         }
 
@@ -1012,18 +979,6 @@ namespace Hecton8.World
             _scanJobBufferLockCount = 0;
         }
 
-        private void ReleaseScanSdfSnapshotLock()
-        {
-            if (!_scanSdfSnapshotLocked)
-                return;
-
-            IDataVault vault = _dataVault;
-            if (vault != null)
-                vault.TryUnlockBuffer(GroundRadarSdfSnapshotBuffer, SystemID.WorldStreaming);
-
-            _scanSdfSnapshotLocked = false;
-        }
-
         private void UnlockSdfSnapshotBuffer(ref bool locked)
         {
             if (!locked)
@@ -1262,9 +1217,6 @@ namespace Hecton8.World
             if (!_pendingDataVaultRebind)
                 return _dataVault != null;
 
-            if (_scanJobScheduled)
-                return false;
-
             _dataVault = _pendingDataVault;
             _pendingDataVault = null;
             _pendingDataVaultRebind = false;
@@ -1297,21 +1249,35 @@ namespace Hecton8.World
 
         private void WriteTelemetry(uint frameId, int addedCount, int rayCount, float highestStrength, uint flags)
         {
-            if (!TryOpenGprTelemetryForOwnerWrite(out NativeArray<GroundRadarTelemetryEntry> telemetryRing) || telemetryRing.Length == 0)
+            IDataVault vault = _dataVault;
+            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarTelemetryRing))
                 return;
 
-            int index = _telemetryWriteIndex % telemetryRing.Length;
-            telemetryRing[index] = new GroundRadarTelemetryEntry
+            try
             {
-                Frame = frameId,
-                ActiveGprPings = _activeGprPings,
-                AddedGprPings = addedCount,
-                RayCount = rayCount,
-                HighestSignalStrength = highestStrength,
-                ProbeOrigin = _lastProbeOrigin,
-                Flags = flags
-            };
-            _telemetryWriteIndex = (_telemetryWriteIndex + 1) % telemetryRing.Length;
+                if (!TryOpenVaultBufferForOwnerWrite(vault, in _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out NativeArray<GroundRadarTelemetryEntry> telemetryRing) ||
+                    telemetryRing.Length == 0)
+                {
+                    return;
+                }
+
+                int index = _telemetryWriteIndex % telemetryRing.Length;
+                telemetryRing[index] = new GroundRadarTelemetryEntry
+                {
+                    Frame = frameId,
+                    ActiveGprPings = _activeGprPings,
+                    AddedGprPings = addedCount,
+                    RayCount = rayCount,
+                    HighestSignalStrength = highestStrength,
+                    ProbeOrigin = _lastProbeOrigin,
+                    Flags = flags
+                };
+                _telemetryWriteIndex = (_telemetryWriteIndex + 1) % telemetryRing.Length;
+            }
+            finally
+            {
+                vault?.TryUnlockBuffer(BufferID.GroundRadarTelemetryRing, SystemID.WorldStreaming);
+            }
         }
 
         private void DumpBlackBox()

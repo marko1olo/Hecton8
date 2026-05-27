@@ -1,0 +1,68 @@
+{
+  "agentId": "1335",
+  "task": "VR_SOMATIC_COMFORT_AND_TUNNELING_VFX_DRIVER_LOOP69",
+  "status": "STATIC_VERIFIED_BUILD_BLOCKED_EXTERNAL",
+  "prompt": {
+    "path": "Docs/Tasks/CURRENT_BATCH.md",
+    "lengthBytes": 18576,
+    "taskCount": 20,
+    "sha256": "CED5DA5188E0838802BA00938AFD9F382174FAA78453C32C78A6AE34BCB1C2E2"
+  },
+  "scannedFiles": 11,
+  "changedFiles": [
+    "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+    "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+    "Assets/_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs",
+    "Assets/_Project/Scripts/UI/ARWaypointOverlay.cs",
+    "Assets/_Project/Scripts/UI/AcousticRadarSphereRenderer.cs",
+    "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs",
+    "Assets/_Project/Scripts/UI/SonarHoloCompass.cs",
+    "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs",
+    "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs",
+    "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+    "Assets/_Project/Scripts/Visor/HectonVisorStencilPreviewGizmo.cs"
+  ],
+  "defectsFound": [
+    "Unclamped absolute-universe local float downcasts in visor/UI presentation paths.",
+    "Stale non-1335 black-box dump artifact names in foveated, somatic, and OpenXR manual override paths.",
+    "SomaticKinematicsRuntime held DataVault pins across dispatcher phases through scheduled job completion."
+  ],
+  "fixesApplied": [
+    "Converted scoped AUP local conversions to LocalDeltaFloat3Clamped with DefaultMaxLocalCastMeters and local fallbacks.",
+    "Renamed scoped black-box dump outputs to agent-1335 artifacts.",
+    "Converted SomaticKinematicsRuntime from scheduled/pinned job route to synchronous job.Run under short TryAcquireWriteLock leases released in finally.",
+    "Removed TryResolveHandle, TryLockBuffer, TryUnlockBuffer, DispatcherJobSwap, RegisterActiveJob, _pendingJob, _jobPending, and _buffersLocked from SomaticKinematicsRuntime."
+  ],
+  "failedGates": [
+    "dotnet_build_external_candice_sqlite_dependency"
+  ],
+  "staticGates": {
+    "legacyDumpOrUnclampedAupHits": 0,
+    "legacyVaultOrPinHits": 0,
+    "hotTextLinqHits": 0,
+    "broadExceptionOrThrowHits": 0,
+    "somaticBraceBalance": 0,
+    "gitDiffCheckErrors": 0
+  },
+  "nativeCollections": {
+    "fieldLikeDeclarations": 10,
+    "persistentNativeFieldsRemaining": 0,
+    "transientJobFields": 8,
+    "transientMethodLocalViews": 2
+  },
+  "locks": {
+    "writeLockCallsInScope": 8,
+    "releaseCallsInScope": 19,
+    "readOnlyHandleCallsInScope": 14,
+    "somaticLegacyPinCallsRemaining": 0
+  },
+  "build": {
+    "command": "dotnet build .\\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+    "result": "failed_before_green_verification",
+    "blockingErrors": [
+      "Assets/Candice AI for Games/Scripts/Libs/Candice Save System/Overrides/CandiceSQLiteProvider.cs(1,12): CS0234 Mono.Data namespace missing",
+      "Assets/Candice AI for Games/Scripts/Libs/Candice Save System/Overrides/CandiceSQLiteProvider.cs(489,60): CS0246 SqliteDataReader missing"
+    ]
+  },
+  "verificationHashSha256": "B8F49AE97BF09437778C8EA3B7C9226A6709A51B0CB7BDC123C189B9AF19335C"
+}

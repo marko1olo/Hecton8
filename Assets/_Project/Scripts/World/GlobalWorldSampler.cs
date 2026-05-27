@@ -222,7 +222,7 @@ namespace Hecton8.World
         [FieldOffset(220)] private uint _pad2;
     }
 
-    public ref struct GlobalWorldSamplerData
+    public struct GlobalWorldSamplerData
     {
         // Unity NativeArray<T> handles are pointer-bearing 8-byte-aligned job handles.
         // Scalar payload after the handles is 184 bytes:
@@ -631,7 +631,7 @@ namespace Hecton8.World
             NativeArray<int> sampleCounter,
             NativeArray<GlobalWorldSamplerCounterBlock> counterBlocks,
             NativeArray<GlobalWorldSamplerTelemetryEntry> telemetryRing,
-            in GlobalWorldSamplerScalarData scalar)
+            GlobalWorldSamplerScalarData scalar)
         {
             GlobalWorldSamplerData data = default;
             data.HeightSamples = heightSamples;
@@ -697,7 +697,7 @@ namespace Hecton8.World
                 return inputDeps;
             }
 
-            BatchSamplerJob job;
+            BatchSamplerJob job = default;
             job.SetData(in data);
             job.PositionsAup = positionsAup;
             job.Results = results;
@@ -723,7 +723,7 @@ namespace Hecton8.World
                 return inputDeps;
             }
 
-            BatchLocalSamplerJob job;
+            BatchLocalSamplerJob job = default;
             job.SetData(in data);
             job.PositionsLocal = positionsLocal;
             job.Results = results;
@@ -748,7 +748,7 @@ namespace Hecton8.World
                 return inputDeps;
             }
 
-            GradientNormalEstimationBatchJob job;
+            GradientNormalEstimationBatchJob job = default;
             job.SetData(in data);
             job.PositionsAup = positionsAup;
             job.Results = results;
@@ -773,7 +773,7 @@ namespace Hecton8.World
                 return inputDeps;
             }
 
-            MockTerrainQueryStressJob job;
+            MockTerrainQueryStressJob job = default;
             job.SetData(in data);
             job.Signals = signals;
             job.Results = results;
@@ -802,7 +802,7 @@ namespace Hecton8.World
                 return inputDeps;
             }
 
-            MockBoidRaymarchJob job;
+            MockBoidRaymarchJob job = default;
             job.SetData(in data);
             job.RayDirectionsLocal = rayDirectionsLocal;
             job.Hits = hits;
@@ -2377,7 +2377,7 @@ namespace Hecton8.World
                 SampleCounter,
                 CounterBlocks,
                 TelemetryRing,
-                in ScalarData);
+                ScalarData);
         }
 
         public void Execute(int index)
@@ -2463,7 +2463,7 @@ namespace Hecton8.World
                 SampleCounter,
                 CounterBlocks,
                 TelemetryRing,
-                in ScalarData);
+                ScalarData);
         }
 
         public void Execute(int index)
@@ -2586,7 +2586,7 @@ namespace Hecton8.World
                 SampleCounter,
                 CounterBlocks,
                 TelemetryRing,
-                in ScalarData);
+                ScalarData);
         }
 
         public void Execute(int index)
@@ -2685,7 +2685,7 @@ namespace Hecton8.World
                 SampleCounter,
                 CounterBlocks,
                 TelemetryRing,
-                in ScalarData);
+                ScalarData);
         }
 
         public void Execute(int startIndex, int count)
@@ -2774,7 +2774,7 @@ namespace Hecton8.World
                 SampleCounter,
                 CounterBlocks,
                 TelemetryRing,
-                in ScalarData);
+                ScalarData);
         }
 
         public void Execute(int index)

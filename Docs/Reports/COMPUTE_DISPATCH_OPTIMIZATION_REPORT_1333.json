@@ -40,7 +40,7 @@
         "missing_fragments": [],
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4"
+        "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e"
       },
       {
         "missing_fragments": [],
@@ -58,7 +58,7 @@
         "missing_fragments": [],
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
-        "sha256": "a43b63ef22082f3e6d493ca61eb15e4aa8f8dce47116d1a6031aaa8eac3ac440"
+        "sha256": "a554255a8f3a37c2683f4a68e078ec68daa5f3b1f2c48973e48e1392cd12d213"
       },
       {
         "missing_fragments": [],
@@ -353,7 +353,7 @@
         "missing_fragments": [],
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4"
+        "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e"
       },
       {
         "forbidden_fragments": [],
@@ -374,7 +374,7 @@
         "missing_fragments": [],
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
-        "sha256": "a43b63ef22082f3e6d493ca61eb15e4aa8f8dce47116d1a6031aaa8eac3ac440"
+        "sha256": "a554255a8f3a37c2683f4a68e078ec68daa5f3b1f2c48973e48e1392cd12d213"
       },
       {
         "forbidden_fragments": [],
@@ -618,7 +618,7 @@
         "agent_1333_modified": true,
         "dispatch_count": 2,
         "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4"
+        "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e"
       },
       {
         "agent_1333_modified": true,
@@ -636,7 +636,7 @@
         "agent_1333_modified": true,
         "dispatch_count": 1,
         "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
-        "sha256": "a43b63ef22082f3e6d493ca61eb15e4aa8f8dce47116d1a6031aaa8eac3ac440"
+        "sha256": "a554255a8f3a37c2683f4a68e078ec68daa5f3b1f2c48973e48e1392cd12d213"
       },
       {
         "agent_1333_modified": true,
@@ -793,7 +793,7 @@
       {
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4",
+        "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e",
         "violations": []
       },
       {
@@ -811,7 +811,7 @@
       {
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
-        "sha256": "a43b63ef22082f3e6d493ca61eb15e4aa8f8dce47116d1a6031aaa8eac3ac440",
+        "sha256": "a554255a8f3a37c2683f4a68e078ec68daa5f3b1f2c48973e48e1392cd12d213",
         "violations": []
       },
       {
@@ -958,7 +958,7 @@
         "missing_fragments": [],
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4"
+        "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e"
       },
       {
         "missing_fragments": [],
@@ -1084,7 +1084,7 @@
             "resource_count": 7
           }
         ],
-        "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4"
+        "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e"
       },
       {
         "file_has_high_resource_compute_gate": true,
@@ -1261,7 +1261,7 @@
         "missing_fragments": [],
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4"
+        "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e"
       },
       {
         "dispatch_count": 2,
@@ -1288,7 +1288,7 @@
         "missing_fragments": [],
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
-        "sha256": "a43b63ef22082f3e6d493ca61eb15e4aa8f8dce47116d1a6031aaa8eac3ac440"
+        "sha256": "a554255a8f3a37c2683f4a68e078ec68daa5f3b1f2c48973e48e1392cd12d213"
       },
       {
         "dispatch_count": 6,
@@ -1754,7 +1754,7 @@
         "missing_fragments": [],
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4"
+        "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e"
       },
       {
         "forbidden_fragments": [],
@@ -1775,7 +1775,7 @@
         "missing_fragments": [],
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
-        "sha256": "a43b63ef22082f3e6d493ca61eb15e4aa8f8dce47116d1a6031aaa8eac3ac440"
+        "sha256": "a554255a8f3a37c2683f4a68e078ec68daa5f3b1f2c48973e48e1392cd12d213"
       },
       {
         "forbidden_fragments": [],
@@ -1917,7 +1917,7 @@
         "missing_fragments": [],
         "owner": "first_party",
         "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4"
+        "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e"
       },
       {
         "forbidden_fragments": [],
@@ -4531,7 +4531,7 @@
           "name": "_HectonDamageVolumeStampCommands"
         }
       ],
-      "sha256": "756f8943ea98d7ab68caa9dc2ad3954b04001b8b15e1e72f2fa23d545e2a7b58",
+      "sha256": "da1bf7d5ebf0115b67d02ee376b48c65804f76673271eea2590f576d8a57c50e",
       "unresolved_numthreads": 0
     },
     {
@@ -5184,7 +5184,7 @@
           "name": "_AbyssalFlowField"
         }
       ],
-      "sha256": "8b1de2809f2be7704f138a7541a4a5d507076d520247e4839f6a45ba8559ea61",
+      "sha256": "3e77322adf3932ae2db60b3bad30555595026043a9d60dafc23f5e65f51e553d",
       "unresolved_numthreads": 0
     },
     {
@@ -7819,13 +7819,13 @@
           "expression": "s_PhantomDronesCompute.Dispatch( s_PhantomDroneKernel, phantomDispatchGroups, 1, 1);",
           "external_payload_sizing": false,
           "hardcoded_sizing_evidence": false,
-          "line": 6693
+          "line": 6698
         },
         {
           "expression": "s_DroneCullingCompute.Dispatch( s_DroneCullKernel, cullDispatchGroups, 1, 1);",
           "external_payload_sizing": false,
           "hardcoded_sizing_evidence": false,
-          "line": 6823
+          "line": 6828
         }
       ],
       "file_has_compute_support_gate": true,
@@ -7835,7 +7835,7 @@
       "file_uses_external_payload_sizing": false,
       "owner": "first_party",
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-      "sha256": "b7c231d340485bdf3a893431eed8169435860c9efa11be11b0dc6cb6a6f4b3d4"
+      "sha256": "db57a1bf5f8f46976becee188cb19dcf9d888f31abfb62ab57ca60052ce3be3e"
     },
     {
       "compute_asset_references": [
@@ -7904,7 +7904,7 @@
       "file_uses_external_payload_sizing": false,
       "owner": "first_party",
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
-      "sha256": "a43b63ef22082f3e6d493ca61eb15e4aa8f8dce47116d1a6031aaa8eac3ac440"
+      "sha256": "a554255a8f3a37c2683f4a68e078ec68daa5f3b1f2c48973e48e1392cd12d213"
     },
     {
       "compute_asset_references": [],

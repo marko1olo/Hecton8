@@ -42,8 +42,10 @@ namespace Hecton8.Graphics.Culling
         [Header("Editor Debug")]
         public bool EditorShowSorting;
 
-        public TBDRVertexBudgetVault Vault;
+        private readonly VertexBudgetVaultOwner _vaultOwner = new VertexBudgetVaultOwner();
         private readonly RuntimeBufferSet _buffers = new RuntimeBufferSet();
+
+        public ref TBDRVertexBudgetVault Vault => ref _vaultOwner.Vault;
 
         public NativeArray<PoiTransformDTO>.ReadOnly MockVisibleInstances =>
             _buffers.MockVisibleInstances.IsCreated ? _buffers.MockVisibleInstances.AsReadOnly() : default;
@@ -55,7 +57,7 @@ namespace Hecton8.Graphics.Culling
             _buffers.RadixHistogram.IsCreated ? _buffers.RadixHistogram.AsReadOnly() : default;
         public NativeArray<int>.ReadOnly VisibleCountOut =>
             _buffers.VisibleCountOut.IsCreated ? _buffers.VisibleCountOut.AsReadOnly() : default;
-        public NativeArray<MockQualityWeightSignal>.ReadOnly MockQualitySignal =>
+        public NativeArray<TBDRMockQualityWeightSignal>.ReadOnly MockQualitySignal =>
             _buffers.MockQualitySignal.IsCreated ? _buffers.MockQualitySignal.AsReadOnly() : default;
         public NativeArray<MockCameraMatrix>.ReadOnly MockCamera =>
             _buffers.MockCamera.IsCreated ? _buffers.MockCamera.AsReadOnly() : default;
@@ -75,7 +77,7 @@ namespace Hecton8.Graphics.Culling
             public NativeArray<uint> MeshVertexCounts;
             public NativeArray<int> RadixHistogram;
             public NativeArray<int> VisibleCountOut;
-            public NativeArray<MockQualityWeightSignal> MockQualitySignal;
+            public NativeArray<TBDRMockQualityWeightSignal> MockQualitySignal;
             public NativeArray<MockCameraMatrix> MockCamera;
             public NativeArray<float4> SourceFrustumPlanes;
             public NativeArray<float4> SqueezedFrustumPlanes;
@@ -98,13 +100,18 @@ namespace Hecton8.Graphics.Culling
             }
         }
 
+        private sealed class VertexBudgetVaultOwner
+        {
+            public TBDRVertexBudgetVault Vault;
+        }
+
         private IDataVault _dataVault;
         private VaultGenerationHandle<PoiTransformDTO> _mockVisibleHandle;
         private VaultGenerationHandle<PoiTransformDTO> _sortScratchHandle;
         private VaultGenerationHandle<uint> _meshVertexCountsHandle;
         private VaultGenerationHandle<int> _radixHistogramHandle;
         private VaultGenerationHandle<int> _visibleCountOutHandle;
-        private VaultGenerationHandle<MockQualityWeightSignal> _mockQualitySignalHandle;
+        private VaultGenerationHandle<TBDRMockQualityWeightSignal> _mockQualitySignalHandle;
         private VaultGenerationHandle<MockCameraMatrix> _mockCameraHandle;
         private VaultGenerationHandle<float4> _sourceFrustumPlanesHandle;
         private VaultGenerationHandle<float4> _squeezedFrustumPlanesHandle;
@@ -159,11 +166,12 @@ namespace Hecton8.Graphics.Culling
             _transparentQuadLimit = (int)math.max(1u, _limits.TransparentQuadLimit);
             _frustumSqueezeAngle = math.clamp(_limits.FrustumSqueezeDegrees, 0f, 15f);
 
-            Vault = new TBDRVertexBudgetVault(_dataVault, 1, 1, 4, TelemetryCapacity);
-            Vault.ApplyHardLimits(in _limits);
+            ref TBDRVertexBudgetVault vault = ref Vault;
+            vault = new TBDRVertexBudgetVault(_dataVault, 1, 1, 4, TelemetryCapacity);
+            vault.ApplyHardLimits(in _limits);
             AllocateNativeMockBuffers(math.max(1, _sortCapacity), _dataVault);
             _telemetry = new TBDRPipelineTelemetryRecorder();
-            _telemetry.BindExternalRing(Vault.TelemetryRing);
+            _telemetry.BindExternalRing(vault.TelemetryRing);
             _telemetry.EnsureCreated();
 #if UNITY_EDITOR
             _csvIngestor = new TBDRGpuBudgetCsvIngestor();
@@ -200,7 +208,8 @@ namespace Hecton8.Graphics.Culling
         {
             Initialize();
             string path = ResolveGpuBudgetCsvPath();
-            bool applied = _csvIngestor.Poll(path, ref Vault);
+            ref TBDRVertexBudgetVault vault = ref Vault;
+            bool applied = _csvIngestor.Poll(path, ref vault);
             if (applied)
             {
                 _hardVertexCap = _csvIngestor.LastParsedVertexCap;
@@ -427,15 +436,18 @@ namespace Hecton8.Graphics.Culling
             if (!_initialized)
                 return;
 
-            if (!_usesVaultStorage)
+            if (_telemetry != null)
+                _telemetry.Dispose();
+            _telemetry = null;
+
+            if (_usesVaultStorage)
+                ReleaseVaultBuffers();
+            else
                 DisposeFallbackBuffers();
 
             _buffers.Clear();
             ResetVaultHandles();
-            Vault.Dispose();
-            if (_telemetry != null)
-                _telemetry.Dispose();
-            _telemetry = null;
+            Vault.Dispose(_dataVault);
 #if UNITY_EDITOR
             _csvIngestor = null;
 #endif
@@ -488,7 +500,7 @@ namespace Hecton8.Graphics.Culling
                 _buffers.MeshVertexCounts = new NativeArray<uint>(256, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
                 _buffers.RadixHistogram = new NativeArray<int>(RadixHistogramCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
                 _buffers.VisibleCountOut = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.MockQualitySignal = new NativeArray<MockQualityWeightSignal>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.MockQualitySignal = new NativeArray<TBDRMockQualityWeightSignal>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
                 _buffers.MockCamera = new NativeArray<MockCameraMatrix>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
                 _buffers.SourceFrustumPlanes = new NativeArray<float4>(6, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
                 _buffers.SqueezedFrustumPlanes = new NativeArray<float4>(6, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
@@ -528,6 +540,29 @@ namespace Hecton8.Graphics.Culling
             DisposeFallbackNativeArray(ref _buffers.IndirectDrawArgs);
         }
 
+        private void ReleaseVaultBuffers()
+        {
+            ReleaseVaultBuffer(ref _mockVisibleHandle);
+            ReleaseVaultBuffer(ref _sortScratchHandle);
+            ReleaseVaultBuffer(ref _meshVertexCountsHandle);
+            ReleaseVaultBuffer(ref _radixHistogramHandle);
+            ReleaseVaultBuffer(ref _visibleCountOutHandle);
+            ReleaseVaultBuffer(ref _mockQualitySignalHandle);
+            ReleaseVaultBuffer(ref _mockCameraHandle);
+            ReleaseVaultBuffer(ref _sourceFrustumPlanesHandle);
+            ReleaseVaultBuffer(ref _squeezedFrustumPlanesHandle);
+            ReleaseVaultBuffer(ref _hzbVisibilityMaskHandle);
+            ReleaseVaultBuffer(ref _indirectDrawArgsHandle);
+        }
+
+        private void ReleaseVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (_dataVault != null && handle.BufferID != 0u)
+                _dataVault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
         private static void RegisterFallbackNativeArray<T>(NativeArray<T> array, string label) where T : struct
         {
             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
@@ -564,7 +599,7 @@ namespace Hecton8.Graphics.Culling
                 _buffers.MeshVertexCounts[i] = (uint)(300 + (i & 15) * 64);
 
             float initialQuality = math.isfinite(_globalQualityWeight) ? math.saturate(_globalQualityWeight) : 1f;
-            _buffers.MockQualitySignal[0] = new MockQualityWeightSignal
+            _buffers.MockQualitySignal[0] = new TBDRMockQualityWeightSignal
             {
                 GlobalQualityWeight = initialQuality,
                 Frame = 0u,

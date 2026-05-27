@@ -859,26 +859,6 @@ namespace Hecton8.World
             return true;
         }
 
-        private static bool HasByteDelta(NativeArray<byte> previous, NativeArray<byte> current, int count)
-        {
-            if (!previous.IsCreated || !current.IsCreated || count <= 0)
-                return false;
-
-            int safeCount = math.min(count, math.min(previous.Length, current.Length));
-            for (int i = 0; i < safeCount; i++)
-            {
-                if (previous[i] != current[i])
-                    return true;
-            }
-
-            return false;
-        }
-
-        private bool InvalidateChunksForNewPermanentEchoes(NativeArray<byte> previousEchoFlags, NativeArray<byte> nextEchoFlags)
-        {
-            return HasByteDelta(previousEchoFlags, nextEchoFlags, _ecosystemThreatGridCellCount);
-        }
-
         private void ScheduleThreatSpatialVisualSolvePhase()
         {
             if (!_threatGridInitialized)

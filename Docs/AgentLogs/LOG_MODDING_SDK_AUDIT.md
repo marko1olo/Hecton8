@@ -1014,3 +1014,104 @@ Verification:
 - PASS: touched-file trailing whitespace scan.
 - DEFERRED: dotnet compile was not launched because CPU sampled 100 percent and an active `dotnet.exe` process was present. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
 - NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 34
+
+What was wrong:
+- `ModLoader.TryReadManifest` read `mod.json` with `File.ReadAllText` before any byte cap.
+- A hostile oversized manifest could allocate a large managed string during cold package discovery before canonical id, dependency, EntryAssembly, API version, or reserved assembly checks.
+- The static proof chain did not record a manifest byte cap.
+- Concurrent source drift changed `MockModQueue` shape and renamed the acoustic sandbox output signal; the validator needed to follow the real no-public-route contract without reverting other-agent changes.
+
+What was done:
+- Added `MaxManifestBytes = 32768` and `TryValidateManifestFileSize` in `ModLoader`.
+- The loader now rejects missing, empty, or `>32768` byte `mod.json` before `File.ReadAllText`.
+- Updated `Signal_Schema.json` to schema revision `58`.
+- Updated `README.md`, `Loader_Save_Audit_Matrix.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove manifest byte cap, pre-read ordering, schema snapshot, audit docs, spec text, and playbook output.
+- Adjusted the validator to accept current `internal ref struct MockModQueue` if all queue/control members remain non-public, to track `SandboxMockAcousticSignal`, and to exclude root cold registry cache hooks from the internal-forbidden facade method count.
+- Updated `Command_Audit_Matrix.md` for `SandboxMockAcousticSignal`.
+
+Cinematic cheats used:
+- No physical simulation cheat. The practical SDK cheat is bounding the small runtime manifest and pushing richer authoring data into separate bounded artifacts instead of letting JSON grow unbounded.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: one cold `FileInfo` allocation and length checks per discovered manifest.
+- Removed risk: large managed string allocation during mod discovery from oversized `mod.json`.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `58`, `ManifestMaxBytes=32768`, `ManifestByteCapEnforcedBeforeRead=True`, `SaveStateStoreRequiresScopedOrEngineOwner=True`, `MockModQueueMembersInternalOnly=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `58`, manifest byte cap `32768`, and last static validation snapshot `manifestByteCapEnforcedBeforeRead=True`.
+- PASS: source ordering scan found `TryValidateManifestFileSize(manifestPath)` before `File.ReadAllText(manifestPath)`.
+- PASS: stale schema-57 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet compile was not launched because CPU sampled 69 percent and active `dotnet.exe` process `61052` was present.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 35
+
+What was wrong:
+- `ModLoader.DiscoverAndLoadMods` recursively called `Directory.GetFiles(..., SearchOption.AllDirectories)` and allocated the full manifest path array before any package count cap.
+- The schema 58 byte cap protected each `mod.json` read, but package discovery count was still controlled by filesystem contents.
+- Candidate list capacity was derived from the unbounded path array length.
+
+What was done:
+- Added `MaxDiscoveredManifestCount = 64` and `MaxDiscoveredManifestCountLabel = "64"` in `ModLoader`.
+- Replaced recursive `Directory.GetFiles` discovery with `CollectManifestPaths`, lazy `Directory.EnumerateFiles`, capped collection, and explicit warning on cap hit or discovery exceptions.
+- Allocated `List<ModCandidate>` from the bounded collected count instead of an unbounded path array.
+- Updated `Signal_Schema.json` to schema revision `59`.
+- Updated `README.md`, `Loader_Save_Audit_Matrix.md`, `Mod_API_Specification.md`, and `Runtime_Verification_Playbook.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove discovery cap, lazy enumeration, removal of recursive manifest `Directory.GetFiles`, ordering before candidate allocation, schema snapshot, audit docs, spec text, and playbook output.
+
+Cinematic cheats used:
+- No physical simulation cheat. The practical SDK cheat is a fixed runtime discovery ceiling while richer package browsing belongs in SDK/workbench tooling, not in the game boot crawl.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: cold directory enumeration and up to 64 collected manifest path strings.
+- Removed risk: full recursive path-array allocation and candidate-list sizing from arbitrary Mods directory contents.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `59`, `ManifestMaxBytes=32768`, `ManifestByteCapEnforcedBeforeRead=True`, `ManifestDiscoveryMaxCount=64`, `ManifestDiscoveryUsesBoundedEnumeration=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `59`, manifest discovery cap `64`, and last static validation snapshot `manifestDiscoveryUsesBoundedEnumeration=True`.
+- PASS: source scan found lazy `Directory.EnumerateFiles`, no recursive manifest `Directory.GetFiles`, and `CollectManifestPaths` before candidate allocation.
+- PASS: stale schema-58 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet compile was not launched because CPU sampled 100 percent and active `dotnet.exe` process `61052` was present. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 36
+
+What was wrong:
+- `ModLoader` still used top-level `Directory.GetFiles` arrays for managed DLL identity scan, legacy `.bundle` fallback, and `lang_*.json` fallback.
+- A package folder could force cold managed path-array allocation even after recursive manifest discovery was capped.
+- Managed DLL identity discovery needed a fail-closed package outcome when the top-level DLL cap is exceeded or discovery fails.
+
+What was done:
+- Added top-level package file caps in `ModLoader`: `32` managed assemblies, `4` bundles, `16` localization files.
+- Replaced the remaining top-level package `Directory.GetFiles` calls with `CollectTopLevelFiles`, lazy `Directory.EnumerateFiles`, bounded lists, deterministic sort, and cap/failure warnings.
+- Made managed assembly discovery over-cap or discovery failure set the manifest contract error, disabling the package before load.
+- Updated `Signal_Schema.json` to schema revision `60`.
+- Updated `README.md`, `Loader_Save_Audit_Matrix.md`, `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md`, and `Mod_API_Sandbox_Quarantine.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove bounded top-level package file discovery, caps `32/4/16`, fail-closed DLL over-cap behavior, schema snapshot, audit docs, spec text, and playbook output.
+
+Cinematic cheats used:
+- No physical simulation cheat. The practical SDK cheat is a strict runtime package envelope: rich browsing and package analysis belong in SDK/workbench tools, while game boot discovery stays bounded and predictable.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: cold bounded list allocation and sort for up to 32 DLL paths, 4 bundle paths, or 16 localization paths.
+- Removed risk: unbounded top-level package path-array allocation and partial trust after failed managed DLL identity discovery.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `60`, `ManagedAssemblyIdentityScanUsesBoundedEnumeration=True`, `MaxTopLevelManagedAssemblyCount=32`, `ExcessTopLevelManagedAssembliesDisablePackage=True`, `MaxTopLevelBundleCount=4`, `MaxLocalizationFileCount=16`, `TopLevelContentDiscoveryUsesBoundedEnumeration=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `60`, loader/save audit caps `32/4/16`, and last static validation snapshot top-level discovery flags.
+- PASS: source scan found old top-level DLL/bundle/localization `Directory.GetFiles` calls removed, bounded top-level `Directory.EnumerateFiles` present, and DLL cap/failure package disable reasons present.
+- PASS: stale schema-59/current-text scan found no stale current revision or old unbounded top-level DLL wording in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: dotnet compile was not launched because active `dotnet.exe` process `52044` was present, despite CPU sampling 33.95 percent. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.

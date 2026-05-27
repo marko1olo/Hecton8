@@ -592,8 +592,10 @@ Shader "Hecton8/Flora/CoralMaster"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 float3 safePositionOS = all(isfinite(input.positionOS.xyz)) ? input.positionOS.xyz : float3(0.0, 0.0, 0.0);
+                float3 safeNormalOS = all(isfinite(input.normalOS)) ? input.normalOS : float3(0.0, 1.0, 0.0);
+                safeNormalOS = dot(safeNormalOS, safeNormalOS) > 0.000001 ? safeNormalOS : float3(0.0, 1.0, 0.0);
                 float3 positionWS = TransformObjectToWorld(safePositionOS);
-                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                float3 normalWS = TransformObjectToWorldNormal(safeNormalOS);
                 output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
 
                 #if UNITY_REVERSED_Z

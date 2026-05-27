@@ -105,6 +105,7 @@ Shader "Hecton8/Flora/ProceduralBio"
             float4 _HectonFloraBiomeTintParams;
             float4x4 _GlobalBiolumDearLieGroups;
             float4 _GlobalBiolumParams;
+            float _H8GlobalQualityWeight;
 
             struct Attributes
             {
@@ -117,8 +118,8 @@ Shader "Hecton8/Flora/ProceduralBio"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                #if !defined(_MATH_LOD_LOW)
                 float3 positionWS : TEXCOORD0;
+                #if !defined(_MATH_LOD_LOW)
                 float3 projectWS : TEXCOORD1;
                 #endif
                 half3 normalWS : TEXCOORD2;
@@ -150,6 +151,17 @@ Shader "Hecton8/Flora/ProceduralBio"
                 return frac(float2((p.x + p.y) * p.x, (p.x + p.y) * p.y));
             }
 
+            half HectonProceduralBioGlobalQualityWeight()
+            {
+                return (half)(isfinite(_H8GlobalQualityWeight) ? saturate(_H8GlobalQualityWeight) : 0.0);
+            }
+
+            half HectonProceduralBioSmoothRange01(half low, half high, half value)
+            {
+                half t = saturate((value - low) * rcp(max(high - low, 0.0001h)));
+                return t * t * (3.0h - 2.0h * t);
+            }
+
             float ResolveProceduralBioInstanceSeed()
             {
                 float4x4 objectToWorld = GetObjectToWorldMatrix();
@@ -178,6 +190,7 @@ Shader "Hecton8/Flora/ProceduralBio"
 
                 #if defined(_QUALITY_HIGH)
                 float sharpen = saturate(((float)_TriplanarSharpness - 1.0) * 0.14285715);
+                sharpen *= HectonProceduralBioSmoothRange01(0.35h, 0.95h, HectonProceduralBioGlobalQualityWeight());
                 blend = lerp(blend, blend * blend, sharpen);
                 blend *= rcp(max(dot(blend, float3(1.0, 1.0, 1.0)), 0.0001));
                 #endif
@@ -352,15 +365,15 @@ Shader "Hecton8/Flora/ProceduralBio"
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(normalOS);
 
                 output.positionCS = positionInputs.positionCS;
-                #if !defined(_MATH_LOD_LOW)
                 output.positionWS = positionInputs.positionWS;
+                #if !defined(_MATH_LOD_LOW)
                 output.projectWS = ResolveProceduralBioProjectionPosition(positionInputs.positionWS);
                 output.seed = ResolveProceduralBioInstanceSeed();
                 output.biolumLocalAupCoord = positionInputs.positionWS - TransformObjectToWorld(float3(0.0, 0.0, 0.0));
                 output.viewDirWS = HectonProceduralBioNormalizeRsqrt(GetWorldSpaceViewDir(positionInputs.positionWS));
                 #endif
                 output.normalWS = HectonProceduralBioNormalizeRsqrt(normalInputs.normalWS);
-                output.color = input.color;
+                output.color = all(isfinite(input.color)) ? input.color : half4(1.0h, 1.0h, 1.0h, 1.0h);
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
                 return output;
             }
@@ -390,11 +403,13 @@ Shader "Hecton8/Flora/ProceduralBio"
                 normalVS *= rsqrt(max(dot(normalVS, normalVS), 0.0001));
                 float2 matcapUv = normalVS.xy * 0.5 + 0.5;
                 half3 matcap = SAMPLE_TEXTURE2D(_MatCap, sampler_MatCap, matcapUv).rgb;
+                half qualityWeight = HectonProceduralBioGlobalQualityWeight();
+                half matcapWeight = _MatCapStrength * (1.0h - HectonProceduralBioSmoothRange01(0.18h, 0.68h, qualityWeight) * 0.45h);
                 half wrapDiffuse = max(0.0h, dot(baseNormalWS, (half3)mainLight.direction) + 0.5h) * 0.6666667h;
-                half3 albedo = lerp(_BaseColor.rgb * rootTipTint, matcap * _TipTint.rgb, _MatCapStrength);
+                half3 albedo = lerp(_BaseColor.rgb * rootTipTint, matcap * _TipTint.rgb, matcapWeight);
                 albedo *= ResolveProceduralBioBiomeTint(_BiomeTintStrength);
                 half3 ambient = H8CustomLightProbeResolveAmbient(input.positionWS, baseNormalWS, half3(0.015h, 0.025h, 0.035h)) * _AmbientStrength;
-                half3 emission = ResolveProceduralBioEmissionLow(height01, 0.65h);
+                half3 emission = ResolveProceduralBioEmissionLow(height01, lerp(0.42h, 0.65h, qualityWeight));
                 half3 color = albedo * (ambient + mainLight.color * (wrapDiffuse * mainLightAttenuation)) + emission;
                 color = MixFog(color, input.fogFactor);
                 return half4(color, 1.0h);

@@ -11,7 +11,7 @@ namespace Hecton8.Core
         where TResult : unmanaged;
 
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-    public readonly struct NativeQuery<T> where T : unmanaged
+    public readonly ref struct NativeQuery<T> where T : unmanaged
     {
         internal readonly NativeArray<T> Source;
         internal readonly FunctionPointer<NativePredicate<T>> Predicate;
@@ -37,7 +37,7 @@ namespace Hecton8.Core
     }
 
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-    public readonly struct NativeSelectQuery<TSource, TResult>
+    public readonly ref struct NativeSelectQuery<TSource, TResult>
         where TSource : unmanaged
         where TResult : unmanaged
     {

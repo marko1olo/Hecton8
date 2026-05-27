@@ -671,7 +671,22 @@ namespace Hecton8.UI
             {
                 listener.OnBaseIntegrityEvent(in payload);
             }
-            catch (Exception exception)
+            catch (ObjectDisposedException exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+            catch (InvalidOperationException exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+            catch (ArgumentException exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+            catch (NotSupportedException exception)
             {
                 ReportListenerDispatchException();
                 LogListenerDispatchException(exception);

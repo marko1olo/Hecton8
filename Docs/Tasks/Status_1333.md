@@ -2,7 +2,7 @@
 
 Batch source: `Docs/Tasks/CURRENT_BATCH.md`
 Domain: compute shader thread sizing, C# compute dispatch sizing, GPU buffer layout audit.
-Status: VERIFIED GREEN STATIC / VENDOR COMPONENT ACTIVATION GATE + SCANNER PREFILTER / BUILD BLOCKED BY UNITY SHADERGRAPH ARTIFACT
+Status: VERIFIED GREEN STATIC / DRONE PHANTOM COMPUTE ADMISSION + GPU-WRITTEN STATIC BUFFER PROOF / BUILD BLOCKED BY UNITY SHADERGRAPH ARTIFACT
 
 Relevant mandates read:
 - `GPU_Compute_Kernels_Kernels_Optimization_MX350.txt`
@@ -71,9 +71,10 @@ Latest scanner result:
 - transient vault views: 1703
 - transient job views: 295
 - byte offset maps: 134
-- purge verification hash: `f54d1fa1dc5d6fada69755f7f6625b14407dce2bdbf765e624869d36cf016364`
-- current-pass code/proof hash: `f54d1fa1dc5d6fada69755f7f6625b14407dce2bdbf765e624869d36cf016364`
+- purge verification hash: `40edfb80bcbb21c695a4235dd715cf04cc11048f369089c8221b15ec7d3cfd91`
+- current-pass code/proof hash: `40edfb80bcbb21c695a4235dd715cf04cc11048f369089c8221b15ec7d3cfd91`
 - build: `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1` launched after CPU/process gate opened (`19%`, no compiler processes). It failed on missing generated Unity dependency `Temp/CodexBuild/Unity.ShaderGraph.Editor/Unity.ShaderGraph.Editor.dll`; `dotnet build-server shutdown` completed.
+- current build gate recheck after Task 71: not launched; CPU averaged `94%` and active compiler processes were present (`dotnet`, `csc`, `VBCSCompiler`).
 
 ## Checklist
 
@@ -147,6 +148,7 @@ Latest scanner result:
 - [x] Task 68: LEGACY_COMPUTEBUFFER_DEV_SMOKE_PURGE | DOD: `HabitatStressSmokeTester` no longer owns first-party `ComputeBuffer` fields or allocations; smoke shader payload lanes now use `GraphicsBuffer`, and `OOP_ComputeDispatch_Scanner.py` rejects first-party `new ComputeBuffer(...)` after stripping comments/strings | Rejected: leaving a dev-only legacy buffer exception, raw grep that matches string literals, and broad vendor package rewrites | Estimate: 0 us runtime; smoke harness cold allocation only
 - [x] Task 69: AUTHORED_VENDOR_COMPONENT_ACTIVATION_GATE | DOD: dispatch scanner audits first-party `.prefab`/`.unity` authored Crest/GPUI component activation; 7 contracts, 0 first-party violations; scene-authored GPUI managers are admitted only through `HardwareTierDetector.AllowHighResourceComputeShaders` runtime disable guards | Rejected: raw scene binary mutation and broad vendor package edits | Estimate: 0 us normal path; unsupported backends skip vendor manager work
 - [x] Task 70: SCANNER_HOTPATH_PREFILTER | DOD: `OOP_ComputeDispatch_Scanner.py` now prefilters legacy `ComputeBuffer` and graphics-buffer lock analysis before comment stripping/regex passes; dispatch scanner remains green and drops from ~100-130 s to ~21 s locally | Rejected: accepting proof tooling that is too slow for repeated autonomous loops | Estimate: 0 us runtime; editor scanner only
+- [x] Task 71: DRONE_PHANTOM_COMPUTE_ADMISSION_AND_AUP_LOCALITY | DOD: `DroneFleetManager` phantom compute now routes through `HardwareTierDetector.AllowHighResourceComputeShaders`, writes camera-relative phantom matrices, and scanner ownership includes static GPU-written drone append/args/phantom buffers; dispatch/purge scanners remain green | Rejected: raw `SystemInfo.supportsComputeShaders` for optional visual compute and leaving static `s_` GPU-written buffers outside proof | Estimate: 0 us measured; removes unsupported-backend entry and float-magnitude jitter risk
 
 ## Loop State
 
@@ -210,3 +212,4 @@ Latest scanner result:
 - Iteration 58: Re-audited authored scene/prefab activation for vendor compute packages. Dispatch scanner now proves Crest `ShapeFFT` is paired with `Crest4KinematicsAdapter` and scene-authored GPUI manager components are covered by runtime admission disable guards; report shows 7 vendor component activation contracts and 0 first-party violations.
 - Iteration 59: Profiled the dispatch scanner after the asset gate and found most time in comment/string stripping for legacy `ComputeBuffer` proof across all C# files. Added cheap API prefilters before the heavy analyzers, regenerated dispatch/purge reports green, and reduced local dispatch scanner runtime to ~21 seconds.
 - Iteration 60: Rechecked CPU/process gate, launched one throttled `Hecton8.Core.csproj` build when the gate opened, and shut down build servers after failure. Build is currently blocked by the missing Unity-generated `Unity.ShaderGraph.Editor.dll` metadata artifact, not by dispatch scanner failures.
+- Iteration 61: Re-audited drone indirect/phantom compute after the scanner prefilter pass. Found `DroneFleetManager` phantom visual compute still admitted through raw compute support and that static GPU-written drone buffers were not in the scanner ownership map. Repaired phantom admission, changed phantom matrices to camera-relative output, expanded static GPU-written buffer proof, regenerated reports green, and kept compile proof gated by the existing Unity ShaderGraph metadata blocker unless a build gate reopens.

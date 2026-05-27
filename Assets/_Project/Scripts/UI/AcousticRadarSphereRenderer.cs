@@ -161,9 +161,10 @@ namespace Hecton8.UI
                     continue;
 
                 AbsoluteUniversePosition sampleAup = sample.PositionAup;
-                float3 deltaAup = AupPrecisionMath.LocalDeltaFloat3(
+                float3 deltaAup = AupPrecisionMath.LocalDeltaFloat3Clamped(
                     sampleAup.ToAbsoluteDouble3(),
                     listenerAup.ToAbsoluteDouble3(),
+                    AupPrecisionMath.DefaultMaxLocalCastMeters,
                     float3.zero);
                 if (!math.all(math.isfinite(deltaAup)) || math.dot(submarineForward, deltaAup) <= 0f)
                     continue;

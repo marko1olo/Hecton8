@@ -999,7 +999,7 @@ namespace Hecton8.Construction
             _atmosphereResolveAttempted = true;
             _atmosphereSystem = atmosphereSystemSource as ISubmarineAtmosphereRoomMutationSink;
             if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
-                _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(this);
+                ConstructionParentLookup.TryCaptureSelfOrParent(this, out _atmosphereSystem);
         }
 
         private static short ClampToShort(int value)

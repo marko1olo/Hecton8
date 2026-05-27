@@ -148,9 +148,14 @@ namespace Hecton8.World
 
             NativeMemorySentinel.UnregisterNativeArray(array);
             if (hasDependency)
-                array.Dispose(dependency);
+            {
+                JobHandle disposeHandle = array.Dispose(dependency);
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            }
             else
+            {
                 array.Dispose();
+            }
 
             array = default;
         }

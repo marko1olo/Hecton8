@@ -100,6 +100,7 @@ namespace Hecton8.Core
         private bool _registeredSceneCallbacks;
         private bool _registeredUpdatable;
         private bool _registeredHotSwapListener;
+        private bool _dispatcherAvailable;
         private bool _sceneLoadInFlight;
         private string _pendingSceneName;
         private AsyncOperation _pendingSceneLoadOperation;
@@ -133,6 +134,11 @@ namespace Hecton8.Core
         private TMP_Text _terminalBootText;
         // COLD ALLOC: char[384] - transition terminal boot text buffer - owner: SceneRuntimeService
         private readonly char[] _terminalBootBuffer = new char[TerminalBootBufferLength];
+        private object _terminalBootDispatcherService;
+        private object _terminalBootTickService;
+        private object _terminalBootSceneService;
+        private object _terminalBootPhysicsService;
+        private object _terminalBootAudioService;
         private uint _terminalBootSeed;
         private int _terminalBootLastFrame = -1;
         private bool _transitionPerformanceWarningPublished;
@@ -203,6 +209,8 @@ namespace Hecton8.Core
             GlobalRegistry.RegisterSceneRuntime(this);
             H8Memory.Initialize();
             _dataVault = GlobalRegistry.DataVault;
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
+            RefreshTerminalBootServiceHandlesCold();
             TryRegisterHotSwapListener();
 
             if (_isInitialized)
@@ -383,11 +391,13 @@ namespace Hecton8.Core
             TryUnregisterSceneCallbacks();
             TryUnregisterSceneService();
             EndMainMenuCinematicTransition();
+            _dispatcherAvailable = false;
             _sceneLoadInFlight = false;
             _pendingSceneName = null;
             _pendingSceneLoadOperation = null;
             _gpuResidencyReadyFrame = -1;
             _sceneActivationReleased = false;
+            ClearTerminalBootServiceHandles();
             _dataVault = null;
             _isInitialized = false;
 
@@ -611,7 +621,7 @@ namespace Hecton8.Core
             if (!_cinematicTransitionActive)
                 return;
 
-            double solveStartTime = Time.realtimeSinceStartupAsDouble;
+            double solveStartTime = UnityEngine.Time.realtimeSinceStartupAsDouble;
             _cinematicTransitionElapsed = math.min(
                 TransitionDissolveSeconds,
                 _cinematicTransitionElapsed + math.max(0f, unscaledDeltaTime));
@@ -677,7 +687,7 @@ namespace Hecton8.Core
             float elapsed = 0f;
             while (Application.isPlaying && elapsed < TransitionDissolveSeconds)
             {
-                double solveStartTime = Time.realtimeSinceStartupAsDouble;
+                double solveStartTime = UnityEngine.Time.realtimeSinceStartupAsDouble;
                 elapsed += math.max(0f, ResolveTransitionUnscaledDeltaTime());
                 float normalized = TransitionDissolveSeconds > 0f
                     ? math.saturate(elapsed / TransitionDissolveSeconds)
@@ -743,7 +753,7 @@ namespace Hecton8.Core
             if (_transitionPerformanceWarningPublished || !Application.isPlaying)
                 return;
 
-            double elapsedMilliseconds = (Time.realtimeSinceStartupAsDouble - solveStartTime) * 1000.0d;
+            double elapsedMilliseconds = (UnityEngine.Time.realtimeSinceStartupAsDouble - solveStartTime) * 1000.0d;
             if (elapsedMilliseconds < TransitionSolveTelemetryThresholdMs)
                 return;
 
@@ -880,11 +890,11 @@ namespace Hecton8.Core
             AppendAsciiLiteral(buffer, ref cursor, _TerminalBootMaskBytes);
             AppendHex8(buffer, ref cursor, MixTerminalBootHash(_terminalBootSeed ^ 0xC2B2AE35u, (uint)(frame + 31)));
             AppendNewLine(buffer, ref cursor);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootDispatcherLabelBytes, GlobalRegistry.Dispatcher, 0u, _terminalBootSeed, (uint)frame);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootTickLabelBytes, GlobalRegistry.TickManager, 1u, _terminalBootSeed, (uint)frame);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootSceneLabelBytes, GlobalRegistry.Scene, 2u, _terminalBootSeed, (uint)frame);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootPhysicsLabelBytes, GlobalRegistry.Physics, 3u, _terminalBootSeed, (uint)frame);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootAudioLabelBytes, GlobalRegistry.Audio, 4u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootDispatcherLabelBytes, _terminalBootDispatcherService, 0u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootTickLabelBytes, _terminalBootTickService, 1u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootSceneLabelBytes, _terminalBootSceneService, 2u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootPhysicsLabelBytes, _terminalBootPhysicsService, 3u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootAudioLabelBytes, _terminalBootAudioService, 4u, _terminalBootSeed, (uint)frame);
 
             _terminalBootText.SetCharArray(_terminalBootBuffer, 0, cursor);
         }
@@ -1107,11 +1117,11 @@ namespace Hecton8.Core
             if (_registeredUpdatable || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (!_dispatcherAvailable)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            SystemDispatcher.Unregister(this, PriorityLayer.Core);
+            _registeredUpdatable = SystemDispatcher.Register(this, PriorityLayer.Core);
         }
 
         private void RestoreCoreTickAfterRuntimeStateClear()
@@ -1128,7 +1138,7 @@ namespace Hecton8.Core
             if (!_registeredUpdatable)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            SystemDispatcher.Unregister(this, PriorityLayer.Core);
             _registeredUpdatable = false;
         }
 
@@ -1140,16 +1150,48 @@ namespace Hecton8.Core
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null || !_isInitialized || !isActiveAndEnabled)
+                    _dispatcherAvailable = currentService != null;
+                    _terminalBootDispatcherService = currentService;
+                    TryUnregisterUpdatable();
+                    if (!_dispatcherAvailable || !_isInitialized || !isActiveAndEnabled)
                         return;
 
-                    TryUnregisterUpdatable();
                     TryRegisterUpdatable();
+                    break;
+                case GlobalRegistryServiceSlot.TickManager:
+                    _terminalBootTickService = currentService;
+                    break;
+                case GlobalRegistryServiceSlot.Scene:
+                    _terminalBootSceneService = currentService;
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _terminalBootPhysicsService = currentService;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _terminalBootAudioService = currentService;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     _dataVault = currentService as IDataVault;
                     break;
             }
+        }
+
+        private void RefreshTerminalBootServiceHandlesCold()
+        {
+            _terminalBootDispatcherService = GlobalRegistry.Dispatcher;
+            _terminalBootTickService = GlobalRegistry.TickManager;
+            _terminalBootSceneService = GlobalRegistry.Scene;
+            _terminalBootPhysicsService = GlobalRegistry.Physics;
+            _terminalBootAudioService = GlobalRegistry.Audio;
+        }
+
+        private void ClearTerminalBootServiceHandles()
+        {
+            _terminalBootDispatcherService = null;
+            _terminalBootTickService = null;
+            _terminalBootSceneService = null;
+            _terminalBootPhysicsService = null;
+            _terminalBootAudioService = null;
         }
 
         private void TryRegisterHotSwapListener()

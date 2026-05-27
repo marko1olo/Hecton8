@@ -2178,8 +2178,9 @@ namespace Hecton8.UI
                     (BufferID)DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw,
                     out VaultGenerationHandle<byte> borrowedHandle) ||
                 !IsVaultHandleCreated(in borrowedHandle) ||
-                !vault.TryResolveHandle(in borrowedHandle, out NativeArray<byte> glitchTable) ||
-                !glitchTable.IsCreated ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in borrowedHandle, out NativeArray<byte>.ReadOnly glitchTable) ||
+                vault.IsCompactionFenceActive ||
                 glitchTable.Length < DiegeticGlitchSurgeonRuntime.GlitchTableCapacity)
             {
                 return;
@@ -2190,7 +2191,7 @@ namespace Hecton8.UI
 
             unsafe
             {
-                byte* table = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(glitchTable);
+                byte* table = (byte*)glitchTable.GetUnsafeReadOnlyPtr();
                 if (table == null || !GlitchTable.IsValidGlyphTable(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity))
                     ClearGlitchTableBinding();
             }
@@ -2200,18 +2201,20 @@ namespace Hecton8.UI
         {
             table = null;
             tableLength = 0;
-            if (!_glitchTableHandleReady || _glitchVault == null)
+            if (!_glitchTableHandleReady ||
+                _glitchVault == null ||
+                _glitchVault.IsCompactionFenceActive)
                 return false;
 
-            if (!_glitchVault.TryResolveHandle(in _glitchTableHandle, out NativeArray<byte> glitchTable) ||
-                !glitchTable.IsCreated ||
+            if (!_glitchVault.TryReadOnlyHandle(in _glitchTableHandle, out NativeArray<byte>.ReadOnly glitchTable) ||
+                _glitchVault.IsCompactionFenceActive ||
                 glitchTable.Length < DiegeticGlitchSurgeonRuntime.GlitchTableCapacity)
             {
                 ClearGlitchTableBinding();
                 return false;
             }
 
-            table = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(glitchTable);
+            table = (byte*)glitchTable.GetUnsafeReadOnlyPtr();
             if (table == null)
                 return false;
 
@@ -2963,9 +2966,10 @@ namespace Hecton8.UI
             if (!TryResolveRuntimeAup(gridCenter, out AbsoluteUniversePosition gridCenterAup))
                 return;
 
-            float3 gridCenterRelativeToCamera = AupPrecisionMath.LocalDeltaFloat3(
+            float3 gridCenterRelativeToCamera = AupPrecisionMath.LocalDeltaFloat3Clamped(
                 gridCenterAup.ToAbsoluteDouble3(),
                 cameraAup.ToAbsoluteDouble3(),
+                AupPrecisionMath.DefaultMaxLocalCastMeters,
                 float3.zero);
             float radius = math.max(1f, threatChevronRadiusMeters);
             float radiusSq = radius * radius;
@@ -3370,9 +3374,10 @@ namespace Hecton8.UI
             if (!TryResolveRuntimeAup(cameraPosition, out AbsoluteUniversePosition cameraAup))
                 return false;
 
-            float3 threatRelative = AupPrecisionMath.LocalDeltaFloat3(
+            float3 threatRelative = AupPrecisionMath.LocalDeltaFloat3Clamped(
                 threatState.PositionAup.ToAbsoluteDouble3(),
                 cameraAup.ToAbsoluteDouble3(),
+                AupPrecisionMath.DefaultMaxLocalCastMeters,
                 float3.zero);
             float3 cameraForwardF3 = math.float3(cameraTransform.forward.x, cameraTransform.forward.y, cameraTransform.forward.z);
             float3 cameraRightF3 = math.float3(cameraTransform.right.x, cameraTransform.right.y, cameraTransform.right.z);

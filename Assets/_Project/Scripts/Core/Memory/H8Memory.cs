@@ -622,6 +622,7 @@ namespace Hecton8.Core.Memory
         ShinobuModSandboxMemoryLeases = 70911,
         ShinobuModSandboxApprovedAssets = 70912,
         ShinobuModSandboxRingState = 70913,
+        ShinobuModProjectionCullTelemetryRing = 70921,
         InteractionRaycastScheduledCommands = 385,
         InteractionRaycastScheduledHits = 386,
         InteractionRaycastStagingCommands = 387,

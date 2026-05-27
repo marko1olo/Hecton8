@@ -78,7 +78,7 @@ namespace Hecton8.UI
     /// Blind depth signal mirror for deep-ocean interference.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public partial struct MockDepthSignal
+    public partial struct GlitchMockDepthSignal
     {
         [FieldOffset(0)] public float DepthMeters;
         [FieldOffset(4)] public float BaselineIntensity;
@@ -304,7 +304,7 @@ namespace Hecton8.UI
         private VaultGenerationHandle<ushort> _workTextHandle;
         private VaultGenerationHandle<MockTextSpan> _textSpanHandle;
         private VaultGenerationHandle<MockCorruptionLevelSignal> _corruptionSignalHandle;
-        private VaultGenerationHandle<MockDepthSignal> _depthSignalHandle;
+        private VaultGenerationHandle<GlitchMockDepthSignal> _depthSignalHandle;
         private VaultGenerationHandle<MockModuleBreachSignal> _breachSignalHandle;
         private VaultGenerationHandle<GlitchTuningDTO> _tuningHandle;
         private VaultGenerationHandle<GlitchQuadTransformDTO> _quadHandle;
@@ -427,7 +427,7 @@ namespace Hecton8.UI
                     out ushort* workText,
                     out MockTextSpan* textSpan,
                     out MockCorruptionLevelSignal* corruption,
-                    out MockDepthSignal* depth,
+                    out GlitchMockDepthSignal* depth,
                     out MockModuleBreachSignal* breach,
                     out GlitchTuningDTO* tuning,
                     out GlitchQuadTransformDTO* quads,
@@ -1153,7 +1153,7 @@ namespace Hecton8.UI
             _workTextHandle = _vault.EnsureGenerationHandle<ushort>(WorkTextBufferId, MockTextCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
             _textSpanHandle = _vault.EnsureGenerationHandle<MockTextSpan>(TextSpanBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
             _corruptionSignalHandle = _vault.EnsureGenerationHandle<MockCorruptionLevelSignal>(CorruptionSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _depthSignalHandle = _vault.EnsureGenerationHandle<MockDepthSignal>(DepthSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _depthSignalHandle = _vault.EnsureGenerationHandle<GlitchMockDepthSignal>(DepthSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
             _breachSignalHandle = _vault.EnsureGenerationHandle<MockModuleBreachSignal>(BreachSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
             _tuningHandle = _vault.EnsureGenerationHandle<GlitchTuningDTO>(TuningBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
             _quadHandle = _vault.EnsureGenerationHandle<GlitchQuadTransformDTO>(MockQuadBufferId, MockQuadCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
@@ -1215,7 +1215,7 @@ namespace Hecton8.UI
                          TryReadGlitchVaultBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> _) &&
                          TryReadGlitchVaultBuffer(_vault, in _textSpanHandle, TextSpanBufferId, 1, out NativeArray<MockTextSpan> _) &&
                          TryReadGlitchVaultBuffer(_vault, in _corruptionSignalHandle, CorruptionSignalBufferId, 1, out NativeArray<MockCorruptionLevelSignal> _) &&
-                         TryReadGlitchVaultBuffer(_vault, in _depthSignalHandle, DepthSignalBufferId, 1, out NativeArray<MockDepthSignal> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _depthSignalHandle, DepthSignalBufferId, 1, out NativeArray<GlitchMockDepthSignal> _) &&
                          TryReadGlitchVaultBuffer(_vault, in _breachSignalHandle, BreachSignalBufferId, 1, out NativeArray<MockModuleBreachSignal> _) &&
                          TryReadGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> _) &&
                          TryReadGlitchVaultBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out NativeArray<GlitchQuadTransformDTO> _) &&
@@ -1670,7 +1670,7 @@ namespace Hecton8.UI
             out ushort* workText,
             out MockTextSpan* textSpan,
             out MockCorruptionLevelSignal* corruption,
-            out MockDepthSignal* depth,
+            out GlitchMockDepthSignal* depth,
             out MockModuleBreachSignal* breach,
             out GlitchTuningDTO* tuning,
             out GlitchQuadTransformDTO* quads,
@@ -1685,7 +1685,7 @@ namespace Hecton8.UI
                 !TryResolveGlitchVaultBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> workTextBuffer) ||
                 !TryResolveGlitchVaultBuffer(_vault, in _textSpanHandle, TextSpanBufferId, 1, out NativeArray<MockTextSpan> textSpanBuffer) ||
                 !TryResolveGlitchVaultBuffer(_vault, in _corruptionSignalHandle, CorruptionSignalBufferId, 1, out NativeArray<MockCorruptionLevelSignal> corruptionBuffer) ||
-                !TryResolveGlitchVaultBuffer(_vault, in _depthSignalHandle, DepthSignalBufferId, 1, out NativeArray<MockDepthSignal> depthBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _depthSignalHandle, DepthSignalBufferId, 1, out NativeArray<GlitchMockDepthSignal> depthBuffer) ||
                 !TryResolveGlitchVaultBuffer(_vault, in _breachSignalHandle, BreachSignalBufferId, 1, out NativeArray<MockModuleBreachSignal> breachBuffer) ||
                 !TryResolveGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer) ||
                 !TryResolveGlitchVaultBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out NativeArray<GlitchQuadTransformDTO> quadBuffer) ||
@@ -1717,7 +1717,7 @@ namespace Hecton8.UI
             workText = (ushort*)workTextBuffer.GetUnsafePtr();
             textSpan = (MockTextSpan*)textSpanBuffer.GetUnsafePtr();
             corruption = (MockCorruptionLevelSignal*)corruptionBuffer.GetUnsafePtr();
-            depth = (MockDepthSignal*)depthBuffer.GetUnsafePtr();
+            depth = (GlitchMockDepthSignal*)depthBuffer.GetUnsafePtr();
             breach = (MockModuleBreachSignal*)breachBuffer.GetUnsafePtr();
             tuning = (GlitchTuningDTO*)tuningBuffer.GetUnsafePtr();
             quads = (GlitchQuadTransformDTO*)quadBuffer.GetUnsafePtr();
@@ -2338,7 +2338,7 @@ namespace Hecton8.UI
         {
             [NativeDisableUnsafePtrRestriction] [NoAlias] public GlitchStateDTO* State;
             [NativeDisableUnsafePtrRestriction] [NoAlias] public MockCorruptionLevelSignal* Corruption;
-            [NativeDisableUnsafePtrRestriction] [NoAlias] public MockDepthSignal* Depth;
+            [NativeDisableUnsafePtrRestriction] [NoAlias] public GlitchMockDepthSignal* Depth;
             [NativeDisableUnsafePtrRestriction] [NoAlias] public MockModuleBreachSignal* Breach;
             [NativeDisableUnsafePtrRestriction] [NoAlias] public GlitchTuningDTO* Tuning;
             public uint Frame;
@@ -2647,7 +2647,7 @@ namespace Hecton8.UI
         {
             [NativeDisableUnsafePtrRestriction] [NoAlias] public GlitchStateDTO* State;
             [NativeDisableUnsafePtrRestriction] [NoAlias] public GlitchTuningDTO* Tuning;
-            [NativeDisableUnsafePtrRestriction] [NoAlias] public MockDepthSignal* Depth;
+            [NativeDisableUnsafePtrRestriction] [NoAlias] public GlitchMockDepthSignal* Depth;
             [NativeDisableUnsafePtrRestriction] [NoAlias] public MockModuleBreachSignal* Breach;
             [NativeDisableUnsafePtrRestriction] [NoAlias] public MockTextSpan* TextSpan;
             [NativeDisableUnsafePtrRestriction] [NoAlias] public RadarBlipDTO* RadarBlips;

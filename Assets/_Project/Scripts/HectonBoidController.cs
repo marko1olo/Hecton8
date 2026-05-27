@@ -2003,7 +2003,8 @@ namespace Hecton8.AI.GPU
                     for (int i = 0; i < dumpCount; i++)
                     {
                         int index = (start + i) % capacity;
-                        WriteBoidBlackBoxEntry(writer, in blackBox[index]);
+                        BoidBlackBoxEntry entry = blackBox[index];
+                        WriteBoidBlackBoxEntry(writer, entry);
                     }
                 }
             }
@@ -2024,7 +2025,7 @@ namespace Hecton8.AI.GPU
             }
         }
 
-        private static void WriteBoidBlackBoxEntry(BinaryWriter writer, in BoidBlackBoxEntry entry)
+        private static void WriteBoidBlackBoxEntry(BinaryWriter writer, BoidBlackBoxEntry entry)
         {
             writer.Write(entry.Frame);
             writer.Write(entry.StateHash);

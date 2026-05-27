@@ -511,7 +511,7 @@ namespace Hecton8.Core
                 sb.Append("Frame: ");
                 sb.Append(SystemDispatcher.CurrentFrameIndex);
                 sb.Append(" | Time: ");
-                sb.Append(Time.realtimeSinceStartup);
+                sb.Append(UnityEngine.Time.realtimeSinceStartup);
                 sb.AppendLine("s");
                 sb.AppendLine("═════════════════════════════════════════════════════════");
 

@@ -32,6 +32,16 @@ namespace Hecton8.Modding
         }
 
         private const string ManifestFileName = "mod.json";
+        private const long MaxManifestBytes = 32L * 1024L;
+        private const string MaxManifestBytesLabel = "32768";
+        private const int MaxDiscoveredManifestCount = 64;
+        private const string MaxDiscoveredManifestCountLabel = "64";
+        private const int MaxTopLevelManagedAssemblyCount = 32;
+        private const string MaxTopLevelManagedAssemblyCountLabel = "32";
+        private const int MaxTopLevelBundleCount = 4;
+        private const string MaxTopLevelBundleCountLabel = "4";
+        private const int MaxLocalizationFileCount = 16;
+        private const string MaxLocalizationFileCountLabel = "16";
         private const string DefaultAssemblyExtension = ".dll";
         private const string DefaultBundleExtension = ".bundle";
         private const string ReservedAssemblyNamePrefix = "Hecton8.";
@@ -73,6 +83,7 @@ namespace Hecton8.Modding
             _modsInitialized = false;
             _hooksInstalled = false;
             _shutdownInvoked = false;
+            HectonAPI.ResetRegistryCacheCold();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -158,6 +169,8 @@ namespace Hecton8.Modding
 
             SaveEvents.Register(_saveEventListener);
             ModCommandDispatcher.Initialize();
+            ModCommandDispatcher.BindRegistryServicesCold();
+            HectonAPI.BindRegistryServicesCold();
             if (!ShouldForceFutureCommandEnvelopeOnly())
             {
                 ModEventProjectionBridge.InstallGlobal();
@@ -199,14 +212,16 @@ namespace Hecton8.Modding
             if (string.IsNullOrEmpty(modsRoot) || !Directory.Exists(modsRoot))
                 return;
 
-            string[] manifestPaths = Directory.GetFiles(modsRoot, ManifestFileName, SearchOption.AllDirectories);
-            if (manifestPaths == null || manifestPaths.Length == 0)
+            // COLD ALLOC: List<string>[MaxDiscoveredManifestCount] - bounded manifest discovery - owner: ModLoader
+            List<string> manifestPaths = new List<string>(MaxDiscoveredManifestCount);
+            CollectManifestPaths(modsRoot, manifestPaths);
+            if (manifestPaths.Count == 0)
                 return;
 
             // COLD ALLOC: List<ModCandidate>[manifest count] — discovered manifests before dependency sort — owner: ModLoader
-            List<ModCandidate> candidates = new List<ModCandidate>(manifestPaths.Length);
+            List<ModCandidate> candidates = new List<ModCandidate>(manifestPaths.Count);
 
-            for (int i = 0; i < manifestPaths.Length; i++)
+            for (int i = 0; i < manifestPaths.Count; i++)
             {
                 if (TryReadManifest(manifestPaths[i], out ModCandidate candidate))
                     candidates.Add(candidate);
@@ -242,12 +257,47 @@ namespace Hecton8.Modding
 #endif
         }
 
+        private static void CollectManifestPaths(string modsRoot, List<string> manifestPaths)
+        {
+            if (manifestPaths == null || string.IsNullOrWhiteSpace(modsRoot))
+                return;
+
+            try
+            {
+                foreach (string manifestPath in Directory.EnumerateFiles(modsRoot, ManifestFileName, SearchOption.AllDirectories))
+                {
+                    if (manifestPaths.Count >= MaxDiscoveredManifestCount)
+                    {
+                        Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Manifest discovery capped at ", MaxDiscoveredManifestCountLabel, " packages under '", modsRoot, "'."));
+                        break;
+                    }
+
+                    manifestPaths.Add(manifestPath);
+                }
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Manifest discovery skipped inaccessible path under '", modsRoot, "': ", exception.Message));
+            }
+            catch (IOException exception)
+            {
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Manifest discovery failed under '", modsRoot, "': ", exception.Message));
+            }
+            catch (Exception exception)
+            {
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Manifest discovery aborted under '", modsRoot, "': ", exception.Message));
+            }
+        }
+
         private static bool TryReadManifest(string manifestPath, out ModCandidate candidate)
         {
             candidate = null;
 
             try
             {
+                if (!TryValidateManifestFileSize(manifestPath))
+                    return false;
+
                 string json = File.ReadAllText(manifestPath);
                 ModManifest manifest = JsonUtility.FromJson<ModManifest>(json);
 
@@ -276,7 +326,16 @@ namespace Hecton8.Modding
 
                 string modDirectory = Path.GetDirectoryName(manifestPath);
                 bool envelopeOnly = ShouldForceFutureCommandEnvelopeOnly();
-                string[] managedAssemblyIdentityScanPaths = ResolveManagedAssemblyIdentityScanPaths(modDirectory, manifest);
+                string[] managedAssemblyIdentityScanPaths = ResolveManagedAssemblyIdentityScanPaths(
+                    modDirectory,
+                    manifest,
+                    out string managedAssemblyDiscoveryError);
+                if (string.IsNullOrWhiteSpace(manifestContractError) &&
+                    !string.IsNullOrWhiteSpace(managedAssemblyDiscoveryError))
+                {
+                    manifestContractError = managedAssemblyDiscoveryError;
+                }
+
                 string assemblyPath = envelopeOnly
                     ? string.Empty
                     : ResolveAssemblyPath(modDirectory, manifest);
@@ -371,6 +430,41 @@ namespace Hecton8.Modding
             }
 
             return candidate;
+        }
+
+        private static bool TryValidateManifestFileSize(string manifestPath)
+        {
+            if (string.IsNullOrWhiteSpace(manifestPath))
+                return false;
+
+            try
+            {
+                // COLD ALLOC: FileInfo[1] - mod manifest byte cap gate - owner: ModLoader
+                FileInfo fileInfo = new FileInfo(manifestPath);
+                if (!fileInfo.Exists || fileInfo.Length <= 0L)
+                {
+                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Skipped manifest '", manifestPath, "': manifest file is missing or empty."));
+                    return false;
+                }
+
+                if (fileInfo.Length > MaxManifestBytes)
+                {
+                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Skipped manifest '", manifestPath, "': manifest exceeds ", MaxManifestBytesLabel, " byte cap."));
+                    return false;
+                }
+            }
+            catch (IOException exception)
+            {
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Failed to inspect manifest '", manifestPath, "': ", exception.Message));
+                return false;
+            }
+            catch (Exception exception)
+            {
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Rejected invalid manifest path '", manifestPath, "': ", exception.Message));
+                return false;
+            }
+
+            return true;
         }
 
         private static bool TryValidateModIdentifier(string modId, out string disabledReason)
@@ -516,16 +610,27 @@ namespace Hecton8.Modding
                    segment[3] <= '9';
         }
 
-        private static string[] ResolveManagedAssemblyIdentityScanPaths(string modDirectory, ModManifest manifest)
+        private static string[] ResolveManagedAssemblyIdentityScanPaths(
+            string modDirectory,
+            ModManifest manifest,
+            out string disabledReason)
         {
+            disabledReason = string.Empty;
             if (string.IsNullOrWhiteSpace(modDirectory) || !Directory.Exists(modDirectory))
                 return Array.Empty<string>();
 
-            string[] dllFiles = Directory.GetFiles(modDirectory, "*" + DefaultAssemblyExtension, SearchOption.TopDirectoryOnly);
-            if (dllFiles == null)
-                dllFiles = Array.Empty<string>();
-            else if (dllFiles.Length > 1)
-                Array.Sort(dllFiles, StringComparer.OrdinalIgnoreCase);
+            string[] dllFiles = CollectTopLevelFiles(
+                modDirectory,
+                "*" + DefaultAssemblyExtension,
+                MaxTopLevelManagedAssemblyCount,
+                MaxTopLevelManagedAssemblyCountLabel,
+                "managed assembly",
+                out bool managedAssemblyCapExceeded,
+                out bool managedAssemblyDiscoveryFailed);
+            if (managedAssemblyCapExceeded)
+                disabledReason = string.Concat("Package contains more than ", MaxTopLevelManagedAssemblyCountLabel, " top-level managed assemblies.");
+            else if (managedAssemblyDiscoveryFailed)
+                disabledReason = "Package top-level managed assembly discovery failed.";
 
             if (string.IsNullOrWhiteSpace(manifest.EntryAssembly))
                 return dllFiles;
@@ -689,7 +794,14 @@ namespace Hecton8.Modding
             if (File.Exists(conventionalPath))
                 return conventionalPath;
 
-            string[] dllFiles = Directory.GetFiles(modDirectory, "*" + DefaultAssemblyExtension, SearchOption.TopDirectoryOnly);
+            string[] dllFiles = CollectTopLevelFiles(
+                modDirectory,
+                "*" + DefaultAssemblyExtension,
+                MaxTopLevelManagedAssemblyCount,
+                MaxTopLevelManagedAssemblyCountLabel,
+                "managed assembly",
+                out _,
+                out _);
             return dllFiles != null && dllFiles.Length == 1 ? dllFiles[0] : null;
         }
 
@@ -702,7 +814,14 @@ namespace Hecton8.Modding
             if (File.Exists(conventionalPath))
                 return conventionalPath;
 
-            string[] bundleFiles = Directory.GetFiles(modDirectory, "*" + DefaultBundleExtension, SearchOption.TopDirectoryOnly);
+            string[] bundleFiles = CollectTopLevelFiles(
+                modDirectory,
+                "*" + DefaultBundleExtension,
+                MaxTopLevelBundleCount,
+                MaxTopLevelBundleCountLabel,
+                "asset bundle",
+                out _,
+                out _);
             return bundleFiles != null && bundleFiles.Length == 1 ? bundleFiles[0] : null;
         }
 
@@ -711,7 +830,77 @@ namespace Hecton8.Modding
             if (string.IsNullOrWhiteSpace(modDirectory) || !Directory.Exists(modDirectory))
                 return Array.Empty<string>();
 
-            return Directory.GetFiles(modDirectory, "lang_*.json", SearchOption.TopDirectoryOnly);
+            return CollectTopLevelFiles(
+                modDirectory,
+                "lang_*.json",
+                MaxLocalizationFileCount,
+                MaxLocalizationFileCountLabel,
+                "localization file",
+                out _,
+                out _);
+        }
+
+        private static string[] CollectTopLevelFiles(
+            string directory,
+            string searchPattern,
+            int maxCount,
+            string maxCountLabel,
+            string fileKind,
+            out bool capExceeded,
+            out bool discoveryFailed)
+        {
+            capExceeded = false;
+            discoveryFailed = false;
+            if (string.IsNullOrWhiteSpace(directory) ||
+                string.IsNullOrWhiteSpace(searchPattern) ||
+                maxCount <= 0 ||
+                !Directory.Exists(directory))
+            {
+                return Array.Empty<string>();
+            }
+
+            // COLD ALLOC: List<string>[maxCount] - bounded top-level package file discovery - owner: ModLoader
+            List<string> files = new List<string>(maxCount);
+            try
+            {
+                foreach (string filePath in Directory.EnumerateFiles(directory, searchPattern, SearchOption.TopDirectoryOnly))
+                {
+                    if (files.Count >= maxCount)
+                    {
+                        capExceeded = true;
+                        Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Top-level ", fileKind, " discovery capped at ", maxCountLabel, " files under '", directory, "'."));
+                        break;
+                    }
+
+                    files.Add(filePath);
+                }
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                discoveryFailed = true;
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Top-level ", fileKind, " discovery skipped inaccessible path under '", directory, "': ", exception.Message));
+                return Array.Empty<string>();
+            }
+            catch (IOException exception)
+            {
+                discoveryFailed = true;
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Top-level ", fileKind, " discovery failed under '", directory, "': ", exception.Message));
+                return Array.Empty<string>();
+            }
+            catch (Exception exception)
+            {
+                discoveryFailed = true;
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Top-level ", fileKind, " discovery aborted under '", directory, "': ", exception.Message));
+                return Array.Empty<string>();
+            }
+
+            if (files.Count == 0)
+                return Array.Empty<string>();
+
+            if (files.Count > 1)
+                files.Sort(StringComparer.OrdinalIgnoreCase);
+
+            return files.ToArray();
         }
 
         private static void BuildLoadOrder(List<ModCandidate> candidates, List<ModCandidate> loadOrder)
@@ -1096,6 +1285,8 @@ namespace Hecton8.Modding
             if (ShouldForceFutureCommandEnvelopeOnly())
                 return;
 
+            ModCommandDispatcher.BindRegistryServicesCold();
+            HectonAPI.BindRegistryServicesCold();
             ModEventProjectionBridge.InstallGlobal();
             ModItemRegistry.FlushPendingRegistrations();
             ModBuildableRegistry.FlushPendingRegistrations();

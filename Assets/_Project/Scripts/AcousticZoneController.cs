@@ -85,7 +85,7 @@ namespace Hecton8.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
-            s_activeRuntimeInstance = null;
+            AcousticZoneController.ResetActiveRuntimeInstanceForSubsystemRegistration();
             _floodMuffleInitialized = false;
             EnsureInitialized();
         }
@@ -212,6 +212,11 @@ namespace Hecton8.Audio
         private static AcousticZoneController s_activeRuntimeInstance;
 
         public static AcousticZoneController Instance => s_activeRuntimeInstance;
+
+        internal static void ResetActiveRuntimeInstanceForSubsystemRegistration()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  GLOBAL EVENT — ACOUSTIC ZONE CHANGE

@@ -80,3 +80,16 @@
 - [x] Task 60 - Regenerate late-day token snapshot | Justification: rebuilt the archived ledger/report from local Codex JSONL; current snapshot is 107,773,673,063 total tokens and 2,801 usage sessions. Alternative rejected: hand-editing the prior report delta. Microseconds saved: 0 audit-only.
 - [x] Task 61 - Preserve non-1334 commit boundary | Justification: prepared the refresh and requested full workspace commit with an explicit exclusion for paths containing `1334`, per operator prohibition. Alternative rejected: staging 1334-owned reports/status files. Microseconds saved: 0 audit-only.
 - [x] Task 62 - Validate re-refresh artifacts | Justification: reran py_compile, JSON assertions, scoped diff whitespace checks, fixed three unrelated active report BOM gates, and reran `VerifyDocStructure.py` green. Alternative rejected: committing with a red doc-structure gate. Microseconds saved: 0 audit-only.
+
+## Token Velocity Refresh 2026-05-27 23:03 Europe/Samara
+
+- [x] Task 63 - Recheck official token rules | Justification: reopened official OpenAI pricing, prompt-cache, and reasoning documentation before recalculating current GPT-5.5/xhigh economics. Alternative rejected: carrying the 20:42 snapshot forward after active JSONL churn. Microseconds saved: 0 audit-only.
+- [x] Task 64 - Add generated velocity accounting | Justification: extended previous-snapshot delta with tokens/hour, tokens/second, code-lines/hour, dollars/hour, and dollars per net primary C# line/1k chars. Alternative rejected: keeping these as chat-only arithmetic. Microseconds saved: 0 audit-only.
+- [x] Task 65 - Regenerate current token surfaces | Justification: rebuilt the archived report/ledger from local Codex JSONL; current snapshot is 108,244,387,543 total tokens and 2,804 usage sessions. Alternative rejected: editing Markdown by hand without JSON authority. Microseconds saved: 0 audit-only.
+- [x] Task 66 - Verify velocity artifacts | Justification: py_compile passed, JSON assertions proved velocity fields exist, and Markdown/ledger grep found the velocity table. Alternative rejected: trusting rendered prose without machine-readable proof. Microseconds saved: 0 audit-only.
+
+
+## Code Density Economics 2026-05-27 23:03 Europe/Samara
+
+- [x] Task 47 - Add explicit code-density economics | Justification: added tokens per line, tokens per 1k chars, output tokens per 1k chars, GPT-5.5 dollars per 1k lines, and GPT-5.5 dollars per 1k chars. Alternative rejected: forcing readers to multiply per-character fields manually. Microseconds saved: 0 audit-only.
+- [x] Task 48 - Regenerate code-density report surfaces | Justification: refreshed dated Markdown/JSON, stable ledger, and agent log from generated telemetry. Alternative rejected: chat-only derived math. Microseconds saved: 0 audit-only.

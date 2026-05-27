@@ -46,8 +46,12 @@
   </Target>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core'">
+    <Reference Remove="Hecton8.Core.Memory" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Memory.dll" />
     <Reference Remove="Hecton8.Core.Memory.Defrag" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Memory.Defrag.dll" />
     <Reference Remove="Hecton8.Core.Bucketing" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Bucketing.dll" />
     <Compile Remove="Assets\_Project\Scripts\Core\JobAdmissionTelemetryBridge.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\BinaryLayoutManifest.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\HomeostasisBrain.cs" />
@@ -137,6 +141,7 @@
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\Fluids\FluidAnalyticalContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\Fluids\FluidAnalyticalContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\MacroSwarm.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\MacroSwarm.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Determinism\LockstepStateValidator.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Determinism\LockstepStateValidator.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Bucketing\ModuloSimulationBucketer.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Bucketing\ModuloSimulationBucketer.cs'))" />
     <Compile Include="Assets\_Project\Scripts\AI\Sensory\AcousticEchoLocationRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\AI\Sensory\AcousticEchoLocationRuntime.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Animation\Locomotion\LadderClimbIkJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Animation\Locomotion\LadderClimbIkJobs.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Animation\Locomotion\ProceduralLadderClimbRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Animation\Locomotion\ProceduralLadderClimbRuntime.cs'))" />
@@ -154,6 +159,9 @@
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\AupPrecisionContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\AupPrecisionContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Memory\AlignmentTelemetryContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\AlignmentTelemetryContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Memory\BinaryBlittableSafeAttribute.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\BinaryBlittableSafeAttribute.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\CoreMemoryContractAbiGuard.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\CoreMemoryContractAbiGuard.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\H8Memory.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\H8Memory.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Memory\MemorySentinelContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\MemorySentinelContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Memory\VaultLegacyBinaryArchaeology.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\VaultLegacyBinaryArchaeology.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Memory\VaultMemoryContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\VaultMemoryContracts.cs'))" />
@@ -196,6 +204,7 @@
     <Compile Include="Assets\_Project\Scripts\Tools\LaserCutterDodJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Tools\LaserCutterDodJobs.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Tools\LaserCutterSpecsCsvParser.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Tools\LaserCutterSpecsCsvParser.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Tools\LaserCutterDodRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Tools\LaserCutterDodRuntime.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Tools\ToolKinematics\Contracts\ToolKinematicsContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Tools\ToolKinematics\Contracts\ToolKinematicsContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Physics\CablePhysicsSolver132.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\CablePhysicsSolver132.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Physics\TetherAupVerletJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\TetherAupVerletJobs.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Physics\Seaglide\SeaglideHydrodynamicsContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\Seaglide\SeaglideHydrodynamicsContracts.cs'))" />
@@ -257,9 +266,19 @@
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.World.Contracts.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Sirenix.OdinInspector.Attributes" Condition="Exists('$(MSBuildThisFileDirectory)Assets\Plugins\Sirenix\Assemblies\Sirenix.OdinInspector.Attributes.dll') And !$([System.String]::Copy('@(Reference)').Contains('Sirenix.OdinInspector.Attributes'))">
+      <HintPath>$(MSBuildThisFileDirectory)Assets\Plugins\Sirenix\Assemblies\Sirenix.OdinInspector.Attributes.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <Reference Remove="Hecton8.Core.Bucketing" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Bucketing.dll" />
+    <Reference Remove="Hecton8.Core.Scheduling" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Scheduling.dll" />
+    <Reference Remove="Hecton8.Tools.ToolKinematics.Contracts" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Tools.ToolKinematics.Contracts.dll" />
     <ProjectReference Remove="@(ProjectReference)" />
     <Reference Include="GPUInstancer" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\GPUInstancer.dll') And !$([System.String]::Copy('@(Reference)').Contains('GPUInstancer'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\GPUInstancer.dll</HintPath>
@@ -288,6 +307,70 @@
     <Compile Remove="Assets\_Project\Scripts\World\Contracts\TerrainChunkGeneratedSignal.cs" />
 
     <Compile Include="Assets\_Project\Scripts\World\Contracts\OutpostGenerationContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\World\Contracts\OutpostGenerationContracts.cs'))" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$([System.String]::Copy('|Assembly-CSharp|Assembly-CSharp-firstpass|Assembly-CSharp-Editor|Assembly-CSharp-Editor-firstpass|').Contains('|$(MSBuildProjectName)|'))">
+    <Compile Remove="Assets\MapMagic\**\*.cs" />
+    <Reference Remove="MapMagic" />
+    <Reference Remove="MapMagic.Editor" />
+    <Reference Remove="MapMagic.MicroSplat" />
+    <Reference Remove="MapMagic.MicroSplat.Editor" />
+    <Reference Remove="MapMagic.Settings" />
+    <Reference Remove="Library\ScriptAssemblies\MapMagic.dll" />
+    <Reference Remove="Library\ScriptAssemblies\MapMagic.Editor.dll" />
+    <Reference Remove="Library\ScriptAssemblies\MapMagic.MicroSplat.dll" />
+    <Reference Remove="Library\ScriptAssemblies\MapMagic.MicroSplat.Editor.dll" />
+    <Reference Remove="Library\ScriptAssemblies\MapMagic.Settings.dll" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'MapMagic'">
+    <Compile Include="Assets\MapMagic\**\*.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\MapMagic\Products\TileData.cs'))" />
+    <Compile Remove="Assets\MapMagic\**\Editor\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Compatibility\MicroSplat\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Core\Plugins\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Tools\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'MapMagic.Editor'">
+    <Compile Include="Assets\MapMagic\**\Editor\**\*.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\MapMagic\Expose\Editor\CellExpose.cs'))" />
+    <Compile Remove="Assets\MapMagic\Compatibility\MicroSplat\Editor\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Tools\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'AstarPathfindingProject'">
+    <Reference Include="Pathfinding.ClipperLib" Condition="Exists('$(MSBuildThisFileDirectory)Assets\AstarPathfindingProject\Plugins\Clipper\Pathfinding.ClipperLib.dll') And !$([System.String]::Copy('@(Reference)').Contains('Pathfinding.ClipperLib'))">
+      <HintPath>$(MSBuildThisFileDirectory)Assets\AstarPathfindingProject\Plugins\Clipper\Pathfinding.ClipperLib.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Pathfinding.Ionic.Zip.Reduced" Condition="Exists('$(MSBuildThisFileDirectory)Assets\AstarPathfindingProject\Plugins\DotNetZip\Pathfinding.Ionic.Zip.Reduced.dll') And !$([System.String]::Copy('@(Reference)').Contains('Pathfinding.Ionic.Zip.Reduced'))">
+      <HintPath>$(MSBuildThisFileDirectory)Assets\AstarPathfindingProject\Plugins\DotNetZip\Pathfinding.Ionic.Zip.Reduced.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Pathfinding.Poly2Tri" Condition="Exists('$(MSBuildThisFileDirectory)Assets\AstarPathfindingProject\Plugins\Poly2Tri\Pathfinding.Poly2Tri.dll') And !$([System.String]::Copy('@(Reference)').Contains('Pathfinding.Poly2Tri'))">
+      <HintPath>$(MSBuildThisFileDirectory)Assets\AstarPathfindingProject\Plugins\Poly2Tri\Pathfinding.Poly2Tri.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="$([System.String]::Copy('|MeshBakerCore|MeshBakerEditor|').Contains('|$(MSBuildProjectName)|'))">
+    <Reference Include="MeshBakerLib" Condition="Exists('$(MSBuildThisFileDirectory)Assets\MeshBaker\Libs\MeshBakerLib.dll') And !$([System.String]::Copy('@(Reference)').Contains('MeshBakerLib'))">
+      <HintPath>$(MSBuildThisFileDirectory)Assets\MeshBaker\Libs\MeshBakerLib.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'MeshBakerEditor'">
+    <Reference Include="MeshBakerEditorLib" Condition="Exists('$(MSBuildThisFileDirectory)Assets\MeshBaker\Libs\MeshBakerEditorLib.dll') And !$([System.String]::Copy('@(Reference)').Contains('MeshBakerEditorLib'))">
+      <HintPath>$(MSBuildThisFileDirectory)Assets\MeshBaker\Libs\MeshBakerEditorLib.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Assembly-CSharp'">
+    <Reference Include="Mono.Data.Sqlite" Condition="Exists('$(MSBuildThisFileDirectory)Assets\Candice AI for Games\Scripts\Libs\Candice Save System\Plugins\Mono.Data.Sqlite.dll') And !$([System.String]::Copy('@(Reference)').Contains('Mono.Data.Sqlite'))">
+      <HintPath>$(MSBuildThisFileDirectory)Assets\Candice AI for Games\Scripts\Libs\Candice Save System\Plugins\Mono.Data.Sqlite.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Editor'">
@@ -341,6 +424,20 @@
                                        Condition="$([System.String]::Copy('%(Analyzer.Identity)').Contains('com.unity.entities@')) And !Exists('%(Analyzer.Identity)')" />
       <Analyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
       <_HectonMissingGeneratedAnalyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="HectonPruneBurstCompilerIlCliReference" BeforeTargets="ResolveAssemblyReferences;CoreCompile">
+    <ItemGroup>
+      <_HectonBurstCompilerIlReference Include="@(Reference)"
+                                       Condition="'%(Reference.Identity)' == 'Burst.Compiler.IL' Or $([System.String]::Copy('%(Reference.Identity)').Contains('Burst.Compiler.IL.dll')) Or $([System.String]::Copy('%(Reference.HintPath)').Contains('Burst.Compiler.IL.dll'))" />
+      <Reference Remove="@(_HectonBurstCompilerIlReference)" />
+      <_HectonBurstCompilerIlReference Remove="@(_HectonBurstCompilerIlReference)" />
+
+      <ReferencePath Remove="@(ReferencePath)"
+                     Condition="$([System.String]::Copy('%(ReferencePath.Identity)').Contains('Burst.Compiler.IL.dll'))" />
+      <ReferenceDependencyPaths Remove="@(ReferenceDependencyPaths)"
+                                Condition="$([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Burst.Compiler.IL.dll'))" />
     </ItemGroup>
   </Target>
 

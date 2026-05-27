@@ -586,7 +586,7 @@ namespace Hecton8.World
                 {
                     TerrainChunkPagerTuningDTO tuning = TerrainChunkPagerTuningDTO.CreateDefault();
                     tuning.ChunkByteCapacity = _allocatedChunkByteCapacity;
-                    tuning.Flags = resolvedForceMockDiskIo ? TerrainChunkPagerConstants.RequestFlagForceMock : 0u;
+                    tuning.Flags = Volatile.Read(ref _forceMockDiskIo) != 0 ? TerrainChunkPagerConstants.RequestFlagForceMock : 0u;
                     tuningBuffer[0] = TerrainChunkPagerMath.Sanitize(tuning);
                 }
                 finally

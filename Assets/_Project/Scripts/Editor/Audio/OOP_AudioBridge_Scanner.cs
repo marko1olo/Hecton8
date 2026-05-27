@@ -26,6 +26,7 @@ namespace Hecton8.Audio.Editor
         private const string NativePluginPath = "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp";
         private const string NativePluginMatrixPath = "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs";
         private const string NativeBuildScriptPath = "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernel.bat";
+        private const string NativeAndroidBuildScriptPath = "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernelAndroid.bat";
         private const string NativeUtilityCppPath = "NativeAudio/HectonSensoryKernel/AudioPluginUtil.cpp";
         private const string NativeUtilityHeaderPath = "NativeAudio/HectonSensoryKernel/AudioPluginUtil.h";
         private const string NativePluginListPath = "NativeAudio/HectonSensoryKernel/PluginList.h";
@@ -73,6 +74,7 @@ namespace Hecton8.Audio.Editor
             string nativePlugin = ReadAssetText(projectRoot, NativePluginPath, result);
             string nativePluginMatrix = ReadAssetText(projectRoot, NativePluginMatrixPath, result);
             string nativeBuildScript = ReadAssetText(projectRoot, NativeBuildScriptPath, result);
+            string nativeAndroidBuildScript = ReadAssetText(projectRoot, NativeAndroidBuildScriptPath, result);
             string windowsAudioKernelMeta = ReadAssetText(projectRoot, WindowsAudioKernelMetaPath, result);
             string windowsLz4Meta = ReadAssetText(projectRoot, WindowsLz4MetaPath, result);
             ReadAssetText(projectRoot, MasterMixerPath, result);
@@ -104,8 +106,10 @@ namespace Hecton8.Audio.Editor
             AssertContains(result, nativePluginMatrix, "PluginImporter importer = AssetImporter.GetAtPath(assetPath) as PluginImporter", "native_plugin_matrix_importer_probe", NativePluginMatrixPath, "Build preflight rejects raw native files with GUID-only or non-plugin .meta importers.");
             AssertContains(result, nativePluginMatrix, "importer.GetCompatibleWithPlatform(target)", "native_plugin_matrix_platform_importer_compatibility", NativePluginMatrixPath, "Build preflight rejects native binaries that are not enabled for the current build target.");
             AssertContains(result, nativePluginMatrix, "RequirePluginFreshness(", "native_plugin_matrix_audio_kernel_freshness_gate", NativePluginMatrixPath, "Windows player builds fail if the packaged HectonAudioKernel DLL is older than native source or build script.");
+            AssertContains(result, nativePluginMatrix, "RequireAnyCompatiblePluginFreshness(", "native_plugin_matrix_android_audio_kernel_freshness_gate", NativePluginMatrixPath, "Android player builds fail if a packaged HectonAudioKernel .so is older than native source or Android build script.");
             AssertContains(result, nativePluginMatrix, "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp", "native_plugin_matrix_audio_kernel_source_reference", NativePluginMatrixPath, "Build preflight compares the packaged Windows audio DLL against the native source timestamp.");
             AssertContains(result, nativePluginMatrix, "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernel.bat", "native_plugin_matrix_audio_kernel_build_script_reference", NativePluginMatrixPath, "Build preflight compares the packaged Windows audio DLL against the native build-script timestamp.");
+            AssertContains(result, nativePluginMatrix, "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernelAndroid.bat", "native_plugin_matrix_android_audio_kernel_build_script_reference", NativePluginMatrixPath, "Build preflight compares the packaged Android audio .so against the Android native build-script timestamp.");
             AssertContains(result, nativePluginMatrix, "AssetFileExists(", "native_plugin_matrix_project_root_file_probe", NativePluginMatrixPath, "Build preflight probes files from the Unity project root instead of depending on the current working directory.");
             AssertContains(result, nativePluginMatrix, "File.GetLastWriteTimeUtc(ToProjectAbsolutePath(assetPath))", "native_plugin_matrix_timestamp_probe", NativePluginMatrixPath, "Build preflight uses UTC timestamps from project-root absolute paths for stale native-plugin rejection.");
             AssertAnyAssetExists(result, projectRoot, new[] { "Assets/Plugins/Android/arm64-v8a/libHectonAudioKernel.so", "Assets/Plugins/Android/libs/arm64-v8a/libHectonAudioKernel.so" }, "android_audio_kernel_binary_packaged", NativePluginMatrixPath, "Android/Quest builds require a packaged arm64 HectonAudioKernel native plugin.");
@@ -298,6 +302,15 @@ namespace Hecton8.Audio.Editor
             AssertContains(result, nativePlugin, "UnityGetAudioEffectDefinitions", "native_unity_effect_export_local", NativePluginPath, "Unity effect registration is owned by the Hecton plugin source instead of the heap-using Unity sample utility translation unit.");
             AssertContains(result, nativePlugin, "FillUnityEffectDefinition", "native_effect_definition_local_fill", NativePluginPath, "Effect definition setup uses static storage and bounded char copy in the Hecton plugin source.");
             AssertNotContains(result, nativeBuildScript, "AudioPluginUtil.cpp", "native_build_excludes_sample_utility_cpp", NativeBuildScriptPath, "Native build no longer links the Unity sample utility translation unit that contains FFT/analyzer heap helpers.");
+            AssertContains(result, nativeAndroidBuildScript, "aarch64-linux-android24-clang++", "native_android_build_uses_arm64_clang", NativeAndroidBuildScriptPath, "Android native build script targets the arm64 NDK clang driver used by Quest/Android player binaries.");
+            AssertContains(result, nativeAndroidBuildScript, "-shared", "native_android_build_shared_library", NativeAndroidBuildScriptPath, "Android native build emits a shared library for Unity native plugin loading.");
+            AssertContains(result, nativeAndroidBuildScript, "-fPIC", "native_android_build_pic", NativeAndroidBuildScriptPath, "Android native build emits position-independent code required for shared objects.");
+            AssertContains(result, nativeAndroidBuildScript, "-fvisibility=hidden", "native_android_build_hidden_visibility", NativeAndroidBuildScriptPath, "Android native build hides non-exported symbols and leaves explicit plugin exports visible.");
+            AssertContains(result, nativeAndroidBuildScript, "-ffunction-sections -fdata-sections", "native_android_build_function_data_sections", NativeAndroidBuildScriptPath, "Android native build enables section-level dead stripping.");
+            AssertContains(result, nativeAndroidBuildScript, "-Wl,--gc-sections", "native_android_build_dead_code_elimination", NativeAndroidBuildScriptPath, "Android native link drops unused sections.");
+            AssertContains(result, nativeAndroidBuildScript, "Assets\\Plugins\\Android\\arm64-v8a", "native_android_build_output_path", NativeAndroidBuildScriptPath, "Android native build writes the plugin into the Unity Android arm64 plugin folder expected by the build matrix.");
+            AssertContains(result, nativeAndroidBuildScript, "libHectonAudioKernel.so", "native_android_build_output_binary", NativeAndroidBuildScriptPath, "Android native build produces the exact Hecton audio kernel .so name required by the matrix.");
+            AssertNotContains(result, nativeAndroidBuildScript, "AudioPluginUtil.cpp", "native_android_build_excludes_sample_utility_cpp", NativeAndroidBuildScriptPath, "Android native build does not link the removed Unity sample utility translation unit.");
             AssertAssetMissing(result, projectRoot, NativeUtilityCppPath, "native_utility_cpp_removed", NativeUtilityCppPath, "Heap-allocating Unity sample utility translation unit is absent from the Hecton native kernel directory.");
             AssertAssetMissing(result, projectRoot, NativeUtilityHeaderPath, "native_utility_header_removed", NativeUtilityHeaderPath, "Unused Unity sample utility header is absent so future native builds cannot casually reattach analyzer/FFT helper paths.");
             AssertAssetMissing(result, projectRoot, NativePluginListPath, "native_plugin_list_removed", NativePluginListPath, "Legacy PluginList macro route is absent; Hecton effect registration is owned by Plugin_HectonSensoryKernel.cpp.");

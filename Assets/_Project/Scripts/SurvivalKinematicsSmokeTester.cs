@@ -102,7 +102,7 @@ namespace Hecton8.Dev
             if (math.abs(projectedVelocity.z) > 0.0001f || math.abs(projectedVelocity.x - 3f) > 0.0001f)
                 failureMask |= FailureKccProjection;
 
-            reducedMass = HectonContactJob.ResolveReducedMass(20f, 30f, false);
+            reducedMass = Hecton8.Physics.HectonContactJob.ResolveReducedMass(20f, 30f, false);
             if (math.abs(reducedMass - 12f) > 0.0001f)
                 failureMask |= FailureReducedMass;
 

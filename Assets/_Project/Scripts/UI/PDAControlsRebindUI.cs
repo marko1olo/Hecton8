@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;

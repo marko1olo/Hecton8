@@ -2,7 +2,7 @@
 
 Date: 2026-05-27
 Domain: Echelon 1 mod/API cold isolation, SDK package contracts, HectonEventBus boundary
-Status: STATIC_PASS_SCHEMA_57 / HYGIENE_PASS / DOTNET_COMPILE_DEFERRED_CPU100_ACTIVE_DOTNET / UNITY_LOCKED
+Status: STATIC_PASS_SCHEMA_60 / HYGIENE_PASS / DOTNET_COMPILE_DEFERRED_ACTIVE_DOTNET_PID52044 / UNITY_LOCKED
 
 ## Mandates Applied
 
@@ -330,4 +330,58 @@ Evidence:
 - PASS: scoped `git diff --check` for touched schema 57 source/docs. Git line-ending warnings only; no whitespace errors.
 - PASS: touched-file trailing whitespace scan after schema 57.
 - DEFERRED: dotnet compile was not launched after schema 57 because CPU sampled 100 percent and an active `dotnet.exe` process was present. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## Pass 34 - Schema 58 Manifest Byte Cap Closure
+
+- [x] Task 148: Audit manifest ingestion byte ownership. DOD practice: source trace found `ModLoader.TryReadManifest` used `File.ReadAllText(manifestPath)` before any byte cap, so a malicious oversized `mod.json` could allocate a large cold string before contract validation. Rejected alternative: trust SDK builder output while the loader accepts arbitrary package directories. Runtime us estimate: 0 us/frame, cold package discovery only.
+- [x] Task 149: Add pre-read manifest byte gate. DOD practice: `ModLoader` now rejects missing, empty, or `>32768` byte manifests through `TryValidateManifestFileSize` before `File.ReadAllText`. Rejected alternative: parse JSON first and validate after allocation. Runtime us estimate: 0 us/frame; cold `FileInfo` allocation only during mod discovery.
+- [x] Task 150: Extend schema/docs/static validator to schema 58. DOD practice: schema records `manifestMaxBytes=32768` and `manifestByteCapEnforcedBeforeRead=true`; README, loader/save audit, spec, runtime playbook, and validator now prove the contract. Rejected alternative: source-only hardening with stale SDK docs. Runtime us estimate: 0.
+- [x] Task 151: Repair static drift from concurrent source changes without reverting them. DOD practice: validator now accepts the current `internal ref struct MockModQueue` shape if its queue/control members remain non-public, updates FutureCommand output signal proof to `SandboxMockAcousticSignal`, and excludes root cold registry cache hooks from the internal-forbidden facade count. Rejected alternative: revert other-agent source changes or inflate API forbidden method docs with first-party cold infrastructure methods. Runtime us estimate: 0.
+- [x] Task 152: Verify schema 58 static proof and obey compile gate. DOD practice: validator PASS, JSON parse PASS, pre-read ordering scan PASS, stale schema scan PASS, diff hygiene PASS, trailing whitespace PASS, CPU/process/Unity lock sampled before compile decision. Rejected alternative: launch dotnet under 69 percent CPU with active `dotnet.exe`, or claim Unity proof while locked. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision 58, `ManifestMaxBytes=32768`, `ManifestByteCapEnforcedBeforeRead=True`, `SaveStateStoreRequiresScopedOrEngineOwner=True`, `MockModQueueMembersInternalOnly=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=58`, `loaderSaveAudit.manifestMaxBytes=32768`, `loaderSaveAudit.manifestByteCapEnforcedBeforeRead=True`, and matching last static validation snapshot flag.
+- PASS: source ordering scan found `TryValidateManifestFileSize(manifestPath)` before `File.ReadAllText(manifestPath)` in `ModLoader.cs`.
+- PASS: stale schema-57 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched schema 58 source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan after schema 58.
+- DEFERRED: dotnet compile was not launched after schema 58 because CPU sampled 69 percent and an active `dotnet.exe` process was present. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## Pass 35 - Schema 59 Manifest Discovery Cap Closure
+
+- [x] Task 153: Audit recursive manifest discovery allocation. DOD practice: source scan proved `ModLoader.DiscoverAndLoadMods` used `Directory.GetFiles(modsRoot, ManifestFileName, SearchOption.AllDirectories)`, allocating the full manifest path array before any package count cap. Rejected alternative: rely only on the per-file byte cap while package count remained unbounded. Runtime us estimate: 0 us/frame, cold package discovery only.
+- [x] Task 154: Bound manifest discovery before candidate allocation. DOD practice: added `MaxDiscoveredManifestCount = 64`, lazy `Directory.EnumerateFiles`, capped `List<string>`, and stop/log behavior before the `List<ModCandidate>` allocation. Rejected alternative: cap after `Directory.GetFiles` because that still pays the unbounded path-array allocation. Runtime us estimate: 0 us/frame; cold enumeration adds no hot-path work.
+- [x] Task 155: Extend schema/docs/static validator to schema 59. DOD practice: schema records `maxDiscoveredManifestCount=64` and `manifestDiscoveryUsesBoundedEnumeration=true`; README, loader/save audit, spec, runtime playbook, and validator now prove the route. Rejected alternative: source-only cap without a drift gate. Runtime us estimate: 0.
+- [x] Task 156: Verify schema 59 static proof and hygiene. DOD practice: validator PASS, JSON parse PASS, source ordering scan PASS, stale schema-58 scan PASS, scoped `git diff --check` PASS, touched-file trailing whitespace PASS. Rejected alternative: chat-only report without machine proof. Runtime us estimate: 0.
+- [x] Task 157: Obey compile gate after C# change. DOD practice: CPU/process/Unity lock sampled before build. Rejected alternative: launch dotnet under 100 percent CPU with active `dotnet.exe`, or claim Unity proof while locked. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision 59, `ManifestMaxBytes=32768`, `ManifestByteCapEnforcedBeforeRead=True`, `ManifestDiscoveryMaxCount=64`, `ManifestDiscoveryUsesBoundedEnumeration=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=59`, `loaderSaveAudit.maxDiscoveredManifestCount=64`, `loaderSaveAudit.manifestDiscoveryUsesBoundedEnumeration=True`, and matching last static validation snapshot flag.
+- PASS: source scan found `Directory.EnumerateFiles(modsRoot, ManifestFileName, SearchOption.AllDirectories)`, removed recursive `Directory.GetFiles` for manifest discovery, and proved `CollectManifestPaths` runs before `List<ModCandidate>` allocation.
+- PASS: stale schema-58 scan found no stale current-revision text in touched modding docs/schema.
+- PASS: scoped `git diff --check` for touched schema 59 source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan after schema 59.
+- DEFERRED: dotnet compile was not launched after schema 59 because CPU sampled 100 percent and active `dotnet.exe` PID 61052 was present. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## Pass 36 - Schema 60 Top-Level Package File Discovery Cap Closure
+
+- [x] Task 158: Audit top-level package file discovery. DOD practice: source scan found managed DLL identity scan, legacy bundle fallback, and legacy localization fallback still used top-level `Directory.GetFiles` arrays after manifest discovery was capped. Rejected alternative: stop at recursive manifest cap and leave per-package file fanout unbounded. Runtime us estimate: 0 us/frame, cold package discovery only.
+- [x] Task 159: Bound DLL, bundle, and localization discovery. DOD practice: added `CollectTopLevelFiles` with caps `32` managed DLLs, `4` bundles, and `16` localization files; managed DLL over-cap or discovery failure disables the package before load. Rejected alternative: cap after `Directory.GetFiles`, or silently trust packages after failed DLL discovery. Runtime us estimate: 0 us/frame; cold bounded list allocation only.
+- [x] Task 160: Extend schema/docs/static validator to schema 60. DOD practice: schema, README, loader/save audit, mod API spec, quarantine note, runtime playbook, and validator now prove bounded top-level package file discovery and fail-closed DLL over-cap handling. Rejected alternative: source-only change with stale SDK docs. Runtime us estimate: 0.
+- [x] Task 161: Verify schema 60 static proof and hygiene. DOD practice: validator PASS, JSON parse PASS, source scan PASS, stale schema/current-text scan PASS, scoped `git diff --check` PASS, touched-file trailing whitespace PASS. Rejected alternative: chat-only report without machine proof. Runtime us estimate: 0.
+- [x] Task 162: Obey compile gate after C# change. DOD practice: CPU/process/Unity lock sampled before build. Rejected alternative: launch dotnet while another `dotnet.exe` is active, or claim Unity proof while locked. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision 60, `ManagedAssemblyIdentityScanUsesBoundedEnumeration=True`, `MaxTopLevelManagedAssemblyCount=32`, `ExcessTopLevelManagedAssembliesDisablePackage=True`, `MaxTopLevelBundleCount=4`, `MaxLocalizationFileCount=16`, `TopLevelContentDiscoveryUsesBoundedEnumeration=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=60`, loader/save audit caps `32/4/16`, `managedAssemblyIdentityScanUsesBoundedEnumeration=True`, `excessTopLevelManagedAssembliesDisablePackage=True`, and matching last static validation snapshot flags.
+- PASS: source scan found old top-level DLL/bundle/localization `Directory.GetFiles` calls removed, bounded `Directory.EnumerateFiles(directory, searchPattern, SearchOption.TopDirectoryOnly)` present, DLL over-cap disables package, and DLL discovery failure disables package.
+- PASS: stale schema-59/current-text scan found no stale current revision or old unbounded top-level DLL wording in touched modding docs/schema/validator.
+- PASS: scoped `git diff --check` for touched schema 60 source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan after schema 60.
+- DEFERRED: dotnet compile was not launched after schema 60 because an active `dotnet.exe` PID 52044 was present, although CPU sampled 33.95 percent. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
 - NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.

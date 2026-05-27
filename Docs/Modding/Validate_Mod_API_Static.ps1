@@ -333,7 +333,12 @@ $schemaOpcodes = @($schema.commandApi.acceptedOpcodes | Sort-Object -Unique)
 $apiSurfaceNames = @([regex]::Matches($hectonApiSource, 'public\s+static\s+class\s+([A-Za-z0-9_]+)') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -ne 'HectonAPI' } | Sort-Object)
 $publicApiMethods = @([regex]::Matches($hectonApiSource, '(?m)^\s*public\s+static\s+(?!class\b)(?:[A-Za-z0-9_<>,\[\]\.?]+\s+)+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*\(') | ForEach-Object { $_.Groups[1].Value } | Sort-Object)
 $publicApiProperties = @([regex]::Matches($hectonApiSource, '(?m)^\s*public\s+static\s+[A-Za-z0-9_<>,\[\]\.?]+\s+([A-Za-z0-9_]+)\s*=>') | ForEach-Object { $_.Groups[1].Value } | Sort-Object)
-$internalApiMethods = @([regex]::Matches($hectonApiSource, '(?m)^\s*internal\s+static\s+(?!class\b)(?:[A-Za-z0-9_<>,\[\]\.?]+\s+)+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*\(') | ForEach-Object { $_.Groups[1].Value } | Sort-Object)
+$internalApiInfrastructureMethods = @(
+    'BindRegistryServicesCold',
+    'OnGlobalRegistryServiceReplaced',
+    'ResetRegistryCacheCold'
+)
+$internalApiMethods = @([regex]::Matches($hectonApiSource, '(?m)^\s*internal\s+static\s+(?!class\b)(?:[A-Za-z0-9_<>,\[\]\.?]+\s+)+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*\(') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $internalApiInfrastructureMethods -notcontains $_ } | Sort-Object)
 $modEventDtoSizeMatch = [regex]::Match($eventContractsSource, 'StructLayout\(.*?LayoutKind\.Explicit,\s*Size\s*=\s*(\d+).*?public\s+struct\s+ModEventDto', 'Singleline')
 Assert-True $modEventDtoSizeMatch.Success 'Missing ModEventDto explicit size declaration.'
 $modEventDtoSize = [int]$modEventDtoSizeMatch.Groups[1].Value
@@ -390,6 +395,74 @@ $currentApiVersion = [int]$currentApiVersionMatch.Groups[1].Value
 $manifestFileNameMatch = [regex]::Match($modLoaderSource, 'private\s+const\s+string\s+ManifestFileName\s*=\s*"([^"]+)";')
 Assert-True $manifestFileNameMatch.Success 'Missing ModLoader manifest file name constant.'
 $manifestFileName = $manifestFileNameMatch.Groups[1].Value
+$manifestMaxBytesMatch = [regex]::Match($modLoaderSource, 'private\s+const\s+long\s+MaxManifestBytes\s*=\s*(\d+)L\s*\*\s*(\d+)L;')
+Assert-True $manifestMaxBytesMatch.Success 'Missing ModLoader.MaxManifestBytes.'
+$manifestMaxBytes = [long]$manifestMaxBytesMatch.Groups[1].Value * [long]$manifestMaxBytesMatch.Groups[2].Value
+$manifestByteCapCheckIndex = $modLoaderSource.IndexOf('if (!TryValidateManifestFileSize(manifestPath))', [System.StringComparison]::Ordinal)
+$manifestReadAllTextIndex = $modLoaderSource.IndexOf('string json = File.ReadAllText(manifestPath);', [System.StringComparison]::Ordinal)
+$manifestByteCapEnforcedBeforeRead =
+    $modLoaderSource.Contains('private static bool TryValidateManifestFileSize') -and
+    $modLoaderSource.Contains('FileInfo fileInfo = new FileInfo(manifestPath);') -and
+    $modLoaderSource.Contains('fileInfo.Length > MaxManifestBytes') -and
+    $modLoaderSource.Contains('manifest exceeds ", MaxManifestBytesLabel, " byte cap') -and
+    ($manifestByteCapCheckIndex -ge 0) -and
+    ($manifestReadAllTextIndex -gt $manifestByteCapCheckIndex)
+Assert-True $manifestByteCapEnforcedBeforeRead 'ModLoader must reject missing, empty, or oversized manifests before File.ReadAllText.'
+$manifestDiscoveryMaxCountMatch = [regex]::Match($modLoaderSource, 'private\s+const\s+int\s+MaxDiscoveredManifestCount\s*=\s*(\d+);')
+Assert-True $manifestDiscoveryMaxCountMatch.Success 'Missing ModLoader.MaxDiscoveredManifestCount.'
+$manifestDiscoveryMaxCount = [int]$manifestDiscoveryMaxCountMatch.Groups[1].Value
+$manifestDiscoveryGetFilesAllDirectoriesForbidden =
+    -not $modLoaderSource.Contains('Directory.GetFiles(modsRoot, ManifestFileName, SearchOption.AllDirectories)')
+$manifestDiscoveryCollectIndex = $modLoaderSource.IndexOf('CollectManifestPaths(modsRoot, manifestPaths);', [System.StringComparison]::Ordinal)
+$manifestDiscoveryCandidateListIndex = $modLoaderSource.IndexOf('List<ModCandidate> candidates = new List<ModCandidate>(manifestPaths.Count);', [System.StringComparison]::Ordinal)
+$manifestDiscoveryUsesBoundedEnumeration =
+    $modLoaderSource.Contains('private static void CollectManifestPaths') -and
+    $modLoaderSource.Contains('Directory.EnumerateFiles(modsRoot, ManifestFileName, SearchOption.AllDirectories)') -and
+    $modLoaderSource.Contains('new List<string>(MaxDiscoveredManifestCount)') -and
+    $modLoaderSource.Contains('manifestPaths.Count >= MaxDiscoveredManifestCount') -and
+    $modLoaderSource.Contains('Manifest discovery capped at ') -and
+    $manifestDiscoveryGetFilesAllDirectoriesForbidden -and
+    ($manifestDiscoveryCollectIndex -ge 0) -and
+    ($manifestDiscoveryCandidateListIndex -gt $manifestDiscoveryCollectIndex)
+Assert-True $manifestDiscoveryUsesBoundedEnumeration 'ModLoader must use bounded lazy manifest discovery before candidate allocation.'
+$maxTopLevelManagedAssemblyCountMatch = [regex]::Match($modLoaderSource, 'private\s+const\s+int\s+MaxTopLevelManagedAssemblyCount\s*=\s*(\d+);')
+Assert-True $maxTopLevelManagedAssemblyCountMatch.Success 'Missing ModLoader.MaxTopLevelManagedAssemblyCount.'
+$maxTopLevelManagedAssemblyCount = [int]$maxTopLevelManagedAssemblyCountMatch.Groups[1].Value
+$maxTopLevelBundleCountMatch = [regex]::Match($modLoaderSource, 'private\s+const\s+int\s+MaxTopLevelBundleCount\s*=\s*(\d+);')
+Assert-True $maxTopLevelBundleCountMatch.Success 'Missing ModLoader.MaxTopLevelBundleCount.'
+$maxTopLevelBundleCount = [int]$maxTopLevelBundleCountMatch.Groups[1].Value
+$maxLocalizationFileCountMatch = [regex]::Match($modLoaderSource, 'private\s+const\s+int\s+MaxLocalizationFileCount\s*=\s*(\d+);')
+Assert-True $maxLocalizationFileCountMatch.Success 'Missing ModLoader.MaxLocalizationFileCount.'
+$maxLocalizationFileCount = [int]$maxLocalizationFileCountMatch.Groups[1].Value
+$oldTopLevelDllGetFilesForbidden =
+    -not $modLoaderSource.Contains('Directory.GetFiles(modDirectory, "*" + DefaultAssemblyExtension, SearchOption.TopDirectoryOnly)')
+$oldTopLevelBundleGetFilesForbidden =
+    -not $modLoaderSource.Contains('Directory.GetFiles(modDirectory, "*" + DefaultBundleExtension, SearchOption.TopDirectoryOnly)')
+$oldTopLevelLocalizationGetFilesForbidden =
+    -not $modLoaderSource.Contains('Directory.GetFiles(modDirectory, "lang_*.json", SearchOption.TopDirectoryOnly)')
+$topLevelPackageFileDiscoveryUsesBoundedEnumeration =
+    $modLoaderSource.Contains('private static string[] CollectTopLevelFiles') -and
+    $modLoaderSource.Contains('Directory.EnumerateFiles(directory, searchPattern, SearchOption.TopDirectoryOnly)') -and
+    $modLoaderSource.Contains('new List<string>(maxCount)') -and
+    $modLoaderSource.Contains('files.Count >= maxCount') -and
+    $modLoaderSource.Contains('Top-level ", fileKind, " discovery capped at ') -and
+    $modLoaderSource.Contains('files.Sort(StringComparer.OrdinalIgnoreCase)') -and
+    $oldTopLevelDllGetFilesForbidden -and
+    $oldTopLevelBundleGetFilesForbidden -and
+    $oldTopLevelLocalizationGetFilesForbidden
+Assert-True $topLevelPackageFileDiscoveryUsesBoundedEnumeration 'ModLoader must use bounded top-level package file discovery for DLL, bundle, and localization files.'
+$managedAssemblyIdentityScanUsesBoundedEnumeration =
+    $modLoaderSource.Contains('ResolveManagedAssemblyIdentityScanPaths(') -and
+    $modLoaderSource.Contains('out string disabledReason') -and
+    $modLoaderSource.Contains('MaxTopLevelManagedAssemblyCount') -and
+    $modLoaderSource.Contains('Package contains more than ", MaxTopLevelManagedAssemblyCountLabel, " top-level managed assemblies.') -and
+    $modLoaderSource.Contains('Package top-level managed assembly discovery failed.')
+Assert-True $managedAssemblyIdentityScanUsesBoundedEnumeration 'ModLoader managed assembly identity scan must be bounded and fail closed on over-cap or discovery failure.'
+$excessTopLevelManagedAssembliesDisablePackage =
+    $modLoaderSource.Contains('out string managedAssemblyDiscoveryError') -and
+    $modLoaderSource.Contains('manifestContractError = managedAssemblyDiscoveryError') -and
+    $managedAssemblyIdentityScanUsesBoundedEnumeration
+Assert-True $excessTopLevelManagedAssembliesDisablePackage 'ModLoader must disable packages when top-level managed assembly discovery exceeds cap or fails.'
 $manifestStructMatch = [regex]::Match($modLoaderSource, 'private\s+struct\s+ModManifest\s*\{(?<body>.*?)public\s+ModManifest\s*\(', 'Singleline')
 Assert-True $manifestStructMatch.Success 'Missing ModManifest field block.'
 $manifestFields = @([regex]::Matches($manifestStructMatch.Groups['body'].Value, '(?m)^\s*public\s+[A-Za-z0-9_<>,\[\]\.?]+\s+([A-Za-z0-9_]+);') | ForEach-Object { $_.Groups[1].Value } | Sort-Object)
@@ -621,14 +694,14 @@ Assert-True ($futureCommandSandboxValidatorStart -ge 0) 'Missing FutureCommandSa
 $futureCommandSandboxValidatorBody = $futureCommandSandboxSource.Substring($futureCommandSandboxValidatorStart)
 $futureCommandSandboxPublicStaticMembersForbidden = -not [regex]::IsMatch($futureCommandSandboxValidatorBody, '(?m)^\s*public\s+static\s+') -and -not [regex]::IsMatch($futureCommandSandboxSource, '(?m)^\s*public\s+static\s+MockModQueue\s+Wrap\s*\(')
 Assert-True $futureCommandSandboxPublicStaticMembersForbidden 'FutureCommandSandboxValidator and MockModQueue control-plane static methods must remain internal.'
-$mockModQueueMatch = [regex]::Match($futureCommandSandboxSource, '(?s)internal\s+partial\s+struct\s+MockModQueue\s*:\s*IDisposable\s*\{(?<body>.*?)\n\s*\}\s*\n\s*/// <summary>')
+$mockModQueueMatch = [regex]::Match($futureCommandSandboxSource, '(?s)internal\s+(?:partial\s+)?(?:ref\s+)?struct\s+MockModQueue(?:\s*:\s*IDisposable)?\s*\{(?<body>.*?)\n\s*\}\s*\n\s*/// <summary>')
 Assert-True $mockModQueueMatch.Success 'Missing MockModQueue body for member visibility audit.'
 $mockModQueueBody = $mockModQueueMatch.Groups['body'].Value
 $mockModQueueMembersInternalOnly =
     $mockModQueueBody.Contains('private NativeQueue<FutureCommandEnvelope> _queue;') -and
     [regex]::IsMatch($mockModQueueBody, '(?m)^\s*internal\s+bool\s+GetIsCreated\s*\(') -and
     [regex]::IsMatch($mockModQueueBody, '(?m)^\s*internal\s+bool\s+Attach\s*\(') -and
-    [regex]::IsMatch($mockModQueueBody, '(?m)^\s*void\s+IDisposable\.Dispose\s*\(') -and
+    ([regex]::IsMatch($mockModQueueBody, '(?m)^\s*void\s+IDisposable\.Dispose\s*\(') -or [regex]::IsMatch($mockModQueueBody, '(?m)^\s*internal\s+void\s+Dispose\s*\(')) -and
     -not [regex]::IsMatch($mockModQueueBody, '(?m)^\s*public\s+(?:NativeQueue<FutureCommandEnvelope>\s+\w+|bool\s+(?:GetIsCreated|Attach)\s*\(|void\s+Dispose\s*\()')
 Assert-True $mockModQueueMembersInternalOnly 'MockModQueue queue handle and instance control-plane members must remain internal/private.'
 Assert-True (-not [regex]::IsMatch($futureCommandSandboxSource, '(?m)^\s*public\s+static\s+class\s+FutureCommandSandboxConstants\b')) 'FutureCommandSandboxConstants exposes sandbox control-plane tuning/capacity constants and must not be public SDK API.'
@@ -647,13 +720,13 @@ $forbiddenPublicSandboxControlTypes = @(
     'MockMaliciousEnvelopeInjectionJob'
 )
 foreach ($sandboxControlType in $forbiddenPublicSandboxControlTypes) {
-    Assert-True (-not [regex]::IsMatch($futureCommandSandboxSource, "(?m)^\s*public\s+(?:partial\s+)?(?:struct|class)\s+$sandboxControlType\b")) "Future command sandbox control-plane type is public: $sandboxControlType"
-    Assert-True ([regex]::IsMatch($futureCommandSandboxSource, "(?m)^\s*internal\s+(?:partial\s+)?struct\s+$sandboxControlType\b")) "Future command sandbox control-plane type must remain internal: $sandboxControlType"
+    Assert-True (-not [regex]::IsMatch($futureCommandSandboxSource, "(?m)^\s*public\s+(?:partial\s+)?(?:ref\s+)?(?:struct|class)\s+$sandboxControlType\b")) "Future command sandbox control-plane type is public: $sandboxControlType"
+    Assert-True ([regex]::IsMatch($futureCommandSandboxSource, "(?m)^\s*internal\s+(?:partial\s+)?(?:ref\s+)?struct\s+$sandboxControlType\b")) "Future command sandbox control-plane type must remain internal: $sandboxControlType"
 }
 $forbiddenPublicFutureSignalTypes = @(
     'ModSpawnRequestSignal',
     'ModAssetReferenceSignal',
-    'MockAcousticSignal',
+    'SandboxMockAcousticSignal',
     'MockDamageSignal',
     'ModFutureDevNullSignal',
     'SurvivalOverrideSignal',
@@ -921,6 +994,10 @@ foreach ($payloadName in $explicitLayoutSizesByPayload.Keys) {
 Assert-True ($manifestFileName -eq $schema.loaderSaveAudit.manifestFileName) "Manifest file name drift. Source=$manifestFileName Schema=$($schema.loaderSaveAudit.manifestFileName)"
 Assert-True ($currentApiVersion -eq [int]$schema.loaderSaveAudit.currentApiVersion) "Current API version drift. Source=$currentApiVersion Schema=$($schema.loaderSaveAudit.currentApiVersion)"
 Assert-True ($manifestFields.Count -eq [int]$schema.loaderSaveAudit.manifestFieldCount) "Manifest field count drift. Source=$($manifestFields.Count) Schema=$($schema.loaderSaveAudit.manifestFieldCount)"
+Assert-True ($manifestMaxBytes -eq [long]$schema.loaderSaveAudit.manifestMaxBytes) "Manifest byte cap drift. Source=$manifestMaxBytes Schema=$($schema.loaderSaveAudit.manifestMaxBytes)"
+Assert-True ([bool]$schema.loaderSaveAudit.manifestByteCapEnforcedBeforeRead) 'Schema loaderSaveAudit must record manifest byte cap before read.'
+Assert-True ($manifestDiscoveryMaxCount -eq [int]$schema.loaderSaveAudit.maxDiscoveredManifestCount) "Manifest discovery cap drift. Source=$manifestDiscoveryMaxCount Schema=$($schema.loaderSaveAudit.maxDiscoveredManifestCount)"
+Assert-True ([bool]$schema.loaderSaveAudit.manifestDiscoveryUsesBoundedEnumeration) 'Schema loaderSaveAudit must record bounded manifest discovery.'
 Assert-True ($builderApiVersion -eq $currentApiVersion) "ModBuilder API version drift. Builder=$builderApiVersion Loader=$currentApiVersion"
 Assert-True ($modBuilderManifestFields.Count -eq $manifestFields.Count) "ModBuilder manifest field count drift. Builder=$($modBuilderManifestFields.Count) Loader=$($manifestFields.Count)"
 Assert-True ($missingBuilderManifestFields.Count -eq 0) "ModBuilder manifest missing loader-required fields: $($missingBuilderManifestFields -join ', ')"
@@ -946,9 +1023,9 @@ Assert-True ($modRuntimeStateSource.Contains('CurrentModId => _currentModId ?? s
 Assert-True (-not $modRuntimeStateSource.Contains('_currentModId = string.IsNullOrWhiteSpace(modId) ? "anonymous" : modId')) 'ModExecutionScope still synthesizes anonymous active owners.'
 Assert-True ($modLoaderSource.Contains('ReservedAssemblyNamePrefix = "Hecton8."')) 'ModLoader missing reserved Hecton8 assembly-name guard.'
 Assert-True ([regex]::IsMatch($modLoaderSource, 'TryValidateManagedAssemblyIdentity\s*\(\s*manifest\.EntryAssembly\s*,\s*assemblyPath\s*,\s*managedAssemblyIdentityScanPaths', 'Singleline')) 'ModLoader does not validate manifest managed assembly identity with package DLL scan paths.'
-Assert-True ($modLoaderSource.Contains('ResolveManagedAssemblyIdentityScanPaths(modDirectory, manifest)')) 'ModLoader does not collect package DLL paths for managed assembly identity validation.'
+Assert-True ($modLoaderSource.Contains('ResolveManagedAssemblyIdentityScanPaths(') -and $modLoaderSource.Contains('out string managedAssemblyDiscoveryError')) 'ModLoader does not collect package DLL paths for managed assembly identity validation.'
 Assert-True ($modLoaderSource.Contains('managedAssemblyIdentityScanPaths.Length > 0')) 'ModLoader does not classify top-level package DLLs as managed-entry candidates.'
-Assert-True ($modLoaderSource.Contains('Directory.GetFiles(modDirectory, "*" + DefaultAssemblyExtension, SearchOption.TopDirectoryOnly)')) 'ModLoader does not scan top-level package DLLs for identity validation.'
+Assert-True $managedAssemblyIdentityScanUsesBoundedEnumeration 'ModLoader does not use bounded top-level package DLL scan for identity validation.'
 Assert-True ($modLoaderSource.Contains('IsReservedFactoryLoadedFromModsRoot(factory)')) 'ModLoader does not block reserved friend-assembly factories loaded from Mods root.'
 Assert-True ($modLoaderSource.Contains('AssemblyName.GetAssemblyName(assemblyPath)')) 'ModLoader does not inspect managed assembly metadata identity.'
 Assert-True ($modBuilderWindowSource.Contains('ReservedAssemblyNamePrefix = "Hecton8."')) 'ModBuilderWindow missing reserved Hecton8 assembly-name guard.'
@@ -958,6 +1035,12 @@ Assert-True ($modBuilderWindowSource.Contains('RemoveStaleAssemblies(outputDirec
 Assert-True ($modBuilderWindowSource.Contains('Directory.GetFiles(outputDirectory, "*.dll", SearchOption.TopDirectoryOnly)')) 'ModBuilderWindow stale managed DLL cleanup does not scan output DLLs.'
 Assert-True ([bool]$schema.loaderSaveAudit.managedAssemblyIdentityReservedNamesBlocked) 'Schema loaderSaveAudit must record reserved managed assembly identity blocking.'
 Assert-True ([bool]$schema.loaderSaveAudit.managedAssemblyIdentityScansAllPackageDlls) 'Schema loaderSaveAudit must record package DLL identity scanning.'
+Assert-True ([bool]$schema.loaderSaveAudit.managedAssemblyIdentityScanUsesBoundedEnumeration) 'Schema loaderSaveAudit must record bounded package DLL identity scanning.'
+Assert-True ([int]$schema.loaderSaveAudit.maxTopLevelManagedAssemblyCount -eq $maxTopLevelManagedAssemblyCount) "Top-level managed assembly cap drift. Source=$maxTopLevelManagedAssemblyCount Schema=$($schema.loaderSaveAudit.maxTopLevelManagedAssemblyCount)"
+Assert-True ([bool]$schema.loaderSaveAudit.excessTopLevelManagedAssembliesDisablePackage) 'Schema loaderSaveAudit must record managed DLL over-cap package disable.'
+Assert-True ([int]$schema.loaderSaveAudit.maxTopLevelBundleCount -eq $maxTopLevelBundleCount) "Top-level bundle cap drift. Source=$maxTopLevelBundleCount Schema=$($schema.loaderSaveAudit.maxTopLevelBundleCount)"
+Assert-True ([int]$schema.loaderSaveAudit.maxLocalizationFileCount -eq $maxLocalizationFileCount) "Top-level localization file cap drift. Source=$maxLocalizationFileCount Schema=$($schema.loaderSaveAudit.maxLocalizationFileCount)"
+Assert-True ([bool]$schema.loaderSaveAudit.topLevelContentDiscoveryUsesBoundedEnumeration) 'Schema loaderSaveAudit must record bounded top-level content discovery.'
 Assert-True ([bool]$schema.loaderSaveAudit.modIdentifierCanonicalForm) 'Schema loaderSaveAudit must record canonical mod identifier validation.'
 Assert-True ([bool]$schema.loaderSaveAudit.dependencyIdentifiersValidated) 'Schema loaderSaveAudit must record dependency identifier validation.'
 Assert-True ([bool]$schema.loaderSaveAudit.entryAssemblyPathRestrictedToFileName) 'Schema loaderSaveAudit must record EntryAssembly file-name-only restriction.'
@@ -1318,10 +1401,20 @@ Assert-True ($lastStaticValidation.modRegistryEventTypesPublic -eq $false) "Sche
 Assert-True ($lastStaticValidation.modRegistryListenersUsePrivateAdapters -eq $true) "Schema lastStaticValidationSnapshot must record private adapters for internal mod registry listeners."
 Assert-True ($lastStaticValidation.managedAssemblyIdentityReservedNamesBlocked -eq $true) "Schema lastStaticValidationSnapshot must record reserved managed assembly identity blocking."
 Assert-True ($lastStaticValidation.managedAssemblyIdentityScansAllPackageDlls -eq $true) "Schema lastStaticValidationSnapshot must record package DLL identity scanning."
+Assert-True ($lastStaticValidation.managedAssemblyIdentityScanUsesBoundedEnumeration -eq $true) "Schema lastStaticValidationSnapshot must record bounded package DLL identity scanning."
+Assert-True ([int]$lastStaticValidation.maxTopLevelManagedAssemblyCount -eq $maxTopLevelManagedAssemblyCount) "Schema lastStaticValidationSnapshot top-level managed assembly cap drift. Source=$maxTopLevelManagedAssemblyCount SchemaLastKnown=$($lastStaticValidation.maxTopLevelManagedAssemblyCount)"
+Assert-True ($lastStaticValidation.excessTopLevelManagedAssembliesDisablePackage -eq $true) "Schema lastStaticValidationSnapshot must record managed DLL over-cap package disable."
+Assert-True ([int]$lastStaticValidation.maxTopLevelBundleCount -eq $maxTopLevelBundleCount) "Schema lastStaticValidationSnapshot top-level bundle cap drift. Source=$maxTopLevelBundleCount SchemaLastKnown=$($lastStaticValidation.maxTopLevelBundleCount)"
+Assert-True ([int]$lastStaticValidation.maxLocalizationFileCount -eq $maxLocalizationFileCount) "Schema lastStaticValidationSnapshot top-level localization cap drift. Source=$maxLocalizationFileCount SchemaLastKnown=$($lastStaticValidation.maxLocalizationFileCount)"
+Assert-True ($lastStaticValidation.topLevelContentDiscoveryUsesBoundedEnumeration -eq $true) "Schema lastStaticValidationSnapshot must record bounded top-level content discovery."
 Assert-True ($lastStaticValidation.modIdentifierCanonicalForm -eq $true) "Schema lastStaticValidationSnapshot must record canonical mod identifier validation."
 Assert-True ($lastStaticValidation.dependencyIdentifiersValidated -eq $true) "Schema lastStaticValidationSnapshot must record dependency identifier validation."
 Assert-True ($lastStaticValidation.entryAssemblyPathRestrictedToFileName -eq $true) "Schema lastStaticValidationSnapshot must record EntryAssembly file-name-only restriction."
 Assert-True ($lastStaticValidation.modExecutionScopeRejectsAnonymousOwner -eq $true) "Schema lastStaticValidationSnapshot must record ModExecutionScope anonymous-owner rejection."
+Assert-True ([long]$lastStaticValidation.manifestMaxBytes -eq $manifestMaxBytes) "Schema lastStaticValidationSnapshot manifest byte cap drift. Source=$manifestMaxBytes SchemaLastKnown=$($lastStaticValidation.manifestMaxBytes)"
+Assert-True ($lastStaticValidation.manifestByteCapEnforcedBeforeRead -eq $true) "Schema lastStaticValidationSnapshot must record manifest byte cap before read."
+Assert-True ([int]$lastStaticValidation.manifestDiscoveryMaxCount -eq $manifestDiscoveryMaxCount) "Schema lastStaticValidationSnapshot manifest discovery cap drift. Source=$manifestDiscoveryMaxCount SchemaLastKnown=$($lastStaticValidation.manifestDiscoveryMaxCount)"
+Assert-True ($lastStaticValidation.manifestDiscoveryUsesBoundedEnumeration -eq $true) "Schema lastStaticValidationSnapshot must record bounded manifest discovery."
 Assert-True ($lastStaticValidation.eventChannelsRejectAnonymousSubscribers -eq $true) "Schema lastStaticValidationSnapshot must record private event channel anonymous-subscriber rejection."
 Assert-True ($lastStaticValidation.modApiSpecCurrentClosureRevisionMatchesSchema -eq $true) "Schema lastStaticValidationSnapshot must record Mod API spec closure revision parity."
 Assert-True ($lastStaticValidation.futureSubtitleCueAliasesReserved -eq $true) "Schema lastStaticValidationSnapshot must record reserved subtitle cue opcode aliases."
@@ -1424,6 +1517,23 @@ Assert-True ($runtimePlaybookText.Contains('FutureCommandSandboxPublicStaticMemb
 Assert-True ($runtimePlaybookText.Contains('MockModQueueMembersInternalOnly = True')) 'Runtime playbook missing MockModQueue member visibility closure evidence.'
 Assert-True ($runtimePlaybookText.Contains('ResourceRegistryRejectsForgedOwner = True')) 'Runtime playbook missing resource registry forged-owner closure evidence.'
 Assert-True ($runtimePlaybookText.Contains('SaveStateStoreRequiresScopedOrEngineOwner = True')) 'Runtime playbook missing SaveState store scoped-or-engine owner proof evidence.'
+Assert-True ($runtimePlaybookText.Contains('ManifestByteCapEnforcedBeforeRead = True')) 'Runtime playbook missing manifest byte cap before read evidence.'
+Assert-True ($runtimePlaybookText.Contains('ManifestDiscoveryMaxCount = 64')) 'Runtime playbook missing manifest discovery cap evidence.'
+Assert-True ($runtimePlaybookText.Contains('ManifestDiscoveryUsesBoundedEnumeration = True')) 'Runtime playbook missing bounded manifest discovery evidence.'
+Assert-True ($runtimePlaybookText.Contains('ManagedAssemblyIdentityScanUsesBoundedEnumeration = True')) 'Runtime playbook missing bounded managed assembly identity scan evidence.'
+Assert-True ($runtimePlaybookText.Contains('MaxTopLevelManagedAssemblyCount = 32')) 'Runtime playbook missing top-level managed assembly cap evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExcessTopLevelManagedAssembliesDisablePackage = True')) 'Runtime playbook missing managed assembly over-cap disable evidence.'
+Assert-True ($runtimePlaybookText.Contains('MaxTopLevelBundleCount = 4')) 'Runtime playbook missing top-level bundle cap evidence.'
+Assert-True ($runtimePlaybookText.Contains('MaxLocalizationFileCount = 16')) 'Runtime playbook missing top-level localization cap evidence.'
+Assert-True ($runtimePlaybookText.Contains('TopLevelContentDiscoveryUsesBoundedEnumeration = True')) 'Runtime playbook missing bounded top-level content discovery evidence.'
+Assert-True ($loaderSaveAuditText.Contains('Manifest byte cap') -and $loaderSaveAuditText.Contains('32768')) 'Loader/save audit missing manifest byte cap contract.'
+Assert-True ($loaderSaveAuditText.Contains('Manifest discovery cap') -and $loaderSaveAuditText.Contains('64')) 'Loader/save audit missing manifest discovery cap contract.'
+Assert-True ($loaderSaveAuditText.Contains('Package DLL identity scan') -and $loaderSaveAuditText.Contains('max `32`')) 'Loader/save audit missing top-level DLL identity scan cap contract.'
+Assert-True ($loaderSaveAuditText.Contains('Legacy bundle discovery cap') -and $loaderSaveAuditText.Contains('`4`')) 'Loader/save audit missing top-level bundle discovery cap contract.'
+Assert-True ($loaderSaveAuditText.Contains('Legacy localization discovery cap') -and $loaderSaveAuditText.Contains('`16`')) 'Loader/save audit missing top-level localization discovery cap contract.'
+Assert-True ($specText.Contains('Manifest byte cap') -and $specText.Contains('File.ReadAllText')) 'Mod API spec missing manifest byte cap contract.'
+Assert-True ($specText.Contains('Manifest discovery cap') -and $specText.Contains('64')) 'Mod API spec missing manifest discovery cap contract.'
+Assert-True ($specText.Contains('max `32` top-level `.dll` files') -and $specText.Contains('Legacy bundle discovery cap') -and $specText.Contains('Legacy localization discovery cap')) 'Mod API spec missing bounded top-level package file discovery contract.'
 Assert-True ($runtimePlaybookText.Contains('HectonModHooksPublicStaticMembersForbidden = True')) 'Runtime playbook missing HectonModHooks public-static member closure evidence.'
 Assert-True ($runtimePlaybookText.Contains('ModCommandDispatcherPublicStaticMembersForbidden = True')) 'Runtime playbook missing ModCommandDispatcher public-static member closure evidence.'
 Assert-True ($runtimePlaybookText.Contains('ProjectedEventBridgeRejectsAnonymousSubscribers = True')) 'Runtime playbook missing projected event bridge anonymous-subscriber rejection evidence.'
@@ -1469,6 +1579,10 @@ $result = [pscustomobject]@{
     NativeCraftingEventPayloadSizeBytes = $craftingEventPayloadSize
     CurrentApiVersion = $currentApiVersion
     ManifestFieldCount = $manifestFields.Count
+    ManifestMaxBytes = $manifestMaxBytes
+    ManifestByteCapEnforcedBeforeRead = $manifestByteCapEnforcedBeforeRead
+    ManifestDiscoveryMaxCount = $manifestDiscoveryMaxCount
+    ManifestDiscoveryUsesBoundedEnumeration = $manifestDiscoveryUsesBoundedEnumeration
     SdkBuilderManifestFieldCount = $modBuilderManifestFields.Count
     SdkBuilderManifestMatchesLoader = $true
     ModMetadataFieldCount = $modMetadataFields.Count
@@ -1502,6 +1616,12 @@ $result = [pscustomobject]@{
     ModRegistryListenersUsePrivateAdapters = [bool]$lastStaticValidation.modRegistryListenersUsePrivateAdapters
     ManagedAssemblyIdentityReservedNamesBlocked = [bool]$lastStaticValidation.managedAssemblyIdentityReservedNamesBlocked
     ManagedAssemblyIdentityScansAllPackageDlls = [bool]$lastStaticValidation.managedAssemblyIdentityScansAllPackageDlls
+    ManagedAssemblyIdentityScanUsesBoundedEnumeration = $managedAssemblyIdentityScanUsesBoundedEnumeration
+    MaxTopLevelManagedAssemblyCount = $maxTopLevelManagedAssemblyCount
+    ExcessTopLevelManagedAssembliesDisablePackage = $excessTopLevelManagedAssembliesDisablePackage
+    MaxTopLevelBundleCount = $maxTopLevelBundleCount
+    MaxLocalizationFileCount = $maxLocalizationFileCount
+    TopLevelContentDiscoveryUsesBoundedEnumeration = $topLevelPackageFileDiscoveryUsesBoundedEnumeration
     ModIdentifierCanonicalForm = [bool]$lastStaticValidation.modIdentifierCanonicalForm
     DependencyIdentifiersValidated = [bool]$lastStaticValidation.dependencyIdentifiersValidated
     EntryAssemblyPathRestrictedToFileName = [bool]$lastStaticValidation.entryAssemblyPathRestrictedToFileName

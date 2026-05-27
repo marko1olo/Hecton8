@@ -111,8 +111,8 @@ namespace Hecton8.Core
             SlowStepMask = 0u;
             LongestStepMilliseconds = 0d;
             LongestStep = BootstrapStepToken.None;
-            Time.timeScale = 1f;
-            Physics.simulationMode = SimulationMode.FixedUpdate;
+            UnityEngine.Time.timeScale = 1f;
+            UnityEngine.Physics.simulationMode = SimulationMode.FixedUpdate;
         }
 
         public static void RegisterSafeHaltTelemetryReporter(BootstrapSafeHaltTelemetryReporter reporter)
@@ -150,9 +150,9 @@ namespace Hecton8.Core
             _recentStepWriteIndex = 0;
             _recentStepCount = 0;
             System.Array.Clear(_recentSteps, 0, _recentSteps.Length);
-            _bootStartTimeSeconds = Time.realtimeSinceStartupAsDouble;
-            Time.timeScale = 1f;
-            Physics.simulationMode = SimulationMode.FixedUpdate;
+            _bootStartTimeSeconds = UnityEngine.Time.realtimeSinceStartupAsDouble;
+            UnityEngine.Time.timeScale = 1f;
+            UnityEngine.Physics.simulationMode = SimulationMode.FixedUpdate;
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace Hecton8.Core
 
             BeginBoot();
             _activeStep = step;
-            _stepStartTimeSeconds = Time.realtimeSinceStartupAsDouble;
+            _stepStartTimeSeconds = UnityEngine.Time.realtimeSinceStartupAsDouble;
             _stepActive = true;
             RecordRecentStep(step);
         }
@@ -180,7 +180,7 @@ namespace Hecton8.Core
             if (!_stepActive || _activeStep != step || step == BootstrapStepToken.None)
                 return;
 
-            double elapsedMilliseconds = (Time.realtimeSinceStartupAsDouble - _stepStartTimeSeconds) * 1000.0;
+            double elapsedMilliseconds = (UnityEngine.Time.realtimeSinceStartupAsDouble - _stepStartTimeSeconds) * 1000.0;
             if (elapsedMilliseconds > LongestStepMilliseconds)
             {
                 LongestStepMilliseconds = elapsedMilliseconds;
@@ -208,8 +208,8 @@ namespace Hecton8.Core
             _activeStep = BootstrapStepToken.None;
             _stepActive = false;
             _stepStartTimeSeconds = 0d;
-            Time.timeScale = 1f;
-            Physics.simulationMode = SimulationMode.FixedUpdate;
+            UnityEngine.Time.timeScale = 1f;
+            UnityEngine.Physics.simulationMode = SimulationMode.FixedUpdate;
         }
 
         /// <summary>
@@ -236,7 +236,7 @@ namespace Hecton8.Core
             if (!BootStarted || MainMenuReached || SafeHaltTriggered)
                 return false;
 
-            double nowSeconds = Time.realtimeSinceStartupAsDouble;
+            double nowSeconds = UnityEngine.Time.realtimeSinceStartupAsDouble;
             double bootElapsedSeconds = nowSeconds - _bootStartTimeSeconds;
             double watchedElapsedSeconds = _stepActive
                 ? nowSeconds - _stepStartTimeSeconds
@@ -245,8 +245,8 @@ namespace Hecton8.Core
                 return false;
 
             SafeHaltTriggered = true;
-            Time.timeScale = 1f;
-            Physics.simulationMode = SimulationMode.Script;
+            UnityEngine.Time.timeScale = 1f;
+            UnityEngine.Physics.simulationMode = SimulationMode.Script;
             BuildRecentStepMasks(out uint recentStepMaskLow, out uint recentStepMaskHigh);
             BuildRecentStepHashes(
                 out uint recentStepHash0,

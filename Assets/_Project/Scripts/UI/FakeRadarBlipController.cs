@@ -426,9 +426,10 @@ namespace Hecton8.UI
                 }
 
                 AbsoluteUniversePosition hitAup = hit.AbsolutePosition;
-                float3 enemyDeltaAup = AupPrecisionMath.LocalDeltaFloat3(
+                float3 enemyDeltaAup = AupPrecisionMath.LocalDeltaFloat3Clamped(
                     hitAup.ToAbsoluteDouble3(),
                     playerAup.ToAbsoluteDouble3(),
+                    AupPrecisionMath.DefaultMaxLocalCastMeters,
                     float3.zero);
                 float2 flatDelta = MakeFloat2(
                     math.dot(enemyDeltaAup, radarRightFlatF3),

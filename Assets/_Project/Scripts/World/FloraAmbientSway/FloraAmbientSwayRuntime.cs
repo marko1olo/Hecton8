@@ -113,8 +113,8 @@ namespace Hecton8.World.FloraAmbientSway
     public unsafe struct CalculateFloraSwayParametersJob : IJob
     {
         [NoAlias] public NativeArray<FloraSwayParamsDTO> Params;
-        [ReadOnly, NoAlias] public NativeArray<FloraAmbientFlowStateDTO> FlowState;
-        [ReadOnly, NoAlias] public NativeArray<FloraSwayTuningDTO> Tuning;
+        [ReadOnly, NoAlias] public NativeArray<FloraAmbientFlowStateDTO>.ReadOnly FlowState;
+        [ReadOnly, NoAlias] public NativeArray<FloraSwayTuningDTO>.ReadOnly Tuning;
         public float DeltaTime;
         public float GlobalQualityWeight;
 
@@ -124,9 +124,8 @@ namespace Hecton8.World.FloraAmbientSway
                 return;
 
             void* paramsPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Params);
-            void* tuningPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Tuning);
             FloraSwayParamsDTO previous = UnsafeUtility.AsRef<FloraSwayParamsDTO>(paramsPtr);
-            FloraSwayTuningDTO tuning = UnsafeUtility.AsRef<FloraSwayTuningDTO>(tuningPtr);
+            FloraSwayTuningDTO tuning = Tuning[0];
             float dt = math.clamp(SanitizeFinite(DeltaTime, 0f), 0f, 0.1f);
             float quality = math.saturate(SanitizeFinite(GlobalQualityWeight, 0f));
             float amplitude = math.max(0f, SanitizeFinite(tuning.GlobalAmplitudeMeters, 0.42f));
@@ -137,8 +136,7 @@ namespace Hecton8.World.FloraAmbientSway
 
             if (FlowState.IsCreated && FlowState.Length > 0)
             {
-                void* flowPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(FlowState);
-                float4 state = UnsafeUtility.AsRef<FloraAmbientFlowStateDTO>(flowPtr).FlowDirectionSpeed;
+                float4 state = FlowState[0].FlowDirectionSpeed;
                 if (math.all(math.isfinite(state)))
                 {
                     float3 stateDirection = math.float3(state.x, state.y, state.z);
@@ -443,56 +441,91 @@ namespace Hecton8.World.FloraAmbientSway
 
             WriteTuningToVault(force: false);
 
-            if (!TryResolve(vault, in _paramsHandle, out NativeArray<FloraSwayParamsDTO> parameters) ||
-                !TryResolve(vault, in _flowStateHandle, out NativeArray<FloraAmbientFlowStateDTO> flowState) ||
-                !TryResolve(vault, in _tuningHandle, out NativeArray<FloraSwayTuningDTO> tuning))
-            {
-                RecordTelemetry(frame, TelemetryFlagVaultMissing, default);
-                return;
-            }
-
-            if (!parameters.IsCreated || parameters.Length == 0 ||
-                !flowState.IsCreated || flowState.Length == 0 ||
-                !tuning.IsCreated || tuning.Length == 0)
+            if (!TryRead(vault, in _paramsHandle, out NativeArray<FloraSwayParamsDTO>.ReadOnly currentParameters) ||
+                !currentParameters.IsCreated ||
+                currentParameters.Length == 0)
             {
                 RecordTelemetry(frame, TelemetryFlagVaultMissing, default);
                 return;
             }
 
             float deltaTime = ResolveDeltaTime(in timing);
-            ref readonly FloraSwayParamsDTO currentParams = ref ReadFirstParamsReadonly(parameters);
-            float currentTime = currentParams.SwayMathParams.x;
+            float currentTime = currentParameters[0].SwayMathParams.x;
             if (_mockFlowEnabled)
             {
-                GenerateMockAmbientFlowJob mockFlowJob = default;
-                mockFlowJob.FlowState = flowState;
-                mockFlowJob.WrappedTime = currentTime;
-                mockFlowJob.MockSpeed = _mockFlowSpeed;
-                mockFlowJob.MockIntensity = _mockFlowIntensity;
-                mockFlowJob.Frame = frame;
-                if (!RunMockAmbientFlowKernel(mockFlowJob))
+                if (!TryAcquireWrite(vault, in _flowStateHandle, out NativeArray<FloraAmbientFlowStateDTO> writableFlowState))
                 {
-                    RecordTelemetry(frame, TelemetryFlagBurstKernelUnavailable, default);
+                    RecordTelemetry(frame, TelemetryFlagVaultMissing, default);
                     return;
+                }
+
+                try
+                {
+                    GenerateMockAmbientFlowJob mockFlowJob = default;
+                    mockFlowJob.FlowState = writableFlowState;
+                    mockFlowJob.WrappedTime = currentTime;
+                    mockFlowJob.MockSpeed = _mockFlowSpeed;
+                    mockFlowJob.MockIntensity = _mockFlowIntensity;
+                    mockFlowJob.Frame = frame;
+                    if (!RunMockAmbientFlowKernel(mockFlowJob))
+                    {
+                        RecordTelemetry(frame, TelemetryFlagBurstKernelUnavailable, default);
+                        return;
+                    }
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _flowStateHandle, SystemID.FloraGenomics);
                 }
             }
 
-            CalculateFloraSwayParametersJob parametersJob = default;
-            parametersJob.Params = parameters;
-            parametersJob.FlowState = flowState;
-            parametersJob.Tuning = tuning;
-            parametersJob.DeltaTime = deltaTime;
-            parametersJob.GlobalQualityWeight = ResolveGlobalQualityWeight();
-            if (!RunCalculateFloraSwayParametersKernel(parametersJob))
+            if (!TryRead(vault, in _flowStateHandle, out NativeArray<FloraAmbientFlowStateDTO>.ReadOnly flowState) ||
+                !TryRead(vault, in _tuningHandle, out NativeArray<FloraSwayTuningDTO>.ReadOnly tuning) ||
+                flowState.Length == 0 ||
+                tuning.Length == 0)
             {
-                RecordTelemetry(frame, TelemetryFlagBurstKernelUnavailable, default);
+                RecordTelemetry(frame, TelemetryFlagVaultMissing, default);
                 return;
             }
 
-            ref readonly FloraSwayParamsDTO dto = ref ReadFirstParamsReadonly(parameters);
-            uint flags = ValidateParams(in dto) ? 0u : TelemetryFlagInvalidNumber;
-            RecordTelemetry(frame, flags, in dto);
-            if ((flags & TelemetryFlagInvalidNumber) != 0u)
+            if (!TryAcquireWrite(vault, in _paramsHandle, out NativeArray<FloraSwayParamsDTO> parameters))
+            {
+                RecordTelemetry(frame, TelemetryFlagVaultMissing, default);
+                return;
+            }
+
+            uint telemetryFlags = TelemetryFlagVaultMissing;
+            FloraSwayParamsDTO telemetryDto = default;
+            bool dumpTelemetry = false;
+            try
+            {
+                if (parameters.IsCreated && parameters.Length > 0)
+                {
+                    CalculateFloraSwayParametersJob parametersJob = default;
+                    parametersJob.Params = parameters;
+                    parametersJob.FlowState = flowState;
+                    parametersJob.Tuning = tuning;
+                    parametersJob.DeltaTime = deltaTime;
+                    parametersJob.GlobalQualityWeight = ResolveGlobalQualityWeight();
+                    if (RunCalculateFloraSwayParametersKernel(parametersJob))
+                    {
+                        telemetryDto = parameters[0];
+                        telemetryFlags = ValidateParams(in telemetryDto) ? 0u : TelemetryFlagInvalidNumber;
+                        dumpTelemetry = (telemetryFlags & TelemetryFlagInvalidNumber) != 0u;
+                    }
+                    else
+                    {
+                        telemetryFlags = TelemetryFlagBurstKernelUnavailable;
+                    }
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _paramsHandle, SystemID.FloraGenomics);
+            }
+
+            RecordTelemetry(frame, telemetryFlags, in telemetryDto);
+            if (dumpTelemetry)
                 DumpTelemetryOnce();
         }
 
@@ -509,7 +542,7 @@ namespace Hecton8.World.FloraAmbientSway
         {
             IDataVault vault = _vault;
             if (vault == null ||
-                !TryResolve(vault, in _paramsHandle, out NativeArray<FloraSwayParamsDTO> parameters) ||
+                !TryRead(vault, in _paramsHandle, out NativeArray<FloraSwayParamsDTO>.ReadOnly parameters) ||
                 !parameters.IsCreated ||
                 parameters.Length == 0)
             {
@@ -517,7 +550,7 @@ namespace Hecton8.World.FloraAmbientSway
                 return;
             }
 
-            ref readonly FloraSwayParamsDTO dto = ref ReadFirstParamsReadonly(parameters);
+            FloraSwayParamsDTO dto = parameters[0];
             if (!SystemInfo.supportsSetConstantBuffer)
             {
                 ReleaseGraphicsBuffer(ref _shaderParamsBufferA);
@@ -536,9 +569,7 @@ namespace Hecton8.World.FloraAmbientSway
             NativeArray<FloraSwayParamsDTO> mapped = writeBuffer.LockBufferForWrite<FloraSwayParamsDTO>(0, 1);
             try
             {
-                void* dst = mapped.GetUnsafePtr();
-                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(parameters);
-                UnsafeUtility.MemCpy(dst, src, FloraSwayParamsSizeBytes);
+                mapped[0] = dto;
             }
             finally
             {
@@ -729,12 +760,6 @@ namespace Hecton8.World.FloraAmbientSway
             return true;
         }
 
-        private static unsafe ref readonly FloraSwayParamsDTO ReadFirstParamsReadonly(NativeArray<FloraSwayParamsDTO> parameters)
-        {
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(parameters);
-            return ref UnsafeUtility.AsRef<FloraSwayParamsDTO>(ptr);
-        }
-
         private bool EnsureVaultBuffers(IDataVault vault, bool clearExisting)
         {
             if (vault == null)
@@ -742,6 +767,9 @@ namespace Hecton8.World.FloraAmbientSway
 
             if (!clearExisting && HasResolvedVaultBuffers(vault))
                 return true;
+
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
 
             NativeArrayOptions options = clearExisting ? NativeArrayOptions.ClearMemory : NativeArrayOptions.UninitializedMemory;
             _paramsHandle = vault.EnsureGenerationHandle<FloraSwayParamsDTO>(
@@ -797,19 +825,19 @@ namespace Hecton8.World.FloraAmbientSway
 
         private bool HasResolvedVaultBuffers(IDataVault vault)
         {
-            return TryResolve(vault, in _paramsHandle, out NativeArray<FloraSwayParamsDTO> parameters) &&
+            return TryRead(vault, in _paramsHandle, out NativeArray<FloraSwayParamsDTO>.ReadOnly parameters) &&
                    parameters.Length >= 1 &&
-                   TryResolve(vault, in _flowStateHandle, out NativeArray<FloraAmbientFlowStateDTO> flowState) &&
+                   TryRead(vault, in _flowStateHandle, out NativeArray<FloraAmbientFlowStateDTO>.ReadOnly flowState) &&
                    flowState.Length >= 1 &&
-                   TryResolve(vault, in _tuningHandle, out NativeArray<FloraSwayTuningDTO> tuning) &&
+                   TryRead(vault, in _tuningHandle, out NativeArray<FloraSwayTuningDTO>.ReadOnly tuning) &&
                    tuning.Length >= 1 &&
-                   TryResolve(vault, in _profileHandle, out NativeArray<FloraBiomeSwayProfileDTO> profiles) &&
+                   TryRead(vault, in _profileHandle, out NativeArray<FloraBiomeSwayProfileDTO>.ReadOnly profiles) &&
                    profiles.Length >= BiomeProfileCapacity &&
-                   TryResolve(vault, in _telemetryHandle, out NativeArray<SwayTelemetryEntry> telemetry) &&
+                   TryRead(vault, in _telemetryHandle, out NativeArray<SwayTelemetryEntry>.ReadOnly telemetry) &&
                    telemetry.Length >= SwayTelemetryCapacity &&
-                   TryResolve(vault, in _telemetryCursorHandle, out NativeArray<int> cursor) &&
+                   TryRead(vault, in _telemetryCursorHandle, out NativeArray<int>.ReadOnly cursor) &&
                    cursor.Length >= 1 &&
-                   TryResolve(vault, in _csvScratchHandle, out NativeArray<byte> scratch) &&
+                   TryRead(vault, in _csvScratchHandle, out NativeArray<byte>.ReadOnly scratch) &&
                    scratch.Length >= CsvScratchBytes;
         }
 
@@ -819,124 +847,162 @@ namespace Hecton8.World.FloraAmbientSway
                 return;
 
             IDataVault vault = _vault;
-            if (vault == null || !TryResolve(vault, in _tuningHandle, out NativeArray<FloraSwayTuningDTO> tuning) ||
-                !tuning.IsCreated || tuning.Length == 0)
+            if (vault == null || !TryAcquireWrite(vault, in _tuningHandle, out NativeArray<FloraSwayTuningDTO> tuning))
             {
                 return;
             }
 
-            FloraSwayTuningDTO dto = default;
-            dto.GlobalAmplitudeMeters = math.max(0f, _globalAmplitudeMeters);
-            dto.Frequency = math.max(0.001f, _frequency);
-            dto.PhaseSpatialOffset = math.max(0f, _phaseSpatialOffset);
-            dto.AlphaClip = math.saturate(_alphaClip);
-            dto.MockFlowSpeed = math.max(0.001f, _mockFlowSpeed);
-            dto.MockFlowIntensity = math.max(0f, _mockFlowIntensity);
-            dto.Flags = _mockFlowEnabled ? TuningFlagMockFlowEnabled : 0u;
-            dto.ProfileHash = 0u;
-            void* tuningPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tuning);
-            UnsafeUtility.AsRef<FloraSwayTuningDTO>(tuningPtr) = dto;
-            _tuningDirty = false;
+            try
+            {
+                if (!tuning.IsCreated || tuning.Length == 0)
+                    return;
+
+                FloraSwayTuningDTO dto = default;
+                dto.GlobalAmplitudeMeters = math.max(0f, _globalAmplitudeMeters);
+                dto.Frequency = math.max(0.001f, _frequency);
+                dto.PhaseSpatialOffset = math.max(0f, _phaseSpatialOffset);
+                dto.AlphaClip = math.saturate(_alphaClip);
+                dto.MockFlowSpeed = math.max(0.001f, _mockFlowSpeed);
+                dto.MockFlowIntensity = math.max(0f, _mockFlowIntensity);
+                dto.Flags = _mockFlowEnabled ? TuningFlagMockFlowEnabled : 0u;
+                dto.ProfileHash = 0u;
+                tuning[0] = dto;
+                _tuningDirty = false;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _tuningHandle, SystemID.FloraGenomics);
+            }
         }
 
 #if UNITY_EDITOR
         private bool TryLoadBiomeProfilesFromEditorCsv(IDataVault vault)
         {
-            if (vault == null ||
-                !TryResolve(vault, in _csvScratchHandle, out NativeArray<byte> scratch) ||
-                !TryResolve(vault, in _profileHandle, out NativeArray<FloraBiomeSwayProfileDTO> profiles) ||
-                !scratch.IsCreated ||
-                !profiles.IsCreated)
-            {
-                return false;
-            }
-
-            string path = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "Data", "Profiles", "flora_biome_sway_profiles.csv");
-            if (!File.Exists(path))
+            if (vault == null)
                 return false;
 
-            int bytesRead = 0;
+            if (!TryAcquireWrite(vault, in _csvScratchHandle, out NativeArray<byte> scratch) ||
+                !scratch.IsCreated)
+                return false;
+
+            bool profileLocked = false;
             try
             {
-                using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                string path = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "Data", "Profiles", "flora_biome_sway_profiles.csv");
+                if (!File.Exists(path))
+                    return false;
+
+                int bytesRead = 0;
+                try
                 {
-                    int limit = scratch.Length;
-                    if (stream.Length < limit)
-                        limit = (int)stream.Length;
-                    void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                    bytesRead = stream.Read(new Span<byte>(ptr, limit));
+                    using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        int limit = scratch.Length;
+                        if (stream.Length < limit)
+                            limit = (int)stream.Length;
+                        void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                        bytesRead = stream.Read(new Span<byte>(ptr, limit));
+                    }
                 }
+                catch (IOException)
+                {
+                    return false;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return false;
+                }
+
+                if (bytesRead <= 0)
+                    return false;
+
+                if (!TryAcquireWrite(vault, in _profileHandle, out NativeArray<FloraBiomeSwayProfileDTO> profiles) ||
+                    !profiles.IsCreated)
+                {
+                    return false;
+                }
+
+                profileLocked = true;
+                ClearNativeArray(profiles);
+
+                void* readPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
+                return TryParseBiomeProfiles(new ReadOnlySpan<byte>(readPtr, bytesRead), profiles, out _);
             }
-            catch (IOException)
+            finally
             {
-                return false;
+                if (profileLocked)
+                    vault.ReleaseWriteLock(in _profileHandle, SystemID.FloraGenomics);
+                vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.FloraGenomics);
             }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-
-            if (bytesRead <= 0)
-                return false;
-
-            ClearNativeArray(profiles);
-
-            void* readPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-            return TryParseBiomeProfiles(new ReadOnlySpan<byte>(readPtr, bytesRead), profiles, out _);
         }
 #endif
 
         private void RecordTelemetry(uint frame, uint flags, in FloraSwayParamsDTO dto)
         {
             IDataVault vault = _vault;
-            if (vault == null ||
-                !TryResolve(vault, in _telemetryHandle, out NativeArray<SwayTelemetryEntry> ring) ||
-                !TryResolve(vault, in _telemetryCursorHandle, out NativeArray<int> cursorArray) ||
-                !ring.IsCreated ||
-                ring.Length == 0 ||
-                !cursorArray.IsCreated ||
-                cursorArray.Length == 0)
-            {
+            if (vault == null)
                 return;
+
+            if (!TryAcquireWrite(vault, in _telemetryHandle, out NativeArray<SwayTelemetryEntry> ring) ||
+                !ring.IsCreated)
+                return;
+
+            bool cursorLocked = false;
+            try
+            {
+                if (ring.Length == 0)
+                    return;
+
+                if (!TryAcquireWrite(vault, in _telemetryCursorHandle, out NativeArray<int> cursorArray) ||
+                    !cursorArray.IsCreated)
+                {
+                    return;
+                }
+
+                cursorLocked = true;
+                if (cursorArray.Length == 0)
+                    return;
+
+                int cursor = cursorArray[0];
+                if ((uint)cursor >= (uint)ring.Length)
+                    cursor = 0;
+
+                float3 telemetryFlow = math.float3(dto.GlobalFlowVector.x, dto.GlobalFlowVector.y, dto.GlobalFlowVector.z);
+                float flowLengthSq = math.max(math.lengthsq(telemetryFlow), 0f);
+                float flowMagnitude = flowLengthSq * math.rsqrt(math.max(flowLengthSq, 0.0001f));
+                uint stateHash = 2166136261u;
+                stateHash = MixHash(stateHash, math.asuint(dto.GlobalFlowVector.x));
+                stateHash = MixHash(stateHash, math.asuint(dto.GlobalFlowVector.y));
+                stateHash = MixHash(stateHash, math.asuint(dto.GlobalFlowVector.z));
+                stateHash = MixHash(stateHash, math.asuint(dto.GlobalFlowVector.w));
+                stateHash = MixHash(stateHash, math.asuint(dto.SwayMathParams.x));
+                stateHash = MixHash(stateHash, math.asuint(dto.SwayMathParams.y));
+                stateHash = MixHash(stateHash, math.asuint(dto.SwayMathParams.z));
+                stateHash = MixHash(stateHash, math.asuint(dto.SwayMathParams.w));
+                stateHash = MixHash(stateHash, flags);
+
+                SwayTelemetryEntry entry = default;
+                entry.Frame = frame;
+                entry.Flags = flags;
+                entry.WrappedTime = dto.SwayMathParams.x;
+                entry.FlowMagnitude = flowMagnitude;
+                entry.GlobalQualityWeight = dto.SwayMathParams.w;
+                entry.AmplitudeMeters = dto.SwayMathParams.y;
+                entry.StateHash = stateHash;
+                entry.SourceHash = TelemetrySourceHash;
+                ring[cursor] = entry;
+
+                cursor++;
+                if (cursor >= ring.Length)
+                    cursor = 0;
+                cursorArray[0] = cursor;
             }
-
-            void* cursorPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(cursorArray);
-            ref int cursorRef = ref UnsafeUtility.AsRef<int>(cursorPtr);
-            int cursor = cursorRef;
-            if ((uint)cursor >= (uint)ring.Length)
-                cursor = 0;
-
-            float3 telemetryFlow = math.float3(dto.GlobalFlowVector.x, dto.GlobalFlowVector.y, dto.GlobalFlowVector.z);
-            float flowLengthSq = math.max(math.lengthsq(telemetryFlow), 0f);
-            float flowMagnitude = flowLengthSq * math.rsqrt(math.max(flowLengthSq, 0.0001f));
-            uint stateHash = 2166136261u;
-            stateHash = MixHash(stateHash, math.asuint(dto.GlobalFlowVector.x));
-            stateHash = MixHash(stateHash, math.asuint(dto.GlobalFlowVector.y));
-            stateHash = MixHash(stateHash, math.asuint(dto.GlobalFlowVector.z));
-            stateHash = MixHash(stateHash, math.asuint(dto.GlobalFlowVector.w));
-            stateHash = MixHash(stateHash, math.asuint(dto.SwayMathParams.x));
-            stateHash = MixHash(stateHash, math.asuint(dto.SwayMathParams.y));
-            stateHash = MixHash(stateHash, math.asuint(dto.SwayMathParams.z));
-            stateHash = MixHash(stateHash, math.asuint(dto.SwayMathParams.w));
-            stateHash = MixHash(stateHash, flags);
-
-            SwayTelemetryEntry entry = default;
-            entry.Frame = frame;
-            entry.Flags = flags;
-            entry.WrappedTime = dto.SwayMathParams.x;
-            entry.FlowMagnitude = flowMagnitude;
-            entry.GlobalQualityWeight = dto.SwayMathParams.w;
-            entry.AmplitudeMeters = dto.SwayMathParams.y;
-            entry.StateHash = stateHash;
-            entry.SourceHash = TelemetrySourceHash;
-            byte* ringPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(ring);
-            void* entryPtr = ringPtr + cursor * UnsafeUtility.SizeOf<SwayTelemetryEntry>();
-            UnsafeUtility.AsRef<SwayTelemetryEntry>(entryPtr) = entry;
-
-            cursor++;
-            if (cursor >= ring.Length)
-                cursor = 0;
-            cursorRef = cursor;
+            finally
+            {
+                if (cursorLocked)
+                    vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.FloraGenomics);
+                vault.ReleaseWriteLock(in _telemetryHandle, SystemID.FloraGenomics);
+            }
         }
 
         private void DumpTelemetryOnce()
@@ -946,8 +1012,8 @@ namespace Hecton8.World.FloraAmbientSway
 
             IDataVault vault = _vault;
             if (vault == null ||
-                !TryResolve(vault, in _telemetryHandle, out NativeArray<SwayTelemetryEntry> ring) ||
-                !TryResolve(vault, in _telemetryCursorHandle, out NativeArray<int> cursorArray) ||
+                !TryRead(vault, in _telemetryHandle, out NativeArray<SwayTelemetryEntry>.ReadOnly ring) ||
+                !TryRead(vault, in _telemetryCursorHandle, out NativeArray<int>.ReadOnly cursorArray) ||
                 !ring.IsCreated)
             {
                 return;
@@ -970,10 +1036,10 @@ namespace Hecton8.World.FloraAmbientSway
                     WriteUInt32LittleEndian(stream, TelemetrySourceHash);
                     WriteUInt32LittleEndian(stream, SwayTelemetryEntrySizeBytes);
                     WriteInt32LittleEndian(stream, ring.Length);
-                    WriteInt32LittleEndian(stream, ReadTelemetryCursor(cursorArray));
+                    WriteInt32LittleEndian(stream, cursorArray.IsCreated && cursorArray.Length > 0 ? cursorArray[0] : 0);
                     for (int i = 0; i < ring.Length; i++)
                     {
-                        ref readonly SwayTelemetryEntry entry = ref ReadTelemetryEntryReadonly(ring, i);
+                        SwayTelemetryEntry entry = ring[i];
                         WriteUInt32LittleEndian(stream, entry.Frame);
                         WriteUInt32LittleEndian(stream, entry.Flags);
                         WriteSingleLittleEndian(stream, entry.WrappedTime);
@@ -1015,22 +1081,6 @@ namespace Hecton8.World.FloraAmbientSway
             stream.WriteByte((byte)(value >> 8));
             stream.WriteByte((byte)(value >> 16));
             stream.WriteByte((byte)(value >> 24));
-        }
-
-        private static unsafe int ReadTelemetryCursor(NativeArray<int> cursorArray)
-        {
-            if (!cursorArray.IsCreated || cursorArray.Length == 0)
-                return 0;
-
-            int* cursor = (int*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(cursorArray);
-            return *cursor;
-        }
-
-        private static unsafe ref readonly SwayTelemetryEntry ReadTelemetryEntryReadonly(NativeArray<SwayTelemetryEntry> ring, int index)
-        {
-            byte* entries = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-            byte* entry = entries + (UnsafeUtility.SizeOf<SwayTelemetryEntry>() * index);
-            return ref UnsafeUtility.AsRef<SwayTelemetryEntry>(entry);
         }
 
         private bool EnsureShaderParamsBuffers()
@@ -1133,16 +1183,34 @@ namespace Hecton8.World.FloraAmbientSway
             buffer = null;
         }
 
-        private static bool TryResolve<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            return vault != null && handle.BufferID != 0u && vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
-        }
-
         private static bool TryRead<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
-            return vault != null && handle.BufferID != 0u && vault.TryReadOnlyHandle(in handle, out buffer) && buffer.IsCreated;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   !vault.IsCompactionFenceActive;
+        }
+
+        private static bool TryAcquireWrite<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || handle.BufferID == 0u || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.FloraGenomics, out buffer))
+                return false;
+
+            if (!buffer.IsCreated || vault.IsCompactionFenceActive)
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.FloraGenomics);
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         private void ReleaseOwnedVaultBuffers(IDataVault vault)
@@ -1168,10 +1236,17 @@ namespace Hecton8.World.FloraAmbientSway
 
         private static void ClearBuffer<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
         {
-            if (!TryResolve(vault, in handle, out NativeArray<T> buffer))
+            if (!TryAcquireWrite(vault, in handle, out NativeArray<T> buffer))
                 return;
 
-            ClearNativeArray(buffer);
+            try
+            {
+                ClearNativeArray(buffer);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.FloraGenomics);
+            }
         }
 
         private static unsafe void ClearNativeArray<T>(NativeArray<T> buffer) where T : struct

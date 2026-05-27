@@ -109,23 +109,37 @@ namespace Hecton8.Dev
         private bool ValidateDirtyBlendJob()
         {
             NativeArray<float3> positions = default;
-            NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells = default;
+            NativeArray<VoxelModifiedCellEntry> modifiedCells = default;
+            NativeArray<int> bucketHeads = default;
+            NativeArray<int> bucketNext = default;
             NativeArray<float> dirty = default;
             try
             {
                 positions = new NativeArray<float3>(2, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 dirty = new NativeArray<float>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                modifiedCells = new NativeParallelHashMap<int3, VoxelModifiedCell>(1, Allocator.TempJob);
+                modifiedCells = new NativeArray<VoxelModifiedCellEntry>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                bucketHeads = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                bucketNext = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 positions[0] = new float3(0.5f, 0.5f, 0.5f);
                 positions[1] = new float3(8.5f, 8.5f, 8.5f);
-                modifiedCells.TryAdd(new int3(0, 0, 0), new VoxelModifiedCell { Density = (half)1f, MaterialId = 1, Flags = VoxelDeltaProcessor.DebugAdditiveDeltaMode });
+                modifiedCells[0] = new VoxelModifiedCellEntry
+                {
+                    AbsoluteCell = new int3(0, 0, 0),
+                    Cell = new VoxelModifiedCell { Density = (half)1f, MaterialId = 1, Flags = VoxelDeltaProcessor.DebugAdditiveDeltaMode }
+                };
+                bucketHeads[0] = 0;
+                bucketNext[0] = -1;
 
                 JobHandle handle = new global::VoxelDirtyBlendJob
                 {
                     positions = positions,
                     modifiedCells = modifiedCells,
+                    modifiedCellBucketHeads = bucketHeads,
+                    modifiedCellNext = bucketNext,
+                    modifiedCellCount = 1,
+                    modifiedCellBucketCount = 1,
                     voxelStep = 1f,
-                    absoluteUniverseOffset = float3.zero,
+                    absoluteCellOffset = double3.zero,
                     dirtyBlendValues = dirty
                 }.Schedule(2, 1);
                 // COLD SYNC JOB: dev smoke tester validates a two-vertex UV2 kernel outside gameplay.
@@ -139,6 +153,10 @@ namespace Hecton8.Dev
                     positions.Dispose();
                 if (modifiedCells.IsCreated)
                     modifiedCells.Dispose();
+                if (bucketHeads.IsCreated)
+                    bucketHeads.Dispose();
+                if (bucketNext.IsCreated)
+                    bucketNext.Dispose();
                 if (dirty.IsCreated)
                     dirty.Dispose();
             }

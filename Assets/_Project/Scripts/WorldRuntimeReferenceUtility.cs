@@ -311,12 +311,12 @@ namespace Hecton8.World
                 return true;
             }
 
-            ProceduralOreSpawner active = ProceduralOreSpawner.ActiveRuntimeInstance;
-            if (active == null || !active.isActiveAndEnabled)
+            IWorldResourceSpawnerReadModel active = GlobalRegistry.WorldResourceSpawner;
+            if (active == null)
                 return false;
 
             target = active;
-            dependencySink = active;
+            dependencySink = active as IWorldResourceSpawnerReadDependencySink;
             return true;
         }
 

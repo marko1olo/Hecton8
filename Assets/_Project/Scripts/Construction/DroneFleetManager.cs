@@ -6421,7 +6421,7 @@ namespace Hecton8.Construction
 
         private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
         {
-            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !HardwareTierDetector.AllowHighResourceComputeShaders || !compute.IsSupported(kernel))
                 return 0;
 
             compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
@@ -6539,7 +6539,7 @@ namespace Hecton8.Construction
                 s_PhantomDronesCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(PhantomDronesComputeAssetPath);
 #endif
 
-            if (s_PhantomDronesCompute == null || !SystemInfo.supportsComputeShaders)
+            if (s_PhantomDronesCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
                 return;
 
             if (s_PhantomDronesCompute.HasKernel("CS_UpdatePhantomDrones"))
@@ -6658,10 +6658,15 @@ namespace Hecton8.Construction
             if (phantomDrawCount <= 0)
                 return;
 
-            if (!SystemInfo.supportsComputeShaders)
+            if (!HardwareTierDetector.AllowHighResourceComputeShaders)
                 return;
 
             if (!TryResolvePhantomAnchor(out Vector3 anchor) || !EnsurePhantomRenderResources())
+                return;
+
+            Vector3 phantomOrigin = ResolveDroneRenderReferencePosition();
+            Vector3 phantomAnchorLocal = anchor - phantomOrigin;
+            if (!IsFiniteVector(phantomOrigin) || !IsFiniteVector(phantomAnchorLocal))
                 return;
 
             phantomDrawCount = Mathf.Min(phantomDrawCount, PhantomDroneCount);
@@ -6682,7 +6687,7 @@ namespace Hecton8.Construction
                     PhantomDroneBoundsDiameterMeters));
 
             s_PhantomDronesCompute.SetInt(s_PhantomCountPropertyId, phantomDrawCount);
-            s_PhantomDronesCompute.SetVector(s_PhantomAnchorPropertyId, new Vector4(anchor.x, anchor.y, anchor.z, 0f));
+            s_PhantomDronesCompute.SetVector(s_PhantomAnchorPropertyId, new Vector4(phantomAnchorLocal.x, phantomAnchorLocal.y, phantomAnchorLocal.z, 0f));
             s_PhantomDronesCompute.SetFloat(s_PhantomTimePropertyId, s_PhantomDronePhaseSeconds);
             s_PhantomDronesCompute.SetFloat(s_PhantomBaseRadiusPropertyId, PhantomDroneOrbitRadiusMeters);
             s_PhantomDronesCompute.SetFloat(s_PhantomVerticalAmplitudePropertyId, PhantomDroneVerticalAmplitudeMeters);
@@ -6699,7 +6704,7 @@ namespace Hecton8.Construction
             s_DroneProceduralMaterial.SetBuffer(s_DroneMatricesPropertyId, s_PhantomDroneMatrixBuffer);
             s_DroneProceduralMaterial.SetBuffer(s_InstanceMatricesPropertyId, s_PhantomDroneMatrixBuffer);
             s_DroneProceduralMaterial.SetBuffer(s_PhantomColorsPropertyId, s_PhantomDroneColorBuffer);
-            s_DroneProceduralMaterial.SetVector(s_DroneProceduralCameraOriginPropertyId, Vector4.zero);
+            s_DroneProceduralMaterial.SetVector(s_DroneProceduralCameraOriginPropertyId, new Vector4(phantomOrigin.x, phantomOrigin.y, phantomOrigin.z, 0f));
             s_DroneProceduralMaterial.SetInt(s_UsePhantomColorsPropertyId, 1);
 
             UnityEngine.Graphics.DrawProceduralIndirect(

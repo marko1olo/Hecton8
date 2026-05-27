@@ -1,0 +1,38 @@
+{
+  "agent": "UNKNOWN",
+  "date": "2026-05-27",
+  "evidenceClass": "STATIC_SOURCE_PLUS_SIGNALBUS_AUDIT",
+  "rawAudit": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TBDR_UI_SANDBOX_TETHER_SECTOR_RECHECK.json",
+  "sourceFilesChanged": [
+    "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+    "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs",
+    "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+    "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+    "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+    "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonRuntime.cs",
+    "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonJobs.cs"
+  ],
+  "auditDeltas": {
+    "warnings": "155 -> 148",
+    "infos": "1171 -> 1169",
+    "cacheLineCriticalSignalStrideDebt": "1 -> 0",
+    "zeroGcHotPathEnumerationReview": "1 -> 0",
+    "duplicateSignalLikeNameReview": "14 -> 8"
+  },
+  "compileBoundary": "Full project compile errors were intentionally not fixed or chased in this pass by user instruction.",
+  "documentationGates": {
+    "verifyDocStructure": {
+      "pass": true,
+      "activeDocCount": 693,
+      "encodingWithoutUtf8Sig": 0
+    },
+    "oopDocScanner": {
+      "finalPass": true,
+      "activeFileCount": 693,
+      "sourceSyncPass": true,
+      "wordReductionPercent": 31.34291167072261
+    }
+  },
+  "runtimeProofClaimed": false,
+  "runtimeMicrosecondsSavedClaimed": 0
+}

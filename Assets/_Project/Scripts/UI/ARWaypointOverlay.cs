@@ -842,9 +842,10 @@ namespace Hecton8.UI
                 if (!waypoint.Active)
                     continue;
 
-                float3 delta = AupPrecisionMath.LocalDeltaFloat3(
+                float3 delta = AupPrecisionMath.LocalDeltaFloat3Clamped(
                     waypoint.PositionAup.ToAbsoluteDouble3(),
                     cameraAup.ToAbsoluteDouble3(),
+                    AupPrecisionMath.DefaultMaxLocalCastMeters,
                     float3.zero);
                 float distanceSq = math.lengthsq(delta);
                 if (distanceSq <= 0.01f)
@@ -906,9 +907,10 @@ namespace Hecton8.UI
             if (projectionFrame.IsValid == 0u)
                 return false;
 
-            float3 deltaAup = AupPrecisionMath.LocalDeltaFloat3(
+            float3 deltaAup = AupPrecisionMath.LocalDeltaFloat3Clamped(
                 waypointAup.ToAbsoluteDouble3(),
                 projectionFrame.CameraAup.ToAbsoluteDouble3(),
+                AupPrecisionMath.DefaultMaxLocalCastMeters,
                 float3.zero);
             float viewDepth = math.dot(projectionFrame.CameraForward, deltaAup);
             if (projectionFrame.PlaneDistance <= ProjectionDepthEpsilon)

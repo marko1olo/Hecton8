@@ -77,9 +77,10 @@ namespace Hecton8.Visor
                 if ((target.Flags & 1u) == 0u || !target.PositionAup.IsFinite())
                     continue;
 
-                float3 local = AupPrecisionMath.LocalDeltaFloat3(
+                float3 local = AupPrecisionMath.LocalDeltaFloat3Clamped(
                     target.PositionAup.ToAbsoluteDouble3(),
                     cameraAup.ToAbsoluteDouble3(),
+                    AupPrecisionMath.DefaultMaxLocalCastMeters,
                     float3.zero);
                 Vector3 localVector = default;
                 localVector.x = local.x;

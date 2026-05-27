@@ -675,7 +675,7 @@ namespace Hecton8.Construction
             if (transportBehaviour == null)
                 return;
 
-            _dockedExternalMassSink = ComponentReferenceUtility.ResolveParentService<IDockedExternalMassSink>(transportBehaviour);
+            ConstructionParentLookup.TryCaptureSelfOrParent(transportBehaviour, out _dockedExternalMassSink);
 
             PushDockedExternalMass();
         }

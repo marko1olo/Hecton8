@@ -392,8 +392,12 @@ namespace Hecton8.World
             _facadeBakeCompute.SetVector(_CutMaskWorldRectId, cutMaskWorldRect);
             _facadeBakeCompute.SetInt(_CutMaskActiveId, cutMaskActive ? 1 : 0);
             _facadeBakeCompute.SetVector(_GlobalDriftOffsetId, _activeDriftOffset);
-            _facadeBakeCompute.SetVector(_WaveFacadeParamsId, new Vector4(waveDampingDensityPower, waveDampingCutRelief, 1f, 0f));
-            _facadeBakeCompute.SetVector(_OilFacadeParamsId, new Vector4(oilFilmDensityPower, oilFilmCutRelief, oilFilmAlphaScale, 0f));
+            float qualityWeight = ResolveFacadeQualityWeight01();
+            float visualCurve = Mathf.SmoothStep(0f, 1f, qualityWeight);
+            float waveFacadeScale = Mathf.Lerp(0.58f, 1.15f, visualCurve);
+            float oilFacadeScale = Mathf.Lerp(0.32f, 1f, visualCurve);
+            _facadeBakeCompute.SetVector(_WaveFacadeParamsId, new Vector4(waveDampingDensityPower, waveDampingCutRelief, waveFacadeScale, qualityWeight));
+            _facadeBakeCompute.SetVector(_OilFacadeParamsId, new Vector4(oilFilmDensityPower, oilFilmCutRelief, oilFilmAlphaScale * oilFacadeScale, qualityWeight));
 
             int groupCountX = CeilDividePositive(_waveDampingMask.width, _facadeThreadGroupSizeX);
             int groupCountY = CeilDividePositive(_waveDampingMask.height, _facadeThreadGroupSizeY);
@@ -401,6 +405,12 @@ namespace Hecton8.World
                 return;
 
             _facadeBakeCompute.Dispatch(_facadeBakeKernel, groupCountX, groupCountY, 1);
+        }
+
+        private static float ResolveFacadeQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return float.IsFinite(quality) ? Mathf.Clamp01(quality) : 0f;
         }
 
         private static void ResolveKernelThreadGroupSizes(

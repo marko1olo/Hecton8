@@ -3610,9 +3610,10 @@ namespace Hecton8.Visor
             {
                 AbsoluteUniversePosition sampleAup = s_passiveRadarNearestAups[i];
                 float amplitude = s_passiveRadarNearestAmplitudes[i];
-                float3 deltaAup = AupPrecisionMath.LocalDeltaFloat3(
+                float3 deltaAup = AupPrecisionMath.LocalDeltaFloat3Clamped(
                     sampleAup.ToAbsoluteDouble3(),
                     listenerAup.ToAbsoluteDouble3(),
+                    AupPrecisionMath.DefaultMaxLocalCastMeters,
                     float3.zero);
                 float distanceSqr = math.max(math.lengthsq(deltaAup), minimumDistanceSqr);
                 float inverseDistance = math.rcp(distanceSqr);

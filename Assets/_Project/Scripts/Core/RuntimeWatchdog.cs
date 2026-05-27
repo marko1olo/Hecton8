@@ -259,7 +259,7 @@ namespace Hecton8.Core
 
             if (canvas != null)
                 _hudCanvas = canvas;
-            _lastHudCanvasUpdateTime = Time.realtimeSinceStartupAsDouble;
+            _lastHudCanvasUpdateTime = UnityEngine.Time.realtimeSinceStartupAsDouble;
         }
 
         internal static void RegisterEmergencyResetTarget(RuntimeWatchdogLane lane, IEmergencyResetTarget target)
@@ -270,7 +270,7 @@ namespace Hecton8.Core
 
             _emergencyResetTargets[laneIndex] = target;
             _lastObservedCounters[laneIndex] = Volatile.Read(ref _heartbeatCounters[laneIndex]);
-            _lastChangeTimes[laneIndex] = Time.realtimeSinceStartupAsDouble;
+            _lastChangeTimes[laneIndex] = UnityEngine.Time.realtimeSinceStartupAsDouble;
             _activeLanes[laneIndex] = true;
         }
 
@@ -333,7 +333,7 @@ namespace Hecton8.Core
             RefreshRegistryDependenciesCold();
             ResetGcCollectionSentinel();
             ResetMemorySpikeTracker();
-            ResetRegistryHeartbeatGuard(Time.realtimeSinceStartupAsDouble);
+            ResetRegistryHeartbeatGuard(UnityEngine.Time.realtimeSinceStartupAsDouble);
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterLateFrameTickable();
@@ -352,8 +352,8 @@ namespace Hecton8.Core
             }
 
             _nextSampleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + SampleIntervalFrames;
-            _nextMmfHealthCheckTime = Time.realtimeSinceStartupAsDouble + MmfHealthCheckIntervalSeconds;
-            ResetRegistryHeartbeatGuard(Time.realtimeSinceStartupAsDouble);
+            _nextMmfHealthCheckTime = UnityEngine.Time.realtimeSinceStartupAsDouble + MmfHealthCheckIntervalSeconds;
+            ResetRegistryHeartbeatGuard(UnityEngine.Time.realtimeSinceStartupAsDouble);
             GlobalTelemetryBus.Initialize();
             MathGuard.Initialize();
             ResetGcCollectionSentinel();
@@ -435,7 +435,7 @@ namespace Hecton8.Core
             TickGcCollectionSentinel(deltaTime);
             TickMemorySpikeTracker(frame);
 
-            double now = Time.realtimeSinceStartupAsDouble;
+            double now = UnityEngine.Time.realtimeSinceStartupAsDouble;
             EnforceHudHeartbeat(now, frame);
             QueueMmfHealthCheckIfDue(now);
             if (now >= _nextRegistryHeartbeatGuardTime)

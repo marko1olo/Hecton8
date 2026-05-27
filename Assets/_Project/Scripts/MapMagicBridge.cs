@@ -731,7 +731,7 @@ namespace Hecton8.Core
 
         internal static MapMagicBridge ActiveRuntimeInstance => s_activeRuntimeInstance;
 
-        public readonly struct QuantizedHeightmapPayload
+        public readonly ref struct QuantizedHeightmapPayload
         {
             public QuantizedHeightmapPayload(
                 NativeArray<ushort> heightSamples,

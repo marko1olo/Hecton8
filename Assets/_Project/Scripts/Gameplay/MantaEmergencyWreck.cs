@@ -690,7 +690,9 @@ namespace Hecton8.Gameplay
 
             PoolSlotData slotData = s_residencySlots[_residencySlotIndex];
             slotData.BoundGuid = unchecked((ulong)(_residencySlotIndex + 1));
-            slotData.AupCell = new int3((int)positionAup.GridX, (int)positionAup.GridY, (int)positionAup.GridZ);
+            slotData.GridX = positionAup.GridX;
+            slotData.GridY = positionAup.GridY;
+            slotData.GridZ = positionAup.GridZ;
             slotData.LocalOffset = new float3(positionAup.LocalX, positionAup.LocalY, positionAup.LocalZ);
             slotData.HydrationFrame = unchecked((ushort)SystemDispatcher.CurrentFrameIndex);
             slotData.RefCount = 1;
@@ -888,9 +890,9 @@ namespace Hecton8.Gameplay
         {
             return new AbsoluteUniversePosition
             {
-                GridX = slotData.AupCell.x,
-                GridY = slotData.AupCell.y,
-                GridZ = slotData.AupCell.z,
+                GridX = slotData.GridX,
+                GridY = slotData.GridY,
+                GridZ = slotData.GridZ,
                 LocalX = slotData.LocalOffset.x,
                 LocalY = slotData.LocalOffset.y,
                 LocalZ = slotData.LocalOffset.z

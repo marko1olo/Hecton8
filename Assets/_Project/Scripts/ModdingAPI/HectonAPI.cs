@@ -21,6 +21,26 @@ namespace Hecton8.Modding
     /// </summary>
     public static class HectonAPI
     {
+        private static IInputService s_inputService;
+
+        internal static void ResetRegistryCacheCold()
+        {
+            s_inputService = null;
+        }
+
+        internal static void BindRegistryServicesCold()
+        {
+            s_inputService = GlobalRegistry.Input;
+        }
+
+        internal static void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+                s_inputService = currentService as IInputService;
+        }
+
         private static void ThrowIfNoActiveMod(string surface)
         {
             if (!ModExecutionScope.HasActiveMod)
@@ -233,7 +253,7 @@ namespace Hecton8.Modding
             public static uint GetButtonMask()
             {
                 ThrowIfNoActiveMod("Input.GetButtonMask");
-                IInputService input = GlobalRegistry.Input;
+                IInputService input = s_inputService;
                 if (input == null)
                     return 0u;
 

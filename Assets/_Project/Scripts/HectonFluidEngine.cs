@@ -6168,9 +6168,15 @@ namespace Hecton8.Physics
 
             NativeMemorySentinel.UnregisterNativeArray(array);
             if (dependency.IsCompleted)
+            {
+                dependency.Complete();
                 array.Dispose();
+            }
             else
-                array.Dispose(dependency);
+            {
+                JobHandle disposeHandle = array.Dispose(dependency);
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            }
 
             array = default;
         }

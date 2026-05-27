@@ -696,7 +696,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     const int PendingPhysicsBakeMaxCapacity = 2048;
     const int DeferredChunkRetirementMaxCapacity = 2048;
 
-    private struct PendingChunk
+    private ref struct PendingChunk
     {
         public int2 coord;
         public int lod;
@@ -750,6 +750,136 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         }
     }
 
+    private sealed class PendingChunkStore
+    {
+        private readonly int2[] _coords = new int2[PendingChunkMaxCapacity];
+        private readonly int[] _lods = new int[PendingChunkMaxCapacity];
+        private readonly int[] _resX = new int[PendingChunkMaxCapacity];
+        private readonly int[] _resZ = new int[PendingChunkMaxCapacity];
+        private readonly float[] _spacing = new float[PendingChunkMaxCapacity];
+        private readonly NativeArray<Vector3>[] _verts = new NativeArray<Vector3>[PendingChunkMaxCapacity];
+        private readonly NativeArray<Vector3>[] _norms = new NativeArray<Vector3>[PendingChunkMaxCapacity];
+        private readonly NativeArray<Vector2>[] _uvs = new NativeArray<Vector2>[PendingChunkMaxCapacity];
+        private readonly NativeArray<Color>[] _cols = new NativeArray<Color>[PendingChunkMaxCapacity];
+        private readonly NativeArray<float>[] _caveV = new NativeArray<float>[PendingChunkMaxCapacity];
+        private readonly NativeArray<byte>[] _caveB = new NativeArray<byte>[PendingChunkMaxCapacity];
+        private readonly NativeArray<float>[] _biomeV = new NativeArray<float>[PendingChunkMaxCapacity];
+        private readonly JobHandle[] _combinedHandles = new JobHandle[PendingChunkMaxCapacity];
+        private readonly byte[] _cancelRequested = new byte[PendingChunkMaxCapacity];
+        private int _count;
+
+        public int Count => _count;
+
+        public PendingChunk this[int index]
+        {
+            get
+            {
+                return new PendingChunk
+                {
+                    coord = _coords[index],
+                    lod = _lods[index],
+                    resX = _resX[index],
+                    resZ = _resZ[index],
+                    spacing = _spacing[index],
+                    verts = _verts[index],
+                    norms = _norms[index],
+                    uvs = _uvs[index],
+                    cols = _cols[index],
+                    caveV = _caveV[index],
+                    caveB = _caveB[index],
+                    biomeV = _biomeV[index],
+                    combinedHandle = _combinedHandles[index],
+                    cancelRequested = _cancelRequested[index]
+                };
+            }
+            set => Store(index, in value);
+        }
+
+        public void Add(PendingChunk chunk)
+        {
+            if (_count >= PendingChunkMaxCapacity)
+                return;
+
+            Store(_count, in chunk);
+            _count++;
+        }
+
+        public void RemoveAt(int index)
+        {
+            if ((uint)index >= (uint)_count)
+                return;
+
+            int last = _count - 1;
+            for (int i = index; i < last; i++)
+                CopySlot(i + 1, i);
+
+            ClearSlot(last);
+            _count = last;
+        }
+
+        public void Clear()
+        {
+            for (int i = 0; i < _count; i++)
+                ClearSlot(i);
+
+            _count = 0;
+        }
+
+        private void Store(int index, in PendingChunk chunk)
+        {
+            _coords[index] = chunk.coord;
+            _lods[index] = chunk.lod;
+            _resX[index] = chunk.resX;
+            _resZ[index] = chunk.resZ;
+            _spacing[index] = chunk.spacing;
+            _verts[index] = chunk.verts;
+            _norms[index] = chunk.norms;
+            _uvs[index] = chunk.uvs;
+            _cols[index] = chunk.cols;
+            _caveV[index] = chunk.caveV;
+            _caveB[index] = chunk.caveB;
+            _biomeV[index] = chunk.biomeV;
+            _combinedHandles[index] = chunk.combinedHandle;
+            _cancelRequested[index] = chunk.cancelRequested;
+        }
+
+        private void CopySlot(int source, int destination)
+        {
+            _coords[destination] = _coords[source];
+            _lods[destination] = _lods[source];
+            _resX[destination] = _resX[source];
+            _resZ[destination] = _resZ[source];
+            _spacing[destination] = _spacing[source];
+            _verts[destination] = _verts[source];
+            _norms[destination] = _norms[source];
+            _uvs[destination] = _uvs[source];
+            _cols[destination] = _cols[source];
+            _caveV[destination] = _caveV[source];
+            _caveB[destination] = _caveB[source];
+            _biomeV[destination] = _biomeV[source];
+            _combinedHandles[destination] = _combinedHandles[source];
+            _cancelRequested[destination] = _cancelRequested[source];
+        }
+
+        private void ClearSlot(int index)
+        {
+            _coords[index] = default;
+            _lods[index] = 0;
+            _resX[index] = 0;
+            _resZ[index] = 0;
+            _spacing[index] = 0f;
+            _verts[index] = default;
+            _norms[index] = default;
+            _uvs[index] = default;
+            _cols[index] = default;
+            _caveV[index] = default;
+            _caveB[index] = default;
+            _biomeV[index] = default;
+            _combinedHandles[index] = default;
+            _cancelRequested[index] = 0;
+        }
+    }
+
     // COLD ALLOC: Dictionary<int2,HectonChunkData>[512] - active streamed chunk lookup for residency refresh - owner: HectonWorldGenerator
     readonly Dictionary<int2, HectonChunkData> _active = new Dictionary<int2, HectonChunkData>(WorldStreamingQueueMaxCapacity);
     // COLD ALLOC: List<HectonChunkRequest>[512] - active streaming request queue, reused across refreshes - owner: HectonWorldGenerator
@@ -764,8 +894,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     readonly List<HectonChunkRequest> _requestScratch = new List<HectonChunkRequest>(WorldStreamingQueueMaxCapacity);
     int _queueHead;
 
-    // COLD ALLOC: List<PendingChunk>[64] - pending streamed chunk job records - owner: HectonWorldGenerator
-    private readonly List<PendingChunk> _pendingChunks = new List<PendingChunk>(PendingChunkMaxCapacity);
+    // COLD ALLOC: PendingChunkStore[1] - fixed SoA pending streamed chunk job store, no per-chunk managed allocation - owner: HectonWorldGenerator
+    private readonly PendingChunkStore _pendingChunks = new PendingChunkStore();
+    private JobHandle _pendingChunkOverflowDisposeHandle;
+    private bool _pendingChunkOverflowDisposeActive;
 
     // COLD ALLOC: List<PendingPhysicsBake>[2048] - background PhysX bake queue for streamed chunk colliders - owner: HectonWorldGenerator
     readonly List<PendingPhysicsBake> _pendingPhysicsBakes = new List<PendingPhysicsBake>(PendingPhysicsBakeMaxCapacity);
@@ -932,6 +1064,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             return;
 
         ProcessPendingChunks();
+        DrainPendingChunkOverflowDisposals(forceComplete: false);
         FlushPendingRendererDisables();
 
         if (_physicsBakeFinalizeHead < _pendingPhysicsBakes.Count ||
@@ -1051,6 +1184,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         _queueHead = 0;
 
         CompletePendingChunkJobsForTeardown();
+        DrainPendingChunkOverflowDisposals(forceComplete: true);
         RetireDeferredChunksForStreamingStop();
 
         var activeEnumerator = _active.GetEnumerator();
@@ -1686,9 +1820,31 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         }
         else
         {
-            pc.DisposeArrays(pc.combinedHandle);
+            JobHandle disposalHandle = pc.DisposeArrays(pc.combinedHandle);
+            AccumulatePendingChunkOverflowDisposal(disposalHandle);
             JobHandle.ScheduleBatchedJobs();
         }
+    }
+
+    private void AccumulatePendingChunkOverflowDisposal(JobHandle disposalHandle)
+    {
+        DrainPendingChunkOverflowDisposals(forceComplete: false);
+        _pendingChunkOverflowDisposeHandle = _pendingChunkOverflowDisposeActive
+            ? JobHandle.CombineDependencies(_pendingChunkOverflowDisposeHandle, disposalHandle)
+            : disposalHandle;
+        _pendingChunkOverflowDisposeActive = true;
+    }
+
+    private void DrainPendingChunkOverflowDisposals(bool forceComplete)
+    {
+        if (!_pendingChunkOverflowDisposeActive)
+            return;
+
+        bool completed = forceComplete
+            ? DispatcherJobSwap.TryComplete(ref _pendingChunkOverflowDisposeHandle, forceComplete: true)
+            : DispatcherJobSwap.TryFinalizeCompleted(ref _pendingChunkOverflowDisposeHandle);
+        if (completed)
+            _pendingChunkOverflowDisposeActive = false;
     }
 
     HectonChunkData FinalizeChunk(PendingChunk pc)

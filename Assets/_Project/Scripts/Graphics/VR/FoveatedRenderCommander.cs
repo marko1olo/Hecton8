@@ -62,7 +62,7 @@ namespace Hecton8.Graphics.VR
         private const ushort FlagQuestClassificationPending = 1 << 13;
         private const ushort FlagFreshGpuTimeEscalation = 1 << 14;
         private const string RuntimeObjectName = "[FoveatedRenderCommander]";
-        private const string DumpFileName = "Dump_FOVEATED_RENDER_COMMANDER.bin";
+        private const string DumpFileName = "Dump_1335_FoveatedRenderCommander.bin";
 
         // COLD ALLOC: List<XRDisplaySubsystem>[8] - XR display enumeration scratch reused on policy commits - owner: FoveatedRenderCommander
         private static readonly List<XRDisplaySubsystem> s_displays = new List<XRDisplaySubsystem>(8);
@@ -891,7 +891,7 @@ namespace Hecton8.Graphics.VR
             }
 
             if (IsVaultHandleCreated(in _telemetryHandle) &&
-                vault.TryResolveHandle(in _telemetryHandle, out NativeArray<FoveatedRenderTelemetryEntry> currentTelemetry) &&
+                vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<FoveatedRenderTelemetryEntry>.ReadOnly currentTelemetry) &&
                 !vault.IsCompactionFenceActive &&
                 currentTelemetry.IsCreated &&
                 currentTelemetry.Length >= TelemetryCapacity)
@@ -904,7 +904,7 @@ namespace Hecton8.Graphics.VR
             if (vault.TryGetGenerationHandle(
                     BufferID.FoveatedRenderBlackBox,
                     out VaultGenerationHandle<FoveatedRenderTelemetryEntry> existing) &&
-                vault.TryResolveHandle(in existing, out NativeArray<FoveatedRenderTelemetryEntry> existingTelemetry) &&
+                vault.TryReadOnlyHandle(in existing, out NativeArray<FoveatedRenderTelemetryEntry>.ReadOnly existingTelemetry) &&
                 !vault.IsCompactionFenceActive &&
                 existingTelemetry.IsCreated &&
                 existingTelemetry.Length >= TelemetryCapacity)
@@ -923,7 +923,7 @@ namespace Hecton8.Graphics.VR
                 SystemID.GraphicsScalability,
                 NativeArrayOptions.ClearMemory);
             if (!IsVaultHandleCreated(in acquired) ||
-                !vault.TryResolveHandle(in acquired, out NativeArray<FoveatedRenderTelemetryEntry> acquiredTelemetry) ||
+                !vault.TryReadOnlyHandle(in acquired, out NativeArray<FoveatedRenderTelemetryEntry>.ReadOnly acquiredTelemetry) ||
                 vault.IsCompactionFenceActive ||
                 !acquiredTelemetry.IsCreated ||
                 acquiredTelemetry.Length < TelemetryCapacity)

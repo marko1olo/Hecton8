@@ -71,6 +71,8 @@ namespace Hecton8.Core
         }
 
         private bool _registeredLateFrameTick;
+        private bool _lateFrameTickDormant;
+        private bool _dispatcherAvailable;
         private bool _registeredOriginShiftListener;
         private bool _registeredHotSwapListener;
         private bool _serviceRegistered;
@@ -197,6 +199,7 @@ namespace Hecton8.Core
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ConnectionSplineBatchRenderer, this);
             if (_serviceRegistered)
                 s_activeService = this;
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             EnsureRuntimeRegistrations();
         }
 
@@ -220,8 +223,9 @@ namespace Hecton8.Core
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
+            _dispatcherAvailable = currentService != null;
             TryUnregisterLateFrameTickable();
-            if (currentService != null && isActiveAndEnabled)
+            if (_dispatcherAvailable && isActiveAndEnabled)
                 RefreshLateFrameTickRegistration();
         }
 
@@ -251,10 +255,10 @@ namespace Hecton8.Core
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_registeredLateFrameTick || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrameTick || !_dispatcherAvailable)
                 return;
 
-            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrameTick = SystemDispatcher.Register(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterLateFrameTickable()
@@ -262,8 +266,9 @@ namespace Hecton8.Core
             if (!_registeredLateFrameTick)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            SystemDispatcher.Unregister(this, PriorityLayer.Environment);
             _registeredLateFrameTick = false;
+            _lateFrameTickDormant = false;
         }
 
         private void TryRegisterOriginShiftListener()
@@ -349,14 +354,15 @@ namespace Hecton8.Core
 
         public void LateFrameTick()
         {
+            if (_lateFrameTickDormant && !HasRenderableBatchWork())
+                return;
+
+            _lateFrameTickDormant = false;
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
                 ProcessBatch(_batches[batchIndex]);
 
-            if (!HasRenderableBatchWork() && _registeredLateFrameTick)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrameTick = false;
-            }
+            if (!HasRenderableBatchWork())
+                _lateFrameTickDormant = true;
         }
 
         private void OnDestroy()
@@ -391,6 +397,7 @@ namespace Hecton8.Core
             if (ReferenceEquals(s_activeService, this))
                 s_activeService = null;
 
+            _dispatcherAvailable = false;
             _serviceRegistered = false;
             _shutdownComplete = true;
         }
@@ -701,16 +708,21 @@ namespace Hecton8.Core
 
         private void RefreshLateFrameTickRegistration()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || !_dispatcherAvailable)
             {
                 TryUnregisterLateFrameTickable();
                 return;
             }
 
             if (HasRenderableBatchWork())
+            {
+                _lateFrameTickDormant = false;
                 TryRegisterLateFrameTickable();
-            else
-                TryUnregisterLateFrameTickable();
+                return;
+            }
+
+            if (_registeredLateFrameTick)
+                _lateFrameTickDormant = true;
         }
 
         private bool HasRenderableBatchWork()

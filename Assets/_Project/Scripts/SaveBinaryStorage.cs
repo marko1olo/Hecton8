@@ -4184,7 +4184,7 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                if (!TryReadIndexedDirectory(in header, ref mapping, out _, out SectorEntry[] sectorEntries, out error))
+                if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
                     return false;
 
                 for (int requestedIndex = 0; requestedIndex < desiredSectorHashes.Length; requestedIndex++)

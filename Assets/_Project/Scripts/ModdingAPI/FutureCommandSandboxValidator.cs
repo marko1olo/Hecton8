@@ -182,7 +182,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    internal struct MockAcousticSignal : ISignal
+    internal struct SandboxMockAcousticSignal : ISignal
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint ModderSignature;
@@ -412,7 +412,7 @@ namespace Hecton8.Modding
         [FieldOffset(56)] public ulong Reserved3;
     }
 
-    internal partial struct MockModQueue : IDisposable
+    internal ref struct MockModQueue
     {
         private NativeQueue<FutureCommandEnvelope> _queue;
 
@@ -437,7 +437,7 @@ namespace Hecton8.Modding
             return true;
         }
 
-        void IDisposable.Dispose()
+        internal void Dispose()
         {
             _queue = default;
         }
@@ -1165,7 +1165,7 @@ namespace Hecton8.Modding
                 RingState = ringState,
                 SpawnWriter = SignalBus<ModSpawnRequestSignal>.ParallelWriter,
                 AssetWriter = SignalBus<ModAssetReferenceSignal>.ParallelWriter,
-                AcousticWriter = SignalBus<MockAcousticSignal>.ParallelWriter,
+                AcousticWriter = SignalBus<SandboxMockAcousticSignal>.ParallelWriter,
                 DamageWriter = SignalBus<MockDamageSignal>.ParallelWriter,
                 DevNullSignalWriter = SignalBus<ModFutureDevNullSignal>.ParallelWriter,
                 SurvivalWriter = SignalBus<SurvivalOverrideSignal>.ParallelWriter,
@@ -2442,8 +2442,8 @@ namespace Hecton8.Modding
             SignalBus<ModSpawnRequestSignal>.EnsureInitialized();
             SignalBus<ModAssetReferenceSignal>.Configure(128, maxFrameSignals: 256, lowTierFrameSignals: 16, laneHash: 0x4D415354u);
             SignalBus<ModAssetReferenceSignal>.EnsureInitialized();
-            SignalBus<MockAcousticSignal>.Configure(128, maxFrameSignals: 256, lowTierFrameSignals: 16, laneHash: 0x4D414353u);
-            SignalBus<MockAcousticSignal>.EnsureInitialized();
+            SignalBus<SandboxMockAcousticSignal>.Configure(128, maxFrameSignals: 256, lowTierFrameSignals: 16, laneHash: 0x4D414353u);
+            SignalBus<SandboxMockAcousticSignal>.EnsureInitialized();
             SignalBus<MockDamageSignal>.Configure(128, maxFrameSignals: 256, lowTierFrameSignals: 16, laneHash: 0x4D444D47u);
             SignalBus<MockDamageSignal>.EnsureInitialized();
             SignalBus<ModFutureDevNullSignal>.Configure(256, maxFrameSignals: 512, lowTierFrameSignals: 32, laneHash: 0x4D444E4Cu);
@@ -2823,7 +2823,7 @@ namespace Hecton8.Modding
                 RingState = ringState,
                 SpawnWriter = SignalBus<ModSpawnRequestSignal>.ParallelWriter,
                 AssetWriter = SignalBus<ModAssetReferenceSignal>.ParallelWriter,
-                AcousticWriter = SignalBus<MockAcousticSignal>.ParallelWriter,
+                AcousticWriter = SignalBus<SandboxMockAcousticSignal>.ParallelWriter,
                 DamageWriter = SignalBus<MockDamageSignal>.ParallelWriter,
                 DevNullSignalWriter = SignalBus<ModFutureDevNullSignal>.ParallelWriter,
                 SurvivalWriter = SignalBus<SurvivalOverrideSignal>.ParallelWriter,
@@ -3182,7 +3182,7 @@ namespace Hecton8.Modding
             [NoAlias] public NativeArray<ModKernelCameraJuiceState> CameraJuiceState;
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<ModSpawnRequestSignal>.ParallelWriter SpawnWriter;
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<ModAssetReferenceSignal>.ParallelWriter AssetWriter;
-            [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<MockAcousticSignal>.ParallelWriter AcousticWriter;
+            [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<SandboxMockAcousticSignal>.ParallelWriter AcousticWriter;
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<MockDamageSignal>.ParallelWriter DamageWriter;
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<ModFutureDevNullSignal>.ParallelWriter DevNullSignalWriter;
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<SurvivalOverrideSignal>.ParallelWriter SurvivalWriter;
@@ -3315,7 +3315,7 @@ namespace Hecton8.Modding
                         break;
 
                     case FutureCommandOpcodes.FaunaAcousticStimulus:
-                        AcousticWriter.TryEnqueue(new MockAcousticSignal
+                        AcousticWriter.TryEnqueue(new SandboxMockAcousticSignal
                         {
                             Frame = Frame,
                             ModderSignature = envelope.ModderSignature,

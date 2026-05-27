@@ -155,8 +155,7 @@ namespace Hecton8.UI
         private const float SlowDecodeDumpThresholdMs = 0.5f;
         private const BufferID SubtitleCueStateBufferId = (BufferID)15070550;
         private const BufferID SubtitleCueTelemetryBufferId = (BufferID)15070551;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_BABEL_SURGEON.bin";
-        private const string DumpAgentRelativePath = "Docs/AgentLogs/Dump_1309_BabelSubtitleSync.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_BabelSubtitleSync.bin";
 
         private static readonly DispatcherBridge s_dispatcherBridge = new DispatcherBridge();
         private static IDataVault s_vault;
@@ -233,8 +232,8 @@ namespace Hecton8.UI
 
             if (s_initialized &&
                 ReferenceEquals(s_vault, vault) &&
-                TryResolveCueBuffer(out _) &&
-                TryResolveTelemetryBuffer(out _))
+                TryReadOnlyCueBuffer(out _) &&
+                TryReadOnlyTelemetryBuffer(out _))
             {
                 TryRegisterDispatcher();
                 return true;
@@ -252,19 +251,33 @@ namespace Hecton8.UI
                 SystemID.UI,
                 NativeArrayOptions.ClearMemory);
 
-            if (!TryResolveCueBuffer(out NativeArray<SubtitleCueDTO> cues) ||
-                !TryResolveTelemetryBuffer(out _))
+            if (!TryReadOnlyCueBuffer(out _) ||
+                !TryReadOnlyTelemetryBuffer(out _))
             {
                 s_initialized = false;
                 return false;
             }
 
-            ClearSubtitleCueFlagsPhase clearPhase = default;
-            clearPhase.Cues = (SubtitleCueDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(cues);
-            clearPhase.CueCount = MaxSubtitleCueCount;
-            // Cold first-use sanitation must finish before runtime signal ingestion sees the buffer.
-            for (int i = 0; i < MaxSubtitleCueCount; i++)
-                clearPhase.Execute(i);
+            if (!TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues))
+            {
+                s_initialized = false;
+                return false;
+            }
+
+            try
+            {
+                ClearSubtitleCueFlagsPhase clearPhase = default;
+                clearPhase.Cues = (SubtitleCueDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(cues);
+                clearPhase.CueCount = MaxSubtitleCueCount;
+                // Cold first-use sanitation must finish before runtime signal ingestion sees the buffer.
+                for (int i = 0; i < MaxSubtitleCueCount; i++)
+                    clearPhase.Execute(i);
+            }
+            finally
+            {
+                s_vault.ReleaseWriteLock(in s_cueHandle, SystemID.UI);
+            }
+
             s_nextCueSlot = 0;
             s_activeCueCount = 0;
             s_initialized = true;
@@ -300,27 +313,34 @@ namespace Hecton8.UI
                 return false;
 
             PreparePresentationFrame();
-            if (!TryCompletePendingCueEvaluation() || !TryResolveCueBuffer(out NativeArray<SubtitleCueDTO> cues))
+            if (!TryCompletePendingCueEvaluation() || !TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues))
                 return false;
 
-            for (int i = 0; i < math.min(MaxSubtitleCueCount, cues.Length); i++)
+            try
             {
-                SubtitleCueDTO candidate = cues[i];
-                uint required = FlagActive | FlagVisible;
-                if ((candidate.Flags & required) != required ||
-                    (candidate.Flags & FlagPresented) != 0u ||
-                    candidate.TokenHash == 0u)
+                for (int i = 0; i < math.min(MaxSubtitleCueCount, cues.Length); i++)
                 {
-                    continue;
+                    SubtitleCueDTO candidate = cues[i];
+                    uint required = FlagActive | FlagVisible;
+                    if ((candidate.Flags & required) != required ||
+                        (candidate.Flags & FlagPresented) != 0u ||
+                        candidate.TokenHash == 0u)
+                    {
+                        continue;
+                    }
+
+                    candidate.Flags |= FlagPresented;
+                    cues[i] = candidate;
+                    cue = candidate;
+                    return true;
                 }
 
-                candidate.Flags |= FlagPresented;
-                cues[i] = candidate;
-                cue = candidate;
-                return true;
+                return false;
             }
-
-            return false;
+            finally
+            {
+                s_vault.ReleaseWriteLock(in s_cueHandle, SystemID.UI);
+            }
         }
 
         public static bool TryRegisterImmediateCue(uint tokenHash, float durationSeconds, uint flags)
@@ -365,7 +385,7 @@ namespace Hecton8.UI
         public static bool TryGetLatestTelemetry(out LocalizationTelemetryEntry entry)
         {
             entry = default;
-            if (!EnsureInitialized() || !TryResolveTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry))
+            if (!EnsureInitialized() || !TryReadOnlyTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry>.ReadOnly telemetry))
                 return false;
 
             int index = s_telemetryCursor - 1;
@@ -384,7 +404,7 @@ namespace Hecton8.UI
             cue = default;
             if (!EnsureInitialized() ||
                 !TryCompletePendingCueEvaluation() ||
-                !TryResolveCueBuffer(out NativeArray<SubtitleCueDTO> cues) ||
+                !TryReadOnlyCueBuffer(out NativeArray<SubtitleCueDTO>.ReadOnly cues) ||
                 (uint)index >= (uint)cues.Length)
             {
                 return false;
@@ -394,17 +414,16 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool TryResolveCueBuffer(out NativeArray<SubtitleCueDTO> cues)
+        private static bool TryReadOnlyCueBuffer(out NativeArray<SubtitleCueDTO>.ReadOnly cues)
         {
             cues = default;
             if (s_vault == null ||
                 s_vault.IsCompactionFenceActive ||
-                !IsVaultHandleCreated(in s_cueHandle))
+                !IsSubtitleVaultHandle(in s_cueHandle, SubtitleCueStateBufferId))
                 return false;
 
-            if (!s_vault.TryResolveHandle(in s_cueHandle, out cues) ||
+            if (!s_vault.TryReadOnlyHandle(in s_cueHandle, out cues) ||
                 s_vault.IsCompactionFenceActive ||
-                !cues.IsCreated ||
                 cues.Length < MaxSubtitleCueCount)
             {
                 cues = default;
@@ -414,17 +433,16 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool TryResolveTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry)
+        private static bool TryReadOnlyTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry>.ReadOnly telemetry)
         {
             telemetry = default;
             if (s_vault == null ||
                 s_vault.IsCompactionFenceActive ||
-                !IsVaultHandleCreated(in s_telemetryHandle))
+                !IsSubtitleVaultHandle(in s_telemetryHandle, SubtitleCueTelemetryBufferId))
                 return false;
 
-            if (!s_vault.TryResolveHandle(in s_telemetryHandle, out telemetry) ||
+            if (!s_vault.TryReadOnlyHandle(in s_telemetryHandle, out telemetry) ||
                 s_vault.IsCompactionFenceActive ||
-                !telemetry.IsCreated ||
                 telemetry.Length < TelemetryFrameCapacity)
             {
                 telemetry = default;
@@ -434,9 +452,59 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        private static bool TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues)
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return TryAcquireSubtitleWriteBuffer(
+                in s_cueHandle,
+                SubtitleCueStateBufferId,
+                MaxSubtitleCueCount,
+                out cues);
+        }
+
+        private static bool TryAcquireTelemetryWriteBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry)
+        {
+            return TryAcquireSubtitleWriteBuffer(
+                in s_telemetryHandle,
+                SubtitleCueTelemetryBufferId,
+                TelemetryFrameCapacity,
+                out telemetry);
+        }
+
+        private static bool TryAcquireSubtitleWriteBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : unmanaged
+        {
+            buffer = default;
+            if (s_vault == null ||
+                s_vault.IsCompactionFenceActive ||
+                requiredLength <= 0 ||
+                !IsSubtitleVaultHandle(in handle, bufferId) ||
+                !s_vault.TryAcquireWriteLock(in handle, SystemID.UI, out buffer))
+            {
+                return false;
+            }
+
+            if (s_vault.IsCompactionFenceActive ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                s_vault.ReleaseWriteLock(in handle, SystemID.UI);
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsSubtitleVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : unmanaged
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u;
         }
 
         private static void ReleaseSubtitleBuffers(IDataVault vault)
@@ -526,9 +594,10 @@ namespace Hecton8.UI
             Vector3 cameraForward,
             out char arrow)
         {
-            float3 delta = AupPrecisionMath.LocalDeltaFloat3(
+            float3 delta = AupPrecisionMath.LocalDeltaFloat3Clamped(
                 sourceAup.ToAbsoluteDouble3(),
                 cameraAup.ToAbsoluteDouble3(),
+                AupPrecisionMath.DefaultMaxLocalCastMeters,
                 float3.zero);
             if (!math.all(math.isfinite(delta)) || math.lengthsq(delta) <= 0.0001f)
             {
@@ -590,24 +659,31 @@ namespace Hecton8.UI
 
         private static bool RegisterCue(uint tokenHash, uint startAudioFrame, float durationSeconds, uint flags)
         {
-            if (!TryCompletePendingCueEvaluation() || !TryResolveCueBuffer(out NativeArray<SubtitleCueDTO> cues))
+            if (!TryCompletePendingCueEvaluation() || !TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues))
                 return false;
 
-            int slot = FindCueSlot(cues);
-            if ((uint)slot >= (uint)cues.Length)
+            try
             {
-                s_droppedCueCount++;
-                return false;
-            }
+                int slot = FindCueSlot(cues);
+                if ((uint)slot >= (uint)cues.Length)
+                {
+                    s_droppedCueCount++;
+                    return false;
+                }
 
-            SubtitleCueDTO cue = default;
-            cue.TokenHash = tokenHash;
-            cue.DisplayDuration = math.max(0.05f, math.select(0.05f, durationSeconds, math.isfinite(durationSeconds)));
-            cue.StartAudioFrame = startAudioFrame;
-            cue.CurrentProgress = 0f;
-            cue.Flags = flags | FlagActive | FlagVisualOnlyNoRollback;
-            cues[slot] = cue;
-            return true;
+                SubtitleCueDTO cue = default;
+                cue.TokenHash = tokenHash;
+                cue.DisplayDuration = math.max(0.05f, math.select(0.05f, durationSeconds, math.isfinite(durationSeconds)));
+                cue.StartAudioFrame = startAudioFrame;
+                cue.CurrentProgress = 0f;
+                cue.Flags = flags | FlagActive | FlagVisualOnlyNoRollback;
+                cues[slot] = cue;
+                return true;
+            }
+            finally
+            {
+                s_vault.ReleaseWriteLock(in s_cueHandle, SystemID.UI);
+            }
         }
 
         private static int FindCueSlot(NativeArray<SubtitleCueDTO> cues)
@@ -690,31 +766,38 @@ namespace Hecton8.UI
 
         private static JobHandle ScheduleCueEvaluation(JobHandle dependsOn)
         {
-            if (!TryResolveCueBuffer(out NativeArray<SubtitleCueDTO> cues))
+            if (!TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues))
             {
                 s_activeCueCount = 0;
                 return dependsOn;
             }
 
-            int count = math.min(MaxSubtitleCueCount, cues.Length);
-            if (count <= 0)
-                return dependsOn;
-
-            EvaluateSubtitleCuesPhase phase = default;
-            phase.Cues = (SubtitleCueDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(cues);
-            phase.CueCount = count;
-            phase.AudioFrameClock = s_audioFrameClock;
-            phase.SampleRate = (uint)math.max(1, s_sampleRate);
-            int active = 0;
-            for (int i = 0; i < count; i++)
+            try
             {
-                phase.Execute(i);
-                if ((cues[i].Flags & FlagActive) != 0u)
-                    active++;
-            }
+                int count = math.min(MaxSubtitleCueCount, cues.Length);
+                if (count <= 0)
+                    return dependsOn;
 
-            s_activeCueCount = active;
-            return dependsOn;
+                EvaluateSubtitleCuesPhase phase = default;
+                phase.Cues = (SubtitleCueDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(cues);
+                phase.CueCount = count;
+                phase.AudioFrameClock = s_audioFrameClock;
+                phase.SampleRate = (uint)math.max(1, s_sampleRate);
+                int active = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    phase.Execute(i);
+                    if ((cues[i].Flags & FlagActive) != 0u)
+                        active++;
+                }
+
+                s_activeCueCount = active;
+                return dependsOn;
+            }
+            finally
+            {
+                s_vault.ReleaseWriteLock(in s_cueHandle, SystemID.UI);
+            }
         }
 
         private static bool TryCompletePendingCueEvaluation()
@@ -724,7 +807,7 @@ namespace Hecton8.UI
 
         private static void RefreshActiveCueCount()
         {
-            if (!TryResolveCueBuffer(out NativeArray<SubtitleCueDTO> cues))
+            if (!TryReadOnlyCueBuffer(out NativeArray<SubtitleCueDTO>.ReadOnly cues))
             {
                 s_activeCueCount = 0;
                 return;
@@ -788,30 +871,37 @@ namespace Hecton8.UI
 
         private static void WriteFrameTelemetry(float decodeMilliseconds)
         {
-            if (!TryResolveTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry) || telemetry.Length <= 0)
+            if (!TryAcquireTelemetryWriteBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry))
                 return;
 
-            int slot = s_telemetryCursor;
-            s_telemetryCursor++;
-            if (s_telemetryCursor >= TelemetryFrameCapacity)
-                s_telemetryCursor = 0;
+            try
+            {
+                int slot = s_telemetryCursor;
+                s_telemetryCursor++;
+                if (s_telemetryCursor >= TelemetryFrameCapacity)
+                    s_telemetryCursor = 0;
 
-            LocalizationTelemetryEntry entry = default;
-            entry.Frame = s_lastPreparedFrame;
-            entry.AudioFrameClock = s_audioFrameClock;
-            entry.ActiveSubtitleCount = (uint)math.max(0, s_activeCueCount);
-            entry.DecodedCharacterCount = (uint)math.max(0, s_decodedCharactersThisFrame);
-            entry.Utf8DecodeMilliseconds = decodeMilliseconds;
-            entry.MissingTokenHashCount = (uint)math.max(0, s_missingTokenHashesThisFrame);
-            entry.LastTokenHash = s_lastTokenHash;
-            entry.CueSignalCount = (uint)math.max(0, s_cueSignalCountThisFrame);
-            entry.GlobalQualityWeight = ResolveGlobalQualityWeight();
-            entry.Flags = s_layoutValid ? 0u : FlagFault;
-            entry.DroppedCueCount = (uint)math.max(0, s_droppedCueCount);
-            entry.LayoutAuditHash = 0x15015032u;
-            entry.BufferIdCueState = (uint)SubtitleCueStateBufferId;
-            entry.BufferIdTelemetry = (uint)SubtitleCueTelemetryBufferId;
-            telemetry[slot] = entry;
+                LocalizationTelemetryEntry entry = default;
+                entry.Frame = s_lastPreparedFrame;
+                entry.AudioFrameClock = s_audioFrameClock;
+                entry.ActiveSubtitleCount = (uint)math.max(0, s_activeCueCount);
+                entry.DecodedCharacterCount = (uint)math.max(0, s_decodedCharactersThisFrame);
+                entry.Utf8DecodeMilliseconds = decodeMilliseconds;
+                entry.MissingTokenHashCount = (uint)math.max(0, s_missingTokenHashesThisFrame);
+                entry.LastTokenHash = s_lastTokenHash;
+                entry.CueSignalCount = (uint)math.max(0, s_cueSignalCountThisFrame);
+                entry.GlobalQualityWeight = ResolveGlobalQualityWeight();
+                entry.Flags = s_layoutValid ? 0u : FlagFault;
+                entry.DroppedCueCount = (uint)math.max(0, s_droppedCueCount);
+                entry.LayoutAuditHash = 0x15015032u;
+                entry.BufferIdCueState = (uint)SubtitleCueStateBufferId;
+                entry.BufferIdTelemetry = (uint)SubtitleCueTelemetryBufferId;
+                telemetry[slot] = entry;
+            }
+            finally
+            {
+                s_vault.ReleaseWriteLock(in s_telemetryHandle, SystemID.UI);
+            }
         }
 
         private static float ResolveGlobalQualityWeight()
@@ -825,7 +915,7 @@ namespace Hecton8.UI
 
         private static void DumpTelemetry()
         {
-            if (!TryResolveTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry))
+            if (!TryReadOnlyTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry>.ReadOnly telemetry))
                 return;
 
             int entryCount = telemetry.Length;
@@ -835,9 +925,7 @@ namespace Hecton8.UI
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string dumpPath = Path.Combine(projectRoot, DumpRelativePath);
-                string agentDumpPath = Path.Combine(projectRoot, DumpAgentRelativePath);
                 WriteDump(dumpPath, entryCount, entrySize);
-                WriteDump(agentDumpPath, entryCount, entrySize);
             }
             catch (IOException)
             {
@@ -886,7 +974,7 @@ namespace Hecton8.UI
         {
             row = default;
             if ((uint)index >= TelemetryFrameCapacity ||
-                !TryResolveTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry) ||
+                !TryReadOnlyTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry>.ReadOnly telemetry) ||
                 (uint)index >= (uint)telemetry.Length)
             {
                 return false;
@@ -914,7 +1002,7 @@ namespace Hecton8.UI
             s_dispatcherRegistered = GlobalRegistry.TryRegisterDispatcherSystem(s_dispatcherBridge);
         }
 
-        private struct EvaluateSubtitleCuesPhase
+        private ref struct EvaluateSubtitleCuesPhase
         {
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
             // Cues points to a GlobalDataVault-owned SubtitleCueDTO buffer requested by SubtitleCueStateBufferId.
@@ -963,7 +1051,7 @@ namespace Hecton8.UI
             }
         }
 
-        private struct ClearSubtitleCueFlagsPhase
+        private ref struct ClearSubtitleCueFlagsPhase
         {
             [NativeDisableUnsafePtrRestriction] public SubtitleCueDTO* Cues;
             public int CueCount;

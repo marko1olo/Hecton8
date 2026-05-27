@@ -131,7 +131,7 @@ namespace Hecton8.Construction
         {
             _cachedTransform = transform;
             TryGetComponent(out _powerNode);
-            _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomReadModel>(this);
+            ConstructionParentLookup.TryCaptureSelfOrParent(this, out _atmosphereSystem);
             _pipeLinkId = unchecked((int)EntityId.ToULong(GetEntityId()));
             CacheRegistryServicesCold();
             RefreshEndpointCache(true);
@@ -140,7 +140,7 @@ namespace Hecton8.Construction
         private void OnEnable()
         {
             if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
-                _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomReadModel>(this);
+                ConstructionParentLookup.TryCaptureSelfOrParent(this, out _atmosphereSystem);
 
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();

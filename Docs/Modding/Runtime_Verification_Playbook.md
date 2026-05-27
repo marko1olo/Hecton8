@@ -68,12 +68,14 @@ Required evidence:
 
 - `Validate_Mod_API_Static.ps1` reports `PASS` or records a precise static failure.
 - Package manifest includes `RequiredAPIVersion` and `ModPriority`.
+- Package `mod.json` is non-empty and `<=32768` bytes; oversized manifests are skipped before JSON read.
+- Package discovery enumerates `mod.json` lazily and caps discovery at 64 manifests before candidate allocation.
 - Package manifest uses canonical mod id and dependency ids: lowercase letter/digit segments separated by single `.`, `_`, or `-`; no whitespace, separator-only ids, path-ish ids, or reserved filesystem device names.
 - Explicit `EntryAssembly`, when present for legacy-source audit fixtures, is a package-local `.dll` file name only.
 - Blank or anonymous execution scope cannot satisfy public facade owner guards; active scope requires a non-empty mod id and non-zero owner hash.
 - Package declares capabilities that match emitted opcode families.
 - No managed entry path is declared.
-- Package DLL file names and assembly metadata identities do not use reserved engine/runtime names: `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, or `netstandard`; the cold gate scans every top-level package DLL and the SDK builder has removed stale output DLLs.
+- Package DLL file names and assembly metadata identities do not use reserved engine/runtime names: `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, or `netstandard`; the cold gate scans every accepted top-level package DLL up to the 32-DLL cap, over-cap packages are disabled, and the SDK builder has removed stale output DLLs.
 - No loose runtime asset/content file is discovered as a runtime ingress path.
 - Public `HectonAPI.Events` subscribe/publish calls outside active `ModExecutionScope` throw `IllegalContractException` before reporting envelope-only quarantine status.
 - `SubscribeNative` native byte payload sources have explicit schema-checked layouts: `InteractionEventPayload = 32` bytes and `CraftingEventPayload = 64` bytes.
@@ -239,6 +241,11 @@ Source-backed limits:
 - Voxel modification radius cap: 8 meters.
 - Manifest file: `mod.json`.
 - Manifest field count: 9.
+- Manifest byte cap: 32768.
+- Manifest discovery cap: 64.
+- Top-level managed assembly cap: 32.
+- Top-level AssetBundle discovery cap: 4.
+- Top-level localization file discovery cap: 16.
 - `ModMetadata` field count: 8.
 - Internal `ModRuntimeInfo` field count: 7.
 - `IHectonMod` lifecycle method count: 3.
@@ -332,9 +339,19 @@ Required result:
 - `ModCriticalMemoryEvictionPayloadSizeBytes = 24`
 - `CurrentApiVersion = 2`
 - `ManifestFieldCount = 9`
+- `ManifestMaxBytes = 32768`
+- `ManifestByteCapEnforcedBeforeRead = True`
+- `ManifestDiscoveryMaxCount = 64`
+- `ManifestDiscoveryUsesBoundedEnumeration = True`
 - `SdkBuilderManifestFieldCount = 9`
 - `SdkBuilderManifestMatchesLoader = True`
 - `ManagedAssemblyIdentityReservedNamesBlocked = True`
+- `ManagedAssemblyIdentityScanUsesBoundedEnumeration = True`
+- `MaxTopLevelManagedAssemblyCount = 32`
+- `ExcessTopLevelManagedAssembliesDisablePackage = True`
+- `MaxTopLevelBundleCount = 4`
+- `MaxLocalizationFileCount = 16`
+- `TopLevelContentDiscoveryUsesBoundedEnumeration = True`
 - `ModMetadataFieldCount = 8`
 - `ModRuntimeInfoFieldCount = 7`
 - `LifecycleMethodCount = 3`

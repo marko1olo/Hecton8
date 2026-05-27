@@ -1,0 +1,169 @@
+{
+  "agentId": "1335",
+  "loop": 67,
+  "task": "WRIST_HUD_PDA_PROJECTOR_VAULT_REAUDIT",
+  "status": "PENDING_VERIFICATION",
+  "promptSha256": "CED5DA5188E0838802BA00938AFD9F382174FAA78453C32C78A6AE34BCB1C2E2",
+  "scopedFiles": [
+    "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs",
+    "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs"
+  ],
+  "defectsFound": [
+    "Base wrist HUD still used mutable TryResolveHandle-backed Vault views for state, quad, font atlas, telemetry, counters, and acoustic tap buffers.",
+    "Base wrist HUD scheduled a one-frame-delayed TextToQuads IJob over presentation-only visual geometry while the rest of the route needed short Vault lease proof.",
+    "Base wrist HUD editor CSV/font import paths wrote Vault font atlas buffers directly after file parsing without a scoped writer lease.",
+    "Base wrist HUD GPU upload did not fail closed on GraphicsBuffer LockBufferForWrite/UnlockBufferAfterWrite faults.",
+    "Base wrist HUD DTO padding used wide integer fields instead of explicit private byte pads.",
+    "Base wrist HUD forensic dump and cold allocation comments still carried stale SHINOBU_07/Dump_1309 ownership.",
+    "PDA projector had already been corrected in the same pass for short Vault leases, stack-staged CSV parsing, explicit byte padding, tiny job removal, and fail-closed GPU upload."
+  ],
+  "changes": [
+    "Replaced base wrist HUD mutable resolve helpers with compaction-aware TryAcquireWriteLock and TryReadOnlyHandle routes.",
+    "Converted the text-to-quad path from async IJob scheduling to a stack-only ref struct owner-phase visual builder, releasing all writer leases in the same phase.",
+    "Changed upload and draw consumers to read-only Vault views.",
+    "Moved acoustic tap, state, font atlas, telemetry, and counter mutation behind short writer leases released in finally blocks.",
+    "Staged CSV glyph parsing into stack spans before taking the font atlas writer lease.",
+    "Added specific fail-closed GPU upload catches and a numeric StateFlagGpuUploadFault bit.",
+    "Repacked modified wrist HUD and PDA DTO padding to explicit private byte fields.",
+    "Renamed wrist HUD black-box dump to Docs/AgentLogs/Dump_1335_WristHologramHud.bin and PDA projector dump to Dump_1335_UIPresentation_PdaProjection.bin."
+  ],
+  "byteOffsetMaps": [
+    {
+      "structName": "WristHudQuadTransformDTO",
+      "sizeBytes": 112,
+      "offsets": {
+        "Matrix": "0:float4x4",
+        "Color": "64:float4",
+        "UVRect": "80:float4",
+        "CharacterCode": "96:uint",
+        "GlitchIntensity": "100:float",
+        "_pad104": "104:byte",
+        "_pad105": "105:byte",
+        "_pad106": "106:byte",
+        "_pad107": "107:byte",
+        "_pad108": "108:byte",
+        "_pad109": "109:byte",
+        "_pad110": "110:byte",
+        "_pad111": "111:byte"
+      }
+    },
+    {
+      "structName": "WristHudStateDTO",
+      "sizeBytes": 248,
+      "offsets": {
+        "WristPositionAndDistance": "0:float4",
+        "WristRotation": "16:float4",
+        "HeadPositionAndO2": "32:float4",
+        "HeadForwardAndDepth": "48:float4",
+        "WristRightAndSafeDepth": "64:float4",
+        "WristUpAndPressure": "80:float4",
+        "WristForwardAndRadiation": "96:float4",
+        "LowColor": "112:float4",
+        "MidColor": "128:float4",
+        "DangerColor": "144:float4",
+        "PdaGridCenterAndCell": "160:float4",
+        "CompassAndVitals": "176:float4",
+        "FrameIndex": "192:int",
+        "ActiveQuadCount": "196:int",
+        "GlyphQuadCount": "200:int",
+        "BarQuadCount": "204:int",
+        "PdaGridQuadCount": "208:int",
+        "RadarQuadCount": "212:int",
+        "Culled": "216:int",
+        "Flags": "220:int",
+        "TelemetryCursor": "224:int",
+        "LastJobMicrosecondsQ16": "228:int",
+        "QualityWeightQ8": "232:int",
+        "_pad236": "236:byte",
+        "_pad237": "237:byte",
+        "_pad238": "238:byte",
+        "_pad239": "239:byte",
+        "_pad240": "240:byte",
+        "_pad241": "241:byte",
+        "_pad242": "242:byte",
+        "_pad243": "243:byte",
+        "_pad244": "244:byte",
+        "_pad245": "245:byte",
+        "_pad246": "246:byte",
+        "_pad247": "247:byte"
+      }
+    },
+    {
+      "structName": "AcousticEchoTap",
+      "sizeBytes": 32,
+      "offsets": {
+        "RelativePositionMeters": "0:float3",
+        "Amplitude01": "12:float",
+        "StableId": "16:uint",
+        "AgeSeconds": "20:float",
+        "Flags": "24:uint",
+        "_pad28": "28:byte",
+        "_pad29": "29:byte",
+        "_pad30": "30:byte",
+        "_pad31": "31:byte"
+      }
+    },
+    {
+      "structName": "PdaProjectionInputDTO",
+      "sizeBytes": 112,
+      "offsets": {
+        "WristAup": "0:double3",
+        "CameraAup": "24:double3",
+        "WristRotation": "48:float4",
+        "LocalScreenOffset": "64:float3",
+        "ScreenWidthMeters": "76:float",
+        "ScreenHeightMeters": "80:float",
+        "BootSequenceProgress01": "84:float",
+        "ActiveTabHashID": "88:uint",
+        "PdaFlags": "92:uint",
+        "GlassRefractionIndex": "96:float",
+        "ScreenCurvatureScalar": "100:float",
+        "GlobalQualityWeight01": "104:float",
+        "_pad108": "108:byte",
+        "_pad109": "109:byte",
+        "_pad110": "110:byte",
+        "_pad111": "111:byte"
+      }
+    },
+    {
+      "structName": "PdaProjectionBlackBoxDumpHeader",
+      "sizeBytes": 64,
+      "offsets": {
+        "Magic": "0:uint",
+        "Version": "4:uint",
+        "FrameIndex": "8:uint",
+        "Flags": "12:uint",
+        "TelemetryCapacity": "16:int",
+        "TelemetryCursor": "20:int",
+        "TelemetryEntrySizeBytes": "24:int",
+        "PayloadBytes": "28:int",
+        "TelemetryValidCount": "32:int",
+        "TelemetryStartIndex": "36:int",
+        "_pad40": "40:byte",
+        "_pad63": "63:byte"
+      }
+    }
+  ],
+  "verification": {
+    "scannedFiles": 2,
+    "legacyVaultHelpers": 0,
+    "broadCatches": 0,
+    "throwNew": 0,
+    "binaryWriter": 0,
+    "asNativeArray": 0,
+    "zeroGcHotPathHits": 0,
+    "absoluteAupCastsFound": 0,
+    "nativeFieldDeclarations": 6,
+    "persistentNativeFieldsRemaining": 0,
+    "transientStackOnlyNativeFields": 6,
+    "compactionAwareLocksProven": true,
+    "telemetryRingIntegrated": true,
+    "braceBalance": 0,
+    "gitDiffCheck": "PASS_CRLF_WARNING_ONLY",
+    "build": "NOT_RUN_CPU_GATE_96_9_PERCENT_ACTIVE_DOTNET_8372_VBCSCOMPILER_31136",
+    "failedGates": [
+      "BUILD_NOT_RUN_CPU_GATE_ACTIVE_COMPILER"
+    ],
+    "verificationHashSha256": "74FAEF0496902A34578A5A641965DFD2A12628E29B952E53D1F7A4FC1B6750B1"
+  }
+}

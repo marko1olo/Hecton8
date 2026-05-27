@@ -57,7 +57,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public partial struct MockQualityWeightSignal
+    public partial struct TBDRMockQualityWeightSignal
     {
         [FieldOffset(0)]
         public float GlobalQualityWeight;   // offset 0, size 4
@@ -639,6 +639,12 @@ namespace Hecton8.Graphics.Culling
             return handle;
         }
 
+        public void Dispose(IDataVault dataVault)
+        {
+            ReleaseGlobalDataVaultBuffers(dataVault);
+            Dispose();
+        }
+
         public void Dispose()
         {
             UnregisterNativeArrays();
@@ -665,6 +671,25 @@ namespace Hecton8.Graphics.Culling
             TelemetryCapacity = 0;
             UsesGlobalDataVaultFlag = TBDRByteFlags.False;
             Generation++;
+        }
+
+        private void ReleaseGlobalDataVaultBuffers(IDataVault dataVault)
+        {
+            if (UsesGlobalDataVaultFlag == 0 || dataVault == null)
+                return;
+
+            ReleaseVaultBuffer(dataVault, ref VertexBudgetCountersHandle);
+            ReleaseVaultBuffer(dataVault, ref TileWarningsHandle);
+            ReleaseVaultBuffer(dataVault, ref TransparentQuadCountHandle);
+            ReleaseVaultBuffer(dataVault, ref TelemetryRingHandle);
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault dataVault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u)
+                dataVault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void RegisterNativeArrays()

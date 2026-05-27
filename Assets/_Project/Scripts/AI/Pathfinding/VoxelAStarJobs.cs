@@ -11,7 +11,7 @@ namespace Hecton8.AI.Pathfinding
     /// <summary>
     /// Unmanaged binary min-heap for voxel A* open-set ownership.
     /// </summary>
-    public unsafe struct NativeMinHeap
+    public unsafe ref struct NativeMinHeap
     {
         private const float TieEpsilon = 0.00001f;
 

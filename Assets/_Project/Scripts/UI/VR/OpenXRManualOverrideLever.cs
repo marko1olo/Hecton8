@@ -46,7 +46,7 @@ namespace Hecton8.UI.VR
         private const int MaxStaleGrabFrames = 3;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
         private const BufferID BlackBoxBufferId = BufferID.OpenXrManualOverrideLeverBlackBox;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_VR_COCKPIT_MANUAL_OVERRIDE.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_OpenXRManualOverrideLever.bin";
 
         [Header("References")]
         [SerializeField] private BoxCollider activationVolume;

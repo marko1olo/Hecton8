@@ -53,6 +53,15 @@
     "duplicateSignalLikeWarnings": 14,
     "zeroGcHotPathEnumerationWarnings": 1
   },
+  "supersededBy": {
+    "json": "Docs/Reports/UNITY_SIGNAL_RESIDUAL_CONTRACT_CLEANUP_UNKNOWN_20260527.json",
+    "auditJson": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TBDR_UI_SANDBOX_TETHER_SECTOR_RECHECK.json",
+    "warnings": 148,
+    "infos": 1169,
+    "cacheLineCriticalStrideDebt": 0,
+    "zeroGcHotPathEnumerationWarnings": 0,
+    "duplicateSignalLikeWarnings": 8
+  },
   "staticProofAfterFinalPatch": {
     "scopedDiffCheck": "passed; line-ending warnings only",
     "runtimeBraceBalance": {
@@ -68,10 +77,43 @@
       "UnknownFinal build succeeded and final audit was rerun from that binary."
     ]
   },
+  "fullSolutionBuild": {
+    "firstAttemptLog": "Docs/Reports/BUILD_UNKNOWN_SIGNAL_LAYOUT_ALIAS_FULL_SOLUTION_20260527.log",
+    "firstAttemptResult": "failed before C# compile: root obj tmp access denied",
+    "escalatedLog": "Docs/Reports/BUILD_UNKNOWN_SIGNAL_LAYOUT_ALIAS_FULL_SOLUTION_ESCALATED_20260527.log",
+    "warningsSummary": 3141,
+    "errorSummary": 365,
+    "errorLines": 365,
+    "touchedFileHits": 0,
+    "topErrorProjects": {
+      "Hecton8.Core.csproj": 133,
+      "MeshBakerCore.csproj": 70,
+      "Assembly-CSharp-Editor.csproj": 69,
+      "MapMagic.csproj": 21,
+      "AstarPathfindingProject.csproj": 21,
+      "BakeryEditorAssembly.csproj": 14,
+      "Hecton8.Bootstrap.Contracts.csproj": 12,
+      "Unity.ShaderGraph.Editor.csproj": 10
+    },
+    "interpretation": "full solution is not green; failures are outside the touched SignalBus CLI and DTO layout files"
+  },
+  "documentationGates": {
+    "verifyDocStructure": {
+      "pass": true,
+      "activeDocCount": 692,
+      "encodingWithoutUtf8Sig": 0
+    },
+    "oopDocScanner": {
+      "finalPass": true,
+      "activeFileCount": 692,
+      "sourceSyncPass": true,
+      "wordReductionPercent": 31.353138780085825
+    }
+  },
   "residualRealDebt": [
-    "TetherTensionSignal is still a 192-byte cache-line-critical lane; future fix is payload split, not padding.",
     "ModEventProjectionBridge._cullTelemetry remains registered non-Vault blackbox state without a proven dump route.",
-    "TBDRPipelineSurgeonTypes has two registered non-Vault telemetry buffers outside core ownership."
+    "TBDRPipelineSurgeonTypes has two registered non-Vault telemetry buffers outside core ownership.",
+    "Remaining duplicate signal-like names are cross-domain telemetry owner names; one ocean/fluid side is dirty under concurrent work."
   ],
   "runtimeMicrosecondsSavedClaimed": 0
 }

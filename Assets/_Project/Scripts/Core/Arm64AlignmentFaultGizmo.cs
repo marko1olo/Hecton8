@@ -29,7 +29,7 @@ namespace Hecton8.Core.Memory
             if (!math.all(math.isfinite(p)))
                 return;
 
-            float pulse = 0.55f + (0.45f * math.abs(MathLodApproximation.ApproxSinBhaskara(Time.realtimeSinceStartup * math.max(0.01f, pulseSpeed))));
+            float pulse = 0.55f + (0.45f * math.abs(MathLodApproximation.ApproxSinBhaskara(UnityEngine.Time.realtimeSinceStartup * math.max(0.01f, pulseSpeed))));
             Gizmos.color = new Color(1f, 0.05f, 0.02f, pulse);
             Gizmos.DrawWireCube(
                 ToRuntimePosition(p, HectonFloatingOrigin.CurrentTotalOffsetDouble, math.max(1f, maxSceneOffsetMeters)),

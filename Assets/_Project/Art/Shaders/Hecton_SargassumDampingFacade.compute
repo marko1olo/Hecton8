@@ -14,13 +14,46 @@ float4 _GlobalDriftOffset;
 float4 _WaveFacadeParams;
 float4 _OilFacadeParams;
 
+bool HectonFinite1(float value)
+{
+    return isfinite(value);
+}
+
+bool HectonFinite2(float2 value)
+{
+    return all(isfinite(value));
+}
+
+bool HectonFinite4(float4 value)
+{
+    return all(isfinite(value));
+}
+
+float HectonFiniteOr(float value, float fallbackValue)
+{
+    return HectonFinite1(value) ? value : fallbackValue;
+}
+
+float2 HectonFinite2Or(float2 value, float2 fallbackValue)
+{
+    return HectonFinite2(value) ? value : fallbackValue;
+}
+
+float4 HectonFinite4Or(float4 value, float4 fallbackValue)
+{
+    return HectonFinite4(value) ? value : fallbackValue;
+}
+
 float SampleRectTexture(Texture2D<float4> textureSampler, SamplerState textureState, float2 worldXZ, float4 worldRect)
 {
+    if (!HectonFinite2(worldXZ) || !HectonFinite4(worldRect) || worldRect.z <= 0.0 || worldRect.w <= 0.0)
+        return 0.0;
+
     float2 uv = (worldXZ - worldRect.xy) * worldRect.zw;
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
         return 0.0;
 
-    return textureSampler.SampleLevel(textureState, uv, 0).r;
+    return HectonFiniteOr(textureSampler.SampleLevel(textureState, uv, 0).r, 0.0);
 }
 
 [numthreads(8, 8, 1)]
@@ -29,28 +62,46 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     uint width;
     uint height;
     _WaveDampingMaskResult.GetDimensions(width, height);
-    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+    uint oilWidth;
+    uint oilHeight;
+    _OilFilmMaskResult.GetDimensions(oilWidth, oilHeight);
+    uint activeWidth = min(width, oilWidth);
+    uint activeHeight = min(height, oilHeight);
+    if (activeWidth == 0 || activeHeight == 0 || dispatchThreadId.x >= activeWidth || dispatchThreadId.y >= activeHeight)
         return;
 
-    float2 uv = (dispatchThreadId.xy + 0.5) / float2(width, height);
-    float density = _DensityTex.SampleLevel(sampler_DensityTex, uv, 0).r;
+    float2 uv = (dispatchThreadId.xy + 0.5) / float2(activeWidth, activeHeight);
+    float density = saturate(HectonFiniteOr(_DensityTex.SampleLevel(sampler_DensityTex, uv, 0).r, 0.0));
 
-    float worldSizeX = _DensityWorldRect.z > 0.0 ? 1.0 / _DensityWorldRect.z : 0.0;
-    float worldSizeZ = _DensityWorldRect.w > 0.0 ? 1.0 / _DensityWorldRect.w : 0.0;
+    float4 densityRect = HectonFinite4Or(_DensityWorldRect, float4(0.0, 0.0, 0.0, 0.0));
+    float4 cutRect = HectonFinite4Or(_CutMaskWorldRect, float4(0.0, 0.0, 0.0, 0.0));
+    float2 driftOffset = HectonFinite2Or(_GlobalDriftOffset.xz, float2(0.0, 0.0));
+    float worldSizeX = densityRect.z > 0.0 ? rcp(densityRect.z) : 0.0;
+    float worldSizeZ = densityRect.w > 0.0 ? rcp(densityRect.w) : 0.0;
     float2 worldXZ = float2(
-        _DensityWorldRect.x + uv.x * worldSizeX + _GlobalDriftOffset.x,
-        _DensityWorldRect.y + uv.y * worldSizeZ + _GlobalDriftOffset.z);
+        densityRect.x + uv.x * worldSizeX + driftOffset.x,
+        densityRect.y + uv.y * worldSizeZ + driftOffset.y);
 
     float cutMask = _CutMaskActive != 0
-        ? SampleRectTexture(_CutMaskTex, sampler_CutMaskTex, worldXZ, _CutMaskWorldRect)
+        ? SampleRectTexture(_CutMaskTex, sampler_CutMaskTex, worldXZ, cutRect)
         : 0.0;
 
-    float waveEffectiveDensity = saturate(density * (1.0 - saturate(cutMask * _WaveFacadeParams.y)));
-    float waveMask = pow(saturate(waveEffectiveDensity), _WaveFacadeParams.x) * _WaveFacadeParams.z;
+    float4 waveParams = HectonFinite4Or(_WaveFacadeParams, float4(1.0, 0.0, 1.0, 0.0));
+    float wavePower = max(waveParams.x, 0.01);
+    float waveRelief = max(waveParams.y, 0.0);
+    float waveScale = max(waveParams.z, 0.0);
+    float waveEffectiveDensity = saturate(density * (1.0 - saturate(cutMask * waveRelief)));
+    float waveMask = HectonFiniteOr(pow(saturate(waveEffectiveDensity), wavePower) * waveScale, 0.0);
 
-    float oilEffectiveDensity = saturate(density * (1.0 - saturate(cutMask * _OilFacadeParams.y)));
-    float oilMask = pow(saturate(oilEffectiveDensity), _OilFacadeParams.x) * _OilFacadeParams.z;
+    float4 oilParams = HectonFinite4Or(_OilFacadeParams, float4(1.0, 0.0, 1.0, 0.0));
+    float oilPower = max(oilParams.x, 0.01);
+    float oilRelief = max(oilParams.y, 0.0);
+    float oilScale = max(oilParams.z, 0.0);
+    float oilEffectiveDensity = saturate(density * (1.0 - saturate(cutMask * oilRelief)));
+    float oilMask = HectonFiniteOr(pow(saturate(oilEffectiveDensity), oilPower) * oilScale, 0.0);
 
+    waveMask = saturate(waveMask);
+    oilMask = saturate(oilMask);
     _WaveDampingMaskResult[dispatchThreadId.xy] = float4(waveMask, waveMask, waveMask, waveMask);
     _OilFilmMaskResult[dispatchThreadId.xy] = float4(oilMask, oilMask, oilMask, oilMask);
 }

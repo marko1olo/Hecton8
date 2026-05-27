@@ -6339,7 +6339,7 @@ namespace Hecton8.Caves
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(default);
+            array.Dispose();
             array = default;
         }
 
@@ -6349,7 +6349,8 @@ namespace Hecton8.Caves
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(dependency);
+            JobHandle disposeHandle = array.Dispose(dependency);
+            DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
             array = default;
         }
 

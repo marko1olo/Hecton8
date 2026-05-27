@@ -19,6 +19,7 @@ namespace Hecton8.Editor.Build
         private const string VendorPluginRoot = "Assets/Plugins";
         private const string AudioKernelNativeSourcePath = "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp";
         private const string AudioKernelNativeBuildScriptPath = "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernel.bat";
+        private const string AudioKernelNativeAndroidBuildScriptPath = "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernelAndroid.bat";
 
         public int callbackOrder => -4640;
 
@@ -96,17 +97,35 @@ namespace Hecton8.Editor.Build
                     break;
 
                 case BuildTarget.Android:
+                {
                     RequireAnyPlugin(new[]
                     {
                         ProjectPluginRoot + "/Android/arm64-v8a/liblz4.so",
                         ProjectPluginRoot + "/Android/libs/arm64-v8a/liblz4.so"
                     }, "LZ4 Android arm64", target, blockers, ref blockerCount);
-                    RequireAnyPlugin(new[]
+
+                    string[] androidAudioKernelPaths =
                     {
                         VendorPluginRoot + "/Android/arm64-v8a/libHectonAudioKernel.so",
                         VendorPluginRoot + "/Android/libs/arm64-v8a/libHectonAudioKernel.so"
-                    }, "Audio Kernel Android arm64", target, blockers, ref blockerCount);
+                    };
+                    RequireAnyPlugin(androidAudioKernelPaths, "Audio Kernel Android arm64", target, blockers, ref blockerCount);
+                    RequireAnyCompatiblePluginFreshness(
+                        androidAudioKernelPaths,
+                        AudioKernelNativeSourcePath,
+                        "Audio Kernel Android arm64 native source",
+                        target,
+                        blockers,
+                        ref blockerCount);
+                    RequireAnyCompatiblePluginFreshness(
+                        androidAudioKernelPaths,
+                        AudioKernelNativeAndroidBuildScriptPath,
+                        "Audio Kernel Android arm64 native build script",
+                        target,
+                        blockers,
+                        ref blockerCount);
                     break;
+                }
             }
 
             if (blockerCount <= 0)
@@ -245,6 +264,66 @@ namespace Hecton8.Editor.Build
                 .Append(assetPath)
                 .Append(" utc=")
                 .Append(assetTimestamp.ToString("O"))
+                .Append(" older than ")
+                .Append(referencePath)
+                .Append(" utc=")
+                .Append(referenceTimestamp.ToString("O"))
+                .Append(". Rebuild native plugin before player build.")
+                .Append('\n');
+        }
+
+        private static void RequireAnyCompatiblePluginFreshness(
+            string[] assetPaths,
+            string referencePath,
+            string label,
+            BuildTarget target,
+            StringBuilder blockers,
+            ref int blockerCount)
+        {
+            bool hasCompatibleAsset = false;
+            DateTime newestAssetTimestamp = DateTime.MinValue;
+            string newestAssetPath = string.Empty;
+
+            for (int i = 0; i < assetPaths.Length; i++)
+            {
+                string assetPath = assetPaths[i];
+                if (!AssetFileExists(assetPath) || !HasPluginImporter(assetPath, target))
+                    continue;
+
+                hasCompatibleAsset = true;
+                DateTime assetTimestamp = File.GetLastWriteTimeUtc(ToProjectAbsolutePath(assetPath));
+                if (assetTimestamp > newestAssetTimestamp)
+                {
+                    newestAssetTimestamp = assetTimestamp;
+                    newestAssetPath = assetPath;
+                }
+            }
+
+            if (!hasCompatibleAsset)
+                return;
+
+            if (!AssetFileExists(referencePath))
+            {
+                blockerCount++;
+                blockers.Append("- Missing freshness reference for ")
+                    .Append(label)
+                    .Append(": ")
+                    .Append(referencePath)
+                    .Append('\n');
+                return;
+            }
+
+            DateTime referenceTimestamp = File.GetLastWriteTimeUtc(ToProjectAbsolutePath(referencePath));
+            if (newestAssetTimestamp >= referenceTimestamp)
+                return;
+
+            blockerCount++;
+            blockers.Append("- Stale ")
+                .Append(label)
+                .Append(": newest compatible asset ")
+                .Append(newestAssetPath)
+                .Append(" utc=")
+                .Append(newestAssetTimestamp.ToString("O"))
                 .Append(" older than ")
                 .Append(referencePath)
                 .Append(" utc=")

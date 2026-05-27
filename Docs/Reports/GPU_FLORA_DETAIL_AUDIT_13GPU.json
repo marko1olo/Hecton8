@@ -1,7 +1,7 @@
 {
   "agent": "13GPU",
   "date": "2026-05-27",
-  "status": "STATIC_VERIFIED_COMPILE_BLOCKED_BY_PROJECT_GRAPH",
+  "status": "STATIC_VERIFIED_COMPILE_GATE_BLOCKED_BY_HOST_CONTENTION_PRIOR_PROJECT_GRAPH_BLOCKER_REMAINS",
   "batchPromptFound": false,
   "domain": "GPU instancing, flora, rocks, micro-detail optimization, visual scalability",
   "touchedFiles": [
@@ -94,6 +94,41 @@
       "path": "Assets/_Project/Art/Shaders/Hecton_SargassumMaster.shader",
       "sha256": "ED11787EE3D75DBDDF9EAD42243A134A1D5A6842485E40DC4A8EBD905C81C89D",
       "change": "Adds finite ingress guards for sargassum vertex/color/UV/time/prop-wash/cut/sink/clip paths in forward and shadow passes."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_KelpMaster.shader",
+      "sha256": "E5F36C6C440DD076594830F9C87B9B172175016626C9DDF5B176A129F3D0ECFA",
+      "change": "Extends non-GPUI kelp finite ingress and continuous _H8GlobalQualityWeight motion gates into shadow and depth passes."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader",
+      "sha256": "235E60B6ACDE8542066C0D25F87912E6F3C7EA5B429253199FB51A0CEFA45026",
+      "change": "Sanitizes non-GPUI coral shadow normals before shadow bias; forward ripple and parallax quality gates were already present in baseline."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader",
+      "sha256": "762BC94D35ECF9F1B2314EA3DBDBD6E899368C841F652B88E2935B8694B8112C",
+      "change": "Keeps positionWS available to the low LOD branch and adds continuous _H8GlobalQualityWeight shaping for low matcap/emission and high blend sharpness."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_SargassumCutMask.compute",
+      "sha256": "65B248B0A459903850BAF63E1A708CAD7CC612EF664FB28BB1F84DBFFDDE965C",
+      "change": "Adds finite/fallback guards for cut-mask texel size, scroll offset, recovery, stamp payloads, and final output."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_SargassumDampingFacade.compute",
+      "sha256": "F55690F09295FDE81DEF3208B08F43494A5327D0DF7BF300B460ECAC50E67CFB",
+      "change": "Guards facade output texture dimensions, density/cut rects, drift, pow/scales, and finite wave/oil mask writes."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_VegetationWakeTrailSim.compute",
+      "sha256": "939AFDE998DC80C07E536A9EEDEC3B8030B4326C5ED57D1C600339EE0639D498",
+      "change": "Caps wake stamp iteration to owner buffer capacity and sanitizes wake samples, texel size, stamp payloads, runtime params, and output."
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumCrestDampingController.cs",
+      "sha256": "C16D90EDFA4876B21024D55A819B6FDD22EFDA9FEF4A5365AB6C160ECC6995BA",
+      "change": "Consumes HomeostasisBrain.GlobalQualityWeight for smooth visual-only wave/oil facade intensity scaling before compute dispatch."
     }
   ],
   "confirmedProblems": [
@@ -224,6 +259,42 @@
       "fix": "Sargassum forward and shadow passes now sanitize finite inputs for sway, prop-wash, pulse, wound curl, cut mask, buoyancy sink, alpha clip, and final color."
     },
     {
+      "id": "KELP_NONGPUI_SHADOW_DEPTH_RAW_MOTION",
+      "severity": "medium",
+      "evidence": "Baseline Hecton_KelpMaster.shader had continuous quality/finite guards in forward pass, but shadow and depth passes still used raw motion inputs before deformation.",
+      "fix": "Shadow and depth passes now sanitize position, normal, UV, time, sway, AUP offset, wash data, and use smooth _H8GlobalQualityWeight motion/interaction gates."
+    },
+    {
+      "id": "CORAL_NONGPUI_SHADOW_RAW_NORMAL",
+      "severity": "medium",
+      "evidence": "Baseline Hecton_CoralMaster.shader shadow pass sanitized position but transformed raw input.normalOS through shadow bias.",
+      "fix": "Shadow caster now uses finite non-zero normal fallback before TransformObjectToWorldNormal and ApplyShadowBias."
+    },
+    {
+      "id": "PROCEDURAL_BIO_LOW_VARIANT_MISSING_POSITIONWS",
+      "severity": "high",
+      "evidence": "Baseline Hecton_ProceduralBio.shader low LOD branch read input.positionWS while positionWS was compiled out under _MATH_LOD_LOW.",
+      "fix": "positionWS is now emitted for all variants; low matcap/emission and high blend sharpness consume continuous _H8GlobalQualityWeight."
+    },
+    {
+      "id": "SARGASSUM_CUT_MASK_UNCHECKED_STAMPS",
+      "severity": "medium",
+      "evidence": "Baseline Hecton_SargassumCutMask.compute used authored texel size, scroll offset, recovery, and stamp vectors/strength before sampling and radius math.",
+      "fix": "Texel size falls back to real result dimensions; scroll, recovery, stamps, samples, and output are finite-sanitized and stamp strength is saturated."
+    },
+    {
+      "id": "SARGASSUM_FACADE_UNCHECKED_RECTS_AND_FIXED_VISUAL_SCALE",
+      "severity": "medium",
+      "evidence": "Baseline Hecton_SargassumDampingFacade.compute trusted output dimensions, density/cut rects, drift, pow exponents/scales; SargassumCrestDampingController sent fixed visual scales.",
+      "fix": "Compute clamps to shared output dimensions and finite-sanitizes rect/pow/output paths; owner scales visual facade intensity by continuous GlobalQualityWeight."
+    },
+    {
+      "id": "VEGETATION_WAKE_TRAIL_RAW_STAMP_COUNT_AND_PARAMS",
+      "severity": "medium",
+      "evidence": "Baseline Hecton_VegetationWakeTrailSim.compute looped over raw _HectonWakeTrailStampCount and used raw stamp/time/scroll/texel/damping/curl/wave/fade values.",
+      "fix": "Shader caps stamps to the 4-entry owner buffer capacity and finite-sanitizes all wake inputs before sample, noise, velocity, displacement, and output writes."
+    },
+    {
       "id": "TERRAIN_MASTER_BINARY_MATH_LOD_RESIDUAL_RISK",
       "severity": "medium",
       "evidence": "TerrainMaster.shader still contains _MATH_LOD_LOW compile-time branches. Runtime terrain continuous quality binding was not proven in this pass.",
@@ -236,9 +307,9 @@
     "addedLinq": false,
     "addedHotPathArrayAllocation": false,
     "diffCheck": "PASS_CRLF_WARNINGS_ONLY",
-    "compile": "BLOCKED_BY_PROJECT_GRAPH_LATEST_LEGAL_GATE_CPU_30_NO_ACTIVE_DOTNET_CSC; DOTNET_BUILD_ASSEMBLY_CSHARP_NO_RESTORE_MAXCPU1_FAILED_ON_MSB4006_CIRCULAR_RESOLVEPROJECTREFERENCES_IN_UNITY_RENDERPIPELINES_CORE_EDITOR_AND_UNITY_SHADERGRAPH_EDITOR; EARLIER_BLOCKERS_CANDICE_SQLITE_MISSING_MONO_DATA_AND_NO_DEPENDENCIES_MISSING_TEMP_SHADERGRAPH_EDITOR_DLL",
+    "compile": "CURRENT_GATE_NOT_RUN_INITIAL_CPU_100_ACTIVE_VBCSCOMPILER_31136_AFTER_30S_CPU_26_ACTIVE_VBCSCOMPILER_31136; PRIOR_LEGAL_BUILD_BLOCKED_BY_PROJECT_GRAPH_MSB4006_CIRCULAR_RESOLVEPROJECTREFERENCES_IN_UNITY_RENDERPIPELINES_CORE_EDITOR_AND_UNITY_SHADERGRAPH_EDITOR; EARLIER_BLOCKERS_CANDICE_SQLITE_MISSING_MONO_DATA_AND_NO_DEPENDENCIES_MISSING_TEMP_SHADERGRAPH_EDITOR_DLL",
     "shaderCompile": "NOT_RUN_UNITY_SHADER_COMPILER_UNAVAILABLE"
   },
   "runtimeProof": "absent",
-  "estimatedMicrosecondsSaved": "35-80 during depth threshold churn; 15-40 corrupt BRG cull containment; 20-60 poisoned HLOD batch containment; 10-30 invalid scatter spacing containment; 20-50 corrupt compute cull containment; 5-20 bad impostor material fallback containment; 15-45 corrupt distant landmark/HLOD payload containment; 10-35 malformed GPU scatter dispatch containment; 8-25 corrupt kelp payload containment; 5-18 corrupt coral ripple payload containment; 3-8 malformed geology impostor payload containment; 5-15 malformed voxel SSAO dispatch containment; 12-40 corrupt abyssal rock/geology payload containment; 4-12 malformed terrain damage volume dispatch containment; 6-20 corrupt micro-particle/flow payload containment; 6-18 malformed sargassum payload containment. HLOD and landmark fallback materials are visual correctness, atlas/damage-volume guards are corruption containment, normal flora/particle/geology/rock changes are visual fake safety or fail-closed containment, not profiler-backed saving claims. Pending profiler capture."
+  "estimatedMicrosecondsSaved": "35-80 during depth threshold churn; 15-40 corrupt BRG cull containment; 20-60 poisoned HLOD batch containment; 10-30 invalid scatter spacing containment; 20-50 corrupt compute cull containment; 5-20 bad impostor material fallback containment; 15-45 corrupt distant landmark/HLOD payload containment; 10-35 malformed GPU scatter dispatch containment; 8-25 corrupt kelp payload containment; 5-18 corrupt coral ripple payload containment; 3-8 malformed geology impostor payload containment; 5-15 malformed voxel SSAO dispatch containment; 12-40 corrupt abyssal rock/geology payload containment; 4-12 malformed terrain damage volume dispatch containment; 6-20 corrupt micro-particle/flow payload containment; 6-18 malformed sargassum payload containment; 4-12 malformed non-GPUI kelp shadow/depth payload containment; 2-6 malformed non-GPUI coral shadow payload containment; 3-10 procedural bio low-variant fallback/debug churn containment; 2-8 malformed sargassum cut-mask stamp containment; 3-9 malformed sargassum facade dispatch containment; 4-14 malformed vegetation wake-trail dispatch containment. HLOD and landmark fallback materials are visual correctness, atlas/damage-volume/facade guards are corruption containment, normal flora/particle/geology/rock changes are visual fake safety or fail-closed containment, not profiler-backed saving claims. Pending profiler capture."
 }
