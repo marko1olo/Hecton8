@@ -510,13 +510,8 @@ namespace Hecton8.Animation.KineticCharacter
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            CompletePendingSolverForTeardown();
-            UnlockJobBuffers();
-            ReleaseVaultHandles(_dataVault ?? previousService as IDataVault);
-            _dataVault = currentService as IDataVault;
-            ClearHandles();
+            BindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
             ClearGpuSkinningBinding();
-            _dumpedFault = false;
             if (_dataVault != null)
             {
                 EnsureVaultBuffers();
@@ -780,8 +775,11 @@ namespace Hecton8.Animation.KineticCharacter
             out NativeArray<T> buffer,
             NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct
         {
-            if (TryResolveVaultBuffer(vault, in handle, requiredLength, out buffer))
+            if (IsOwnedVaultHandle(in handle, bufferId) &&
+                TryResolveVaultBuffer(vault, in handle, requiredLength, out buffer))
+            {
                 return true;
+            }
 
             if (vault == null)
                 return false;
@@ -1000,10 +998,32 @@ namespace Hecton8.Animation.KineticCharacter
 
         private IDataVault CacheDataVaultCold()
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
-
+            BindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
             return _dataVault;
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault currentVault, IDataVault releaseVaultOverride)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            CompletePendingSolverForTeardown();
+            UnlockJobBuffers();
+            ReleaseVaultHandles(_dataVault ?? releaseVaultOverride);
+            ClearHandles();
+            _dataVault = currentVault;
+            _dumpedFault = false;
+            _latestStateHash = 0u;
+            _uploadedStateHash = 0u;
+            _activeMatrixUploadCount = 0;
+            _uploadedMatrixCount = 0;
+            _activeCharacterCount = 0;
+            _uploadedCharacterCount = 0;
+            _lastQuality = 1f;
+            _uploadedQuality = -1f;
+            _gpuUploadDirty = true;
+            _gpuConstantsDirty = true;
+            _gpuBufferDataValid = false;
         }
 
         private bool TryLockRequired(IDataVault vault, BufferID bufferId, int bit)
@@ -1290,11 +1310,22 @@ namespace Hecton8.Animation.KineticCharacter
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (!IsVaultHandleCreated(in handle))
-                return;
+            if (IsOwnedVaultHandle(in handle))
+                vault.ReleaseBuffer(in handle);
 
-            vault.ReleaseBuffer(in handle);
             handle = default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return IsVaultHandleCreated(in handle) &&
+                   handle.SystemID == (uint)SystemID.AnimationLocomotion;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return IsOwnedVaultHandle(in handle) &&
+                   handle.BufferID == (uint)expectedBufferId;
         }
 
         private void ClearHandles()
