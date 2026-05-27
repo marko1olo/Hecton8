@@ -82,12 +82,12 @@
     },
     {
       "path": "Assets/_Project/Art/Shaders/Hecton_TerrainDamageVolume.compute",
-      "sha256": "756F8943EA98D7AB68CAA9DC2AD3954B04001B8B15E1E72F2FA23D545E2A7B58",
+      "sha256": "DA1BF7D5EBF0115B67D02EE376B48C65804F76673271EEA2590F576D8A57C50E",
       "change": "Adds source/result 3D texture dimension guards and finite stamp/world parameter guards before terrain damage volume reads/writes."
     },
     {
       "path": "Assets/_Project/Art/Shaders/ParticleUpdate.compute",
-      "sha256": "8B1DE2809F2BE7704F138A7541A4A5D507076D520247E4839F6A45BA8559EA61",
+      "sha256": "3E77322ADF3932AE2DB60B3BAD30555595026043A9D60DAFC23F5E65F51E553D",
       "change": "Clamps particle dispatch count to read/write buffer capacity, validates flow buffer capacity, and sanitizes particle/flow params before visual dispersion integration."
     },
     {

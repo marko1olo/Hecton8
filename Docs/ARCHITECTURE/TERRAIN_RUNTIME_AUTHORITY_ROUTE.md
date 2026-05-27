@@ -53,6 +53,8 @@ Procedural ore and marauder outpost generation consume terrain/MapMagic through 
 
 `BiomeMatrixDirector` consumes terrain through hotswap-injected `ITerrainProvider` or `WorldRuntimeReferenceUtility.TryResolveMapMagicBridge`. It must not poll `GlobalRegistry.Terrain` to evaluate biome depth or seismic dust.
 
+`BiomeMatrixDirector.EvaluateMatrix` must not repair player references while playing. Player transform and movement rebinding belongs to cold setup or the `GlobalRegistryServiceSlot.Player` hotswap route; runtime evaluation consumes the cached transform.
+
 `EcosystemDirector` terrain/resource cross-domain reads use `MapMagicBridge.Instance` and `ResourceDistributionDirector.ActiveRuntimeInstance`. It must not poll `GlobalRegistry.MapMagic` or `GlobalRegistry.ResourceDistribution` from spawn gates, depth, envelope, or mutation sampling.
 
 `HectonAnomalyResourceBinding` consumes resource distribution through `ResourceDistributionDirector.ActiveRuntimeInstance`. MapMagic anomaly nodes and voxel anomaly binding must not rediscover resource distribution through `GlobalRegistry.ResourceDistribution`.

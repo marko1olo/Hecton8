@@ -85,9 +85,9 @@ Status: STATIC VERIFIED / COMPILE GATE PENDING
 - [x] Static scan: `Hecton_AbyssalVoxelRock.shader` adds finite guards for vertex/absolute positions, origin offset, biome grid casts, carve volumes, and caustic/noise math only; no new buffers, draw path, readback, or CPU route.
 - [x] SHA256 `Hecton_AbyssalVoxelRock.shader`: `DC6692A28DCC69F409509772D675220CB732A841902DC3E679010B33AF53DD35`.
 - [x] Static scan: `Hecton_TerrainDamageVolume.compute` adds 3D texture dimension guards, finite stamp/world param guards, and fail-closed current/stamp writes only; no new buffers, draw path, readback, or CPU route.
-- [x] SHA256 `Hecton_TerrainDamageVolume.compute`: `756F8943EA98D7AB68CAA9DC2AD3954B04001B8B15E1E72F2FA23D545E2A7B58`.
+- [x] SHA256 `Hecton_TerrainDamageVolume.compute`: `DA1BF7D5EBF0115B67D02EE376B48C65804F76673271EEA2590F576D8A57C50E`.
 - [x] Static scan: `ParticleUpdate.compute` adds structured-buffer count guards, finite particle/flow parameter guards, and bounded visual dt only; no new buffers, draw path, readback, or CPU route.
-- [x] SHA256 `ParticleUpdate.compute`: `8B1DE2809F2BE7704F138A7541A4A5D507076D520247E4839F6A45BA8559EA61`.
+- [x] SHA256 `ParticleUpdate.compute`: `3E77322ADF3932AE2DB60B3BAD30555595026043A9D60DAFC23F5E65F51E553D`.
 - [x] Static scan: `Hecton_SargassumMaster.shader` adds finite guards for flora vertex/UV/color/time/motion/cut/sink/clip paths in forward and shadow passes only; no new buffers, draw path, readback, or CPU route.
 - [x] SHA256 `Hecton_SargassumMaster.shader`: `ED11787EE3D75DBDDF9EAD42243A134A1D5A6842485E40DC4A8EBD905C81C89D`.
 - [ ] Compile: NOT RELAUNCHED. Earlier `dotnet build Assembly-CSharp.csproj --no-restore -v quiet /clp:ErrorsOnly -maxcpucount:1` reported Candice SQLite missing `Mono.Data` / `SqliteDataReader`; later guarded build hit MSBuild circular `ResolveProjectReferences` in Unity editor projects and `--no-dependencies` hit missing `Temp/CodexBuild/Unity.ShaderGraph.Editor.dll`. Latest gate after rock pass: CPU `73`, then `77` after 30 seconds, no active `dotnet/csc`; build remains forbidden because CPU is above 50%. No touched 13GPU files were reported in previous compiler errors.
