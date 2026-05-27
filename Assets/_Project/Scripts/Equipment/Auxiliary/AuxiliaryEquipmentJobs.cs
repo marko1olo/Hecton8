@@ -431,7 +431,7 @@ namespace Hecton8.Equipment.Auxiliary
         }
     }
 
-    public struct RecordAuxiliaryTelemetryPass
+    public ref struct RecordAuxiliaryTelemetryPass
     {
         public NativeArray<DeployedAuxiliaryDTO> Deployments;
         public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;

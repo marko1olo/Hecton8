@@ -243,7 +243,7 @@ namespace Hecton8.Core
         void PostFixedSimulation(in DispatcherTimingDTO timing);
     }
 
-    public struct DispatcherJobContext
+    public ref struct DispatcherJobContext
     {
         internal NativeArray<MockTimeDilationSignal> MockTimeDilationSignals;
         internal NativeArray<JobDependencyDTO> JobDependencyTelemetry;

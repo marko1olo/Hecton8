@@ -116,7 +116,7 @@ namespace Hecton8.Graphics.Culling
         }
     }
 
-    public struct MockScatterBuffer
+    public ref struct MockScatterBuffer
     {
         public NativeArray<PoiTransformDTO> VisibleInstances;
         public NativeArray<PoiTransformDTO> SortScratch;

@@ -320,7 +320,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(120)] public ulong Mask15;
     }
 
-    public struct MockSpatialHashGrid
+    public ref struct MockSpatialHashGrid
     {
         public NativeArray<int> BucketHeads;
         public NativeArray<int> BucketNext;

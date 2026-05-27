@@ -246,7 +246,7 @@ namespace Hecton8.Core
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct ParallelEventWriter
+        public ref struct ParallelEventWriter
         {
             private NativeQueue<int>.ParallelWriter _events;
             [NativeDisableUnsafePtrRestriction] private readonly int* _counters;
