@@ -1,0 +1,4 @@
+﻿# [ARCHIVE] TETHER_ROSLYN_HOTPATH_AUDIT_1303_V14_STDOUT.txt
+
+Archived by agent 1334 on 2026-05-26. Active replacement: `Docs/Reports/SIGNALBUS_HOTPATH_AUDIT_1303_APEX_V16.md`.
+Voxel runtime hotpath audit: files=4, parseFailures=0, objectCreations=6, managedRiskCreations=5, nativeTempJobAllocations=0, nativePersistentAllocations=0, stringFormatCalls=0, toStringCalls=0, linqCalls=0, foreachStatements=0, interpolatedStrings=0, stringConcatSuspects=0, hash=62d3154585aac613c1dd75a7e1c2c7f74ea0d683d07bb3c440b9de9845264454

@@ -255,7 +255,7 @@ namespace Hecton8.Construction
             }
 
             TryGetComponent(out _powerNode);
-            _owningModule = GetComponentInParent<BaseModule>();
+            ConstructionParentLookup.TryCaptureSelfOrParent(this, out _owningModule);
             _dockingSplineOwnerHash = ResolveDockingSplineOwnerHash();
             CacheDockTelemetryVaultCold();
             EnsureDockTelemetry();
@@ -547,7 +547,7 @@ namespace Hecton8.Construction
 
             Rigidbody candidateBody;
             if (!transportBehaviour.TryGetComponent(out candidateBody))
-                candidateBody = transportBehaviour.GetComponentInParent<Rigidbody>();
+                ConstructionParentLookup.TryCaptureSelfOrParent(transportBehaviour, out candidateBody);
 
             if (candidateBody != null)
             {
@@ -641,7 +641,7 @@ namespace Hecton8.Construction
                 return;
 
             if (!transportBehaviour.TryGetComponent(out _dockedBody))
-                _dockedBody = transportBehaviour.GetComponentInParent<Rigidbody>();
+                ConstructionParentLookup.TryCaptureSelfOrParent(transportBehaviour, out _dockedBody);
 
             if (_dockedBody == null)
                 return;
@@ -666,7 +666,7 @@ namespace Hecton8.Construction
                 return;
 
             if (!transportBehaviour.TryGetComponent(out _dockedVehicleMotor))
-                _dockedVehicleMotor = transportBehaviour.GetComponentInParent<VehicleMotor>();
+                ConstructionParentLookup.TryCaptureSelfOrParent(transportBehaviour, out _dockedVehicleMotor);
         }
 
         private void CaptureDockedExternalMassSink(MonoBehaviour transportBehaviour)
@@ -1945,7 +1945,7 @@ namespace Hecton8.Construction
                 return;
 
             if (!transportBehaviour.TryGetComponent(out _mountedTransportLockOwner))
-                _mountedTransportLockOwner = transportBehaviour.GetComponentInParent<ITransportDockControlLock>();
+                ConstructionParentLookup.TryCaptureSelfOrParent(transportBehaviour, out _mountedTransportLockOwner);
 
             if (_mountedTransportLockOwner != null)
                 _mountedTransportLockOwner.BeginDockControlLock();

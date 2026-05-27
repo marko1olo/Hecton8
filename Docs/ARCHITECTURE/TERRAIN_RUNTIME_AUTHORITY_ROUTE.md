@@ -53,7 +53,11 @@ Procedural ore and marauder outpost generation consume terrain/MapMagic through 
 
 `BiomeMatrixDirector` consumes terrain through hotswap-injected `ITerrainProvider` or `WorldRuntimeReferenceUtility.TryResolveMapMagicBridge`. It must not poll `GlobalRegistry.Terrain` to evaluate biome depth or seismic dust.
 
-`BiomeMatrixDirector.EvaluateMatrix` must not repair player references while playing. Player transform and movement rebinding belongs to cold setup or the `GlobalRegistryServiceSlot.Player` hotswap route; runtime evaluation consumes the cached transform.
+`BiomeMatrixDirector.EvaluateMatrix` must not repair player references while playing.
+
+Player transform and movement rebinding belongs to cold setup or `GlobalRegistryServiceSlot.Player` hotswap.
+
+Runtime evaluation consumes the cached transform.
 
 `EcosystemDirector` terrain/resource cross-domain reads use `MapMagicBridge.Instance` and `ResourceDistributionDirector.ActiveRuntimeInstance`. It must not poll `GlobalRegistry.MapMagic` or `GlobalRegistry.ResourceDistribution` from spawn gates, depth, envelope, or mutation sampling.
 
@@ -211,7 +215,11 @@ MapMagic vegetation runtime identity is owner-local.
 
 `HectonMapMagicVegetationBridge` dependency repair is cold/hotswap only.
 
-`RefreshColdRuntimeDependencies` may run during cold lifecycle and deferred startup bootstrap. `SlowTick` and `IMapMagicTerrainTileEventListener` callbacks must consume cached `MapMagicBridge` and player references only; player rebinding belongs to the `GlobalRegistryServiceSlot.Player` hotswap route.
+`RefreshColdRuntimeDependencies` may run during cold lifecycle and deferred startup bootstrap.
+
+`SlowTick` and `IMapMagicTerrainTileEventListener` callbacks consume cached `MapMagicBridge` and player references.
+
+Player rebinding belongs to the `GlobalRegistryServiceSlot.Player` hotswap route.
 
 Completed tile height readbacks use bulk native copy into the DataVault height buffer.
 
@@ -225,7 +233,9 @@ Registry registration remains the cold brine/resource read-model publication rou
 
 `ResourceDistributionDirector` worldgen dependency repair is cold/hotswap only.
 
-`SlowTick`, thermal-diamond voxel-face placement, and meteor-impact crater application must consume cached player, MapMagic, vegetation, and voxel references. Runtime repair through `WorldRuntimeReferenceUtility` belongs to cold lifecycle setup or `GlobalRegistryServiceSlot` hotswap rebinding.
+`SlowTick`, thermal-diamond voxel-face placement, and meteor-impact crater application consume cached player, MapMagic, vegetation, and voxel references.
+
+Runtime repair through `WorldRuntimeReferenceUtility` belongs to cold lifecycle setup or `GlobalRegistryServiceSlot` hotswap rebinding.
 
 Voxel anomaly-to-resource binding uses the resource owner-local active pointer.
 
@@ -257,7 +267,11 @@ Then sampling jobs, burst buffers, graphics buffers, scatter backend state, and 
 
 Vegetation chunk builds, ecosystem threat propagation, abyssal flow fields, thermal grids, thermal-map diffusion, and voxel dynamic nav-grid updates must not use `IJob.Run()` on the terrain runtime path.
 
-Owner phases schedule Burst jobs and store short-lived job state. Dispatcher swap windows only publish completed DataVault snapshots after `JobHandle.IsCompleted`; teardown may call `Complete()` before native buffer release.
+Owner phases schedule Burst jobs and store short-lived job state.
+
+Dispatcher swap windows publish completed DataVault snapshots after `JobHandle.IsCompleted`.
+
+Teardown may call `Complete()` before native buffer release.
 
 Teardown, origin-shift, and cache eviction may force-complete only to protect native ownership before releasing buffers.
 

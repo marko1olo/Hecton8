@@ -45,7 +45,7 @@ namespace Hecton8.Construction
         private void Awake()
         {
             if (targetModule == null)
-                targetModule = GetComponentInParent<BaseModule>();
+                ConstructionParentLookup.TryCaptureSelfOrParent(this, out targetModule);
 
             if (_cultivationManager == null)
                 TryGetComponent(out _cultivationManager);

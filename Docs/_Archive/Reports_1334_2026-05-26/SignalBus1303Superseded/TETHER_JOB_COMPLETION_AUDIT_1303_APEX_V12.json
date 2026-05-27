@@ -1,0 +1,46 @@
+﻿{
+    "schema":  "hecton8.tether_job_completion_audit.v12",
+    "agentId":  "1303",
+    "files":  [
+                  "Assets/_Project/Scripts/TetherInstance.cs",
+                  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                  "Assets/_Project/Scripts/Core/Contracts/Physics/CableGpuContracts.cs"
+              ],
+    "ownedFindings":  [
+                          {
+                              "file":  "Assets/_Project/Scripts/TetherInstance.cs",
+                              "line":  3075,
+                              "text":  "if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))",
+                              "classification":  "RuntimeDispatcherBarrier",
+                              "editorOnly":  false
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                              "line":  748,
+                              "text":  "DispatcherJobFence.TryComplete(ref loadHandle, forceComplete: true);",
+                              "classification":  "EditorFuzzerForcedComplete",
+                              "editorOnly":  true
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                              "line":  768,
+                              "text":  "DispatcherJobFence.TryComplete(ref integrationHandle, forceComplete: true);",
+                              "classification":  "EditorFuzzerForcedComplete",
+                              "editorOnly":  true
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                              "line":  787,
+                              "text":  "DispatcherJobFence.TryComplete(ref solverHandle, forceComplete: true);",
+                              "classification":  "EditorFuzzerForcedComplete",
+                              "editorOnly":  true
+                          }
+                      ],
+    "ownedFindingCount":  4,
+    "framePathBlockerCount":  0,
+    "framePathBlockers":  [
+
+                          ],
+    "note":  "TetherInstance barrier remains explicit dispatcher-owned forceComplete; TetherVerletJobs completions are editor fuzzer only."
+}

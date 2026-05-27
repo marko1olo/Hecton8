@@ -489,3 +489,11 @@ Solution: Added cheap API substring prefilters before the heavy legacy `ComputeB
 Rejected Alternatives: Removing the legacy `ComputeBuffer` gate was rejected because it caught a real first-party regression. Keeping the 100+ second proof path was rejected because this agent must run repeated static loops without abusing build infrastructure. A full Roslyn parser rewrite was rejected because the measured hotspot had a smaller local fix.
 Scalability potential: Offline proof cost is lower on weak development machines while the runtime architecture is unchanged. Low/Middle/High/Ultra behavior is unaffected; this buys more verification loops, not new gameplay work.
 Hardware Impact: Runtime impact: 0 us. Host verification cost reduced materially in this workspace. Latest reports remain green: dispatch scanner 71 compute files and 48 C# dispatch files; purge scanner 51 C# files, 276 native declarations, 0 persistent consumer native fields, 0 hot-path GC hits, and verification hash `f54d1fa1dc5d6fada69755f7f6625b14407dce2bdbf765e624869d36cf016364`.
+
+## Decision 062 - Build Gate Result
+
+Problem: Static scanners are green, but the batch protocol still requires a real compile attempt when the host CPU/process gate opens.
+Solution: Waited until CPU averaged 19% and no `dotnet`, `csc`, or `VBCSCompiler` processes were active, then launched one throttled `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1`. The build failed on missing metadata `Temp\CodexBuild\Unity.ShaderGraph.Editor\Unity.ShaderGraph.Editor.dll`, then `dotnet build-server shutdown` completed.
+Rejected Alternatives: Launching build while CPU was 100% or 52% was rejected by project policy. Treating the build as green was rejected because the metadata dependency is objectively missing. Attempting to fabricate or stub the Unity ShaderGraph assembly was rejected because that is Unity/generated-artifact ownership, not compute dispatch code.
+Scalability potential: No runtime scalability change. The correct route is regenerating Unity project/build artifacts before another compile validation.
+Hardware Impact: Runtime impact: 0 us. Compile proof remains blocked by Unity-generated metadata, not by 1333 scanner gates.

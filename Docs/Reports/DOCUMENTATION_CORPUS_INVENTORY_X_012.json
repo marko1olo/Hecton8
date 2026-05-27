@@ -8523,8 +8523,8 @@
   {
     "path": "Docs/_Archive/TokenUsage_2026-05-25/README.md",
     "active": false,
-    "bytes": 464,
-    "lastWriteUtc": "2026-05-25T22:37:50.283683+00:00",
+    "bytes": 463,
+    "lastWriteUtc": "2026-05-27T17:04:21.239663+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
     "wordCount": 33,
@@ -8540,7 +8540,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "0370efc43b79a69cdc3f843045e9ce02389fb5ffe75d65704475fd2da9f6006e"
+    "sha256": "8e9d4f82ae42f9b8e3f13374db1ce079c6f487fb45dc087ffa885cc537121750"
   },
   {
     "path": "Docs/_Archive/TokenUsage_2026-05-25/TOKEN_USAGE_AUDIT_2026-05-25.md",
@@ -9274,11 +9274,11 @@
   {
     "path": "Docs/AgentLogs/LOG_1301.md",
     "active": false,
-    "bytes": 125366,
-    "lastWriteUtc": "2026-05-27T13:26:23.272215+00:00",
+    "bytes": 127892,
+    "lastWriteUtc": "2026-05-27T14:31:49.739130+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 14081,
+    "wordCount": 14350,
     "topic": "# LOG_1301",
     "references": [
       "Docs/Tasks/Status_1301.md",
@@ -9310,7 +9310,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "bdc6e84742a903644b4e476b097b6f7f01624dc87285a4d84337713e1a9a6c11"
+    "sha256": "fdb304b634c857c454369aeef311ad6682ab38d266c3eca6ed10ae0f5b201cbc"
   },
   {
     "path": "Docs/AgentLogs/LOG_1302.md",
@@ -9461,11 +9461,11 @@
   {
     "path": "Docs/AgentLogs/LOG_1306.md",
     "active": false,
-    "bytes": 115799,
-    "lastWriteUtc": "2026-05-27T13:28:15.908445+00:00",
+    "bytes": 135130,
+    "lastWriteUtc": "2026-05-27T16:56:51.506832+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12804,
+    "wordCount": 15018,
     "topic": "# LOG_1306 - MEMORY_SOVEREIGN_CONSTRUCTION_EXORCIST",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -9485,7 +9485,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "8c5426a85c319063deb8728427e574e6abe883bdcaff7955610cebdf1241268f"
+    "sha256": "56cfd24ee4e75fb2ad178f79e1ce4c230e5c6274cd0a5a2a119d3ca14dbcec62"
   },
   {
     "path": "Docs/AgentLogs/LOG_1307.md",
@@ -9720,11 +9720,11 @@
   {
     "path": "Docs/AgentLogs/LOG_1314.md",
     "active": false,
-    "bytes": 110585,
-    "lastWriteUtc": "2026-05-27T12:00:58.772403+00:00",
+    "bytes": 127990,
+    "lastWriteUtc": "2026-05-27T16:59:48.251278+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 11995,
+    "wordCount": 13822,
     "topic": "# LOG_1314 - AUDIO_MASTER_BUS_ALIGNMENT_REPAIRER",
     "references": [
       "Docs/Tasks/Status_1314.md",
@@ -9764,16 +9764,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "54805e39c3cf2b74daced21ed1358feebd1b0a4b258d18c3d027343c75e5a3a1"
+    "sha256": "02f9ef5c9379fb8fdb84684ee5a4117132afce016c0da5e44e9de77027489801"
   },
   {
     "path": "Docs/AgentLogs/LOG_1315.md",
     "active": false,
-    "bytes": 72905,
-    "lastWriteUtc": "2026-05-27T13:26:55.958055+00:00",
+    "bytes": 81717,
+    "lastWriteUtc": "2026-05-27T16:53:13.619339+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 8393,
+    "wordCount": 9480,
     "topic": "# LOG 1315 - MEMORY_SOVEREIGN_VOXEL_ENGINE_EXORCIST",
     "references": [
       "Docs/Tasks/_1315_extracted_prompt_pass13.tmp.md",
@@ -9793,7 +9793,8 @@
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/_1315_extracted_prompt_pass34.tmp.md",
-      "current_batch.md"
+      "current_batch.md",
+      "Docs/Tasks/CURRENT_BATCH.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -9801,16 +9802,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "ab6b163a2670bd3ec1aecde026c6ae47099b1ce1fc4c148c1b91e491772fb8cf"
+    "sha256": "fcac6f9010da1d40e549e3216ab3cc9aa2590622f867e2083e7f987ad52065c3"
   },
   {
     "path": "Docs/AgentLogs/LOG_1316.md",
     "active": false,
-    "bytes": 96724,
-    "lastWriteUtc": "2026-05-27T12:20:30.479248+00:00",
+    "bytes": 107797,
+    "lastWriteUtc": "2026-05-27T17:00:52.137849+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 11810,
+    "wordCount": 12976,
     "topic": "# LOG_1316 - MEMORY_SOVEREIGN_VEGETATION_EXORCIST",
     "references": [
       "Docs/ARCHITECTURE/VOXEL_DYNAMIC_NAVGRID_VAULT_ROUTE_1316.md",
@@ -9822,7 +9823,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "8728df530c0fa9d9d3128b2abac3912decaaeca58609ba459c9437fc2784b03b"
+    "sha256": "ad4f2928db12f7659f7c78f2770c6b45287cef8bacf6543688102ac0f34f63b8"
   },
   {
     "path": "Docs/AgentLogs/LOG_1317.md",
@@ -9848,11 +9849,11 @@
   {
     "path": "Docs/AgentLogs/LOG_1318.md",
     "active": false,
-    "bytes": 81192,
-    "lastWriteUtc": "2026-05-27T13:19:11.629667+00:00",
+    "bytes": 101277,
+    "lastWriteUtc": "2026-05-27T17:05:32.919283+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 9517,
+    "wordCount": 11486,
     "topic": "# LOG_1318",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -9866,7 +9867,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "90896bbe6ec961f67c17e92afcd9d40d6aaeb9f3e763f28df5b78a95d62c9606"
+    "sha256": "7ceedf99ad18d1f49f4ca41feee35677621d01d04273bcd6e1abe7bd80b41660"
   },
   {
     "path": "Docs/AgentLogs/LOG_1319.md",
@@ -9922,20 +9923,23 @@
   {
     "path": "Docs/AgentLogs/LOG_1321.md",
     "active": false,
-    "bytes": 23309,
-    "lastWriteUtc": "2026-05-26T09:10:35.090550+00:00",
+    "bytes": 33160,
+    "lastWriteUtc": "2026-05-27T16:48:27.315093+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 2780,
+    "wordCount": 3945,
     "topic": "# LOG 1321 - MEMORY_SOVEREIGN_CARTOGRAPHY_EXORCIST",
-    "references": [],
+    "references": [
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md"
+    ],
     "staleFlags": {
       "signalBusRegistry256": 0,
       "dataMonolithAbsent": 0,
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "d07fc45daf2e523bc48945d76dd82c6abcac86d6bf6ed7163fe6360a9e5316e6"
+    "sha256": "ab07240bf667a3725515744d4ccbb30b481ee4a92b61737a6222abdfcc237bc0"
   },
   {
     "path": "Docs/AgentLogs/LOG_1322.md",
@@ -10012,11 +10016,11 @@
   {
     "path": "Docs/AgentLogs/LOG_1325.md",
     "active": false,
-    "bytes": 88828,
-    "lastWriteUtc": "2026-05-27T12:52:39.292603+00:00",
+    "bytes": 98454,
+    "lastWriteUtc": "2026-05-27T16:56:46.693414+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 9385,
+    "wordCount": 10400,
     "topic": "# LOG 1325 - Persistent World Registry Memory Sovereignty",
     "references": [
       "Docs/Reports/PERSISTENT_WORLD_REGISTRY_MIGRATION_PLAN_1325.md",
@@ -10039,7 +10043,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "9e8c6161ed1360cebe7bdd8547fb9ce471ab9617ce842b1fd3238f29c84e57ef"
+    "sha256": "0034d512a4b813bf3ed3c02753784803a8dd2d46ed86f0d7d8de59649f71f889"
   },
   {
     "path": "Docs/AgentLogs/LOG_1326.md",
@@ -10088,11 +10092,11 @@
   {
     "path": "Docs/AgentLogs/LOG_1328.md",
     "active": false,
-    "bytes": 69764,
-    "lastWriteUtc": "2026-05-27T13:10:26.658607+00:00",
+    "bytes": 74233,
+    "lastWriteUtc": "2026-05-27T14:04:01.682990+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 8092,
+    "wordCount": 8600,
     "topic": "# Agent 1328 Log",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10113,16 +10117,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "98c0857b8e90e7e3e89e5a5937542d4097c9ab012b9f2fca80bdfbe02f75eabd"
+    "sha256": "23a685bc0afd970ecea8724045f7863aa56fd3d08e429bb0190b6edddc60c98c"
   },
   {
     "path": "Docs/AgentLogs/LOG_1329.md",
     "active": false,
-    "bytes": 20875,
-    "lastWriteUtc": "2026-05-27T10:04:13.881057+00:00",
+    "bytes": 33632,
+    "lastWriteUtc": "2026-05-27T16:48:08.752393+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 2351,
+    "wordCount": 3792,
     "topic": "# LOG 1329 - MEMORY_SOVEREIGN_FABRICATOR_EXORCIST",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10135,13 +10139,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "ea5926c2bf5fb3e13b351da30a860e16aa9d71a67d724899f9102c6f127ec0a1"
+    "sha256": "e611f0328e3db856731f9c8ea6acda1f356492851a915c423694ba89b6899d12"
   },
   {
     "path": "Docs/AgentLogs/LOG_1330.md",
     "active": false,
-    "bytes": 45157,
-    "lastWriteUtc": "2026-05-27T05:22:04.996105+00:00",
+    "bytes": 45156,
+    "lastWriteUtc": "2026-05-27T17:04:21.302795+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 5016,
@@ -10161,7 +10165,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "991592333c9b0af4f573f93de4051414efd650569048b830ba1d5a8a1691c9a7"
+    "sha256": "db8fd4ba1e9bcfdeabb048c9f9d6791ebb2e4a9f1c5b43adad316003255972cd"
   },
   {
     "path": "Docs/AgentLogs/LOG_1331.md",
@@ -10191,11 +10195,11 @@
   {
     "path": "Docs/AgentLogs/LOG_1332.md",
     "active": false,
-    "bytes": 71806,
-    "lastWriteUtc": "2026-05-27T10:21:24.341247+00:00",
+    "bytes": 84529,
+    "lastWriteUtc": "2026-05-27T17:06:04.241898+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 8368,
+    "wordCount": 9813,
     "topic": "# LOG_1332",
     "references": [
       "Status_1332.md",
@@ -10217,16 +10221,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "d334361e5d978d625146322e3011f6d6af8fd32bccdbe7713d9f4e5d5b9c1edf"
+    "sha256": "bdbdccdc6d721f6f2e55f2218a80b3ba2b2480c25b8af6b33ecc9d4a4d40f756"
   },
   {
     "path": "Docs/AgentLogs/LOG_1333.md",
     "active": false,
-    "bytes": 105619,
-    "lastWriteUtc": "2026-05-27T13:05:37.521610+00:00",
+    "bytes": 121325,
+    "lastWriteUtc": "2026-05-27T17:08:07.465117+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 11666,
+    "wordCount": 13433,
     "topic": "# LOG 1333 - COMPUTE_SHADER_DISPATCH_SIZER_AND_AUDITOR",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10242,7 +10246,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "1241490ce510f3a03ab0fc5f802cd9fb2b7199dc25d3e5aa033d17f6e294d972"
+    "sha256": "549efbaf482e8a56ca834b7b1242f2d202aa179b5427c7d271980a9bdc460046"
   },
   {
     "path": "Docs/AgentLogs/LOG_1334.md",
@@ -10291,11 +10295,11 @@
   {
     "path": "Docs/AgentLogs/LOG_1335.md",
     "active": false,
-    "bytes": 96096,
-    "lastWriteUtc": "2026-05-27T12:33:21.176992+00:00",
+    "bytes": 105944,
+    "lastWriteUtc": "2026-05-27T16:57:24.737401+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 11559,
+    "wordCount": 12759,
     "topic": "# Agent 1335 Log - VR Somatic Comfort",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10314,7 +10318,8 @@
       "Docs/Tasks/CURRENT_BATCH.md",
       "Status_1335.md",
       "Rationale_1335.md",
-      "AGENTS.md"
+      "AGENTS.md",
+      "Docs/Tasks/CURRENT_BATCH.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -10322,7 +10327,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "af991770a6f353ac5d35f3a03df7bfafe774f4493a6dfe8aa6967196f39ea724"
+    "sha256": "dcce948ec6ec4d4f907f1c47160bdce55a38f3a6fdf27a094055e707f11fa7a1"
   },
   {
     "path": "Docs/AgentLogs/LOG_1336.md",
@@ -10352,11 +10357,11 @@
   {
     "path": "Docs/AgentLogs/LOG_1337.md",
     "active": false,
-    "bytes": 81906,
-    "lastWriteUtc": "2026-05-27T10:10:43.727780+00:00",
+    "bytes": 95973,
+    "lastWriteUtc": "2026-05-27T17:04:11.734421+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 9386,
+    "wordCount": 10976,
     "topic": "# LOG_1337",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10371,6 +10376,9 @@
       "C:\\hades\\Hecton8\\current_batch.md",
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md"
     ],
     "staleFlags": {
@@ -10379,34 +10387,37 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "35f2607852e118dfc4a266c73d6cf1503d49d595440ca873d65a5d58e81531c3"
+    "sha256": "7bdc0462445cd1a15f0dc2a31bfac725000e106751b765041198126879ff326b"
   },
   {
     "path": "Docs/AgentLogs/LOG_13AI.md",
     "active": false,
-    "bytes": 19820,
-    "lastWriteUtc": "2026-05-27T13:04:24.756785+00:00",
+    "bytes": 33649,
+    "lastWriteUtc": "2026-05-27T16:52:15.402107+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 2329,
+    "wordCount": 3896,
     "topic": "# LOG_13AI",
-    "references": [],
+    "references": [
+      "Docs/ARCHITECTURE/SHINOBU_303_LEVIATHAN_STEERING_ROUTE.md",
+      "Docs/ARCHITECTURE/SHINOBU_311_ACOUSTIC_SENSORY_ROUTE.md"
+    ],
     "staleFlags": {
       "signalBusRegistry256": 0,
       "dataMonolithAbsent": 0,
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e3895f514857a30f0f2142bc383fc042b9ff9dce9ffc746414989b8b058b5f32"
+    "sha256": "89d122765353a4a144f68cf6395899cbdc4326145b291a2bd7d4e0958dc210af"
   },
   {
     "path": "Docs/AgentLogs/LOG_13ATMA.md",
     "active": false,
-    "bytes": 31129,
-    "lastWriteUtc": "2026-05-27T13:22:16.412131+00:00",
+    "bytes": 49141,
+    "lastWriteUtc": "2026-05-27T15:00:10.254026+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 3385,
+    "wordCount": 5262,
     "topic": "# LOG_13ATMA",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10419,22 +10430,23 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "8cca37013277c2214d7bd48ddde003c744c98ed209f40316d045056c77b071ae"
+    "sha256": "d35a1110e35130c729ee1726363877d355811c7acac84e3631b4db4e52194d1a"
   },
   {
     "path": "Docs/AgentLogs/LOG_13GEO.md",
     "active": false,
-    "bytes": 12978,
-    "lastWriteUtc": "2026-05-27T13:07:07.089089+00:00",
+    "bytes": 37683,
+    "lastWriteUtc": "2026-05-27T16:33:26.746684+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 1517,
+    "wordCount": 4418,
     "topic": "# LOG_13GEO",
     "references": [
       "Docs/Tasks/Status_13GEO.md",
       "Docs/AgentLogs/Rationale_13GEO.md",
       "Docs/AgentLogs/LOG_13GEO.md",
-      "git diff --check -- Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs Docs/Tasks/Status_13GEO.md Docs/AgentLogs/Rationale_13GEO.md Docs/AgentLogs/LOG_13GEO.md"
+      "git diff --check -- Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs Docs/Tasks/Status_13GEO.md Docs/AgentLogs/Rationale_13GEO.md Docs/AgentLogs/LOG_13GEO.md",
+      "git diff --check -- Assets/_Project/Scripts/HectonVoxelVolume.cs Docs/Tasks/Status_13GEO.md Docs/AgentLogs/Rationale_13GEO.md Docs/AgentLogs/LOG_13GEO.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -10442,16 +10454,36 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e9a7a1b02dfeb4729aa3eee7707e67c72e7018d38dd0ec801ee72ae2626e208a"
+    "sha256": "68252b301458898182d502ef8bc9f9d1ce024222f0ae0ee622ed95f6d20bf641"
+  },
+  {
+    "path": "Docs/AgentLogs/LOG_13GPU.md",
+    "active": false,
+    "bytes": 18899,
+    "lastWriteUtc": "2026-05-27T17:10:36.886379+00:00",
+    "encodingReadAs": "utf-8-sig",
+    "utf8Sig": false,
+    "wordCount": 2427,
+    "topic": "# LOG_13GPU",
+    "references": [
+      "CURRENT_BATCH.md"
+    ],
+    "staleFlags": {
+      "signalBusRegistry256": 0,
+      "dataMonolithAbsent": 0,
+      "h8dmHeader16": 0,
+      "saveVersion000AWriter": 0
+    },
+    "sha256": "b0ee63753017ca4925459c477f871c41249a4a399fb3591c46e75bee0a2d1a26"
   },
   {
     "path": "Docs/AgentLogs/LOG_13j.md",
     "active": false,
-    "bytes": 37156,
-    "lastWriteUtc": "2026-05-27T13:13:13.163630+00:00",
+    "bytes": 47659,
+    "lastWriteUtc": "2026-05-27T16:55:49.712005+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 4300,
+    "wordCount": 5507,
     "topic": "# LOG_13j",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md"
@@ -10462,16 +10494,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "bf27b569a153101cf5a0be3e6e9f00af9fd9e586c4411f49e0783f8d325874a1"
+    "sha256": "ded718e32a7be52a0cb60033b5b325d3f16fab21133b43dc27843e1300eb7169"
   },
   {
     "path": "Docs/AgentLogs/LOG_13KRA.md",
     "active": false,
-    "bytes": 46806,
-    "lastWriteUtc": "2026-05-27T13:19:33.212862+00:00",
+    "bytes": 56691,
+    "lastWriteUtc": "2026-05-27T17:01:36.602280+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 5407,
+    "wordCount": 6608,
     "topic": "# 13KRA Agent Log",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10484,16 +10516,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "f4c86268caa60d3ba232c75260973069c9e3dfd1a4474dafc12d97543ac3609f"
+    "sha256": "4a631c5c2d77a3619f59971dc47ab1a63a5126794dfd24e10e26fa9cf93cb4bf"
   },
   {
     "path": "Docs/AgentLogs/LOG_13pro.md",
     "active": false,
-    "bytes": 52099,
-    "lastWriteUtc": "2026-05-27T13:25:02.347899+00:00",
+    "bytes": 55352,
+    "lastWriteUtc": "2026-05-27T13:50:55.852051+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 6112,
+    "wordCount": 6445,
     "topic": "# LOG_13pro",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10514,16 +10546,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "327abd774838fd65f2a2029d7f807f2701dca5cac800a2c413f590fe28e40d6d"
+    "sha256": "a94a8d23378c3ef55878c6a084afd1f01ecec8b7fe05dc0f39fdf9a049b74c20"
   },
   {
     "path": "Docs/AgentLogs/LOG_13SIK.md",
     "active": false,
-    "bytes": 44946,
-    "lastWriteUtc": "2026-05-27T13:23:06.319945+00:00",
+    "bytes": 55571,
+    "lastWriteUtc": "2026-05-27T16:52:31.883640+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 5320,
+    "wordCount": 6499,
     "topic": "# LOG_13SIK",
     "references": [],
     "staleFlags": {
@@ -10532,16 +10564,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "da29a206ee299ad15414231cae520527ac0cc21b95a37bf76c8b94fa68bab133"
+    "sha256": "ec5b13bd65d52d11d91e6c065271dbcb1f7664bfb5a6510112e194ea61129b4f"
   },
   {
     "path": "Docs/AgentLogs/LOG_13US.md",
     "active": false,
-    "bytes": 42064,
-    "lastWriteUtc": "2026-05-27T13:22:01.422238+00:00",
+    "bytes": 48597,
+    "lastWriteUtc": "2026-05-27T16:47:34.887848+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 4585,
+    "wordCount": 5394,
     "topic": "# LOG_13US",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10558,18 +10590,24 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "15fc40410c76656a49cecf5b8e873c5ab0ae284ddd10b7146c9773d08164fcd3"
+    "sha256": "4dd10c6fcdf4d56a89e58aa0c1f546cfe9b1efba330839b1323ed45bff8c57a0"
   },
   {
     "path": "Docs/AgentLogs/LOG_13VOD.md",
     "active": false,
-    "bytes": 80611,
-    "lastWriteUtc": "2026-05-27T13:27:38.954278+00:00",
+    "bytes": 99237,
+    "lastWriteUtc": "2026-05-27T16:41:23.986287+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 9641,
+    "wordCount": 11802,
     "topic": "# LOG_13VOD",
     "references": [
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
       "CURRENT_BATCH.md",
       "CURRENT_BATCH.md",
       "CURRENT_BATCH.md",
@@ -10592,7 +10630,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c2cd280d7bb9f0e1076c805208765c50eb779806463f60e1cafc69cfc84c1ee7"
+    "sha256": "0681b0c4f84d422558b964cc341c1de3c730ba709ef51eab1345ed1aa2b96584"
   },
   {
     "path": "Docs/AgentLogs/LOG_ADHOC_TASTE_AUDIT.md",
@@ -10623,11 +10661,11 @@
   {
     "path": "Docs/AgentLogs/LOG_AUDIT_NATIVE_STATE.md",
     "active": false,
-    "bytes": 23650,
-    "lastWriteUtc": "2026-05-27T13:29:01.257750+00:00",
+    "bytes": 38160,
+    "lastWriteUtc": "2026-05-27T17:04:34.040253+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 2501,
+    "wordCount": 4159,
     "topic": "# AUDIT_NATIVE_STATE Log",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10639,7 +10677,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "579259bed286b26adfc480bdb1e3bd0c74932c954cba76517814182ae0e202e6"
+    "sha256": "d09ada3d9d08c65f654eb39589daf6cb51df9a91e57a0c3fd4d296d95bed99d7"
   },
   {
     "path": "Docs/AgentLogs/LOG_CSharpComputeDispatchAuditor.md",
@@ -10842,11 +10880,11 @@
   {
     "path": "Docs/AgentLogs/LOG_MODDING_SDK_AUDIT.md",
     "active": false,
-    "bytes": 70519,
-    "lastWriteUtc": "2026-05-27T12:34:25.944010+00:00",
+    "bytes": 85652,
+    "lastWriteUtc": "2026-05-27T16:46:23.769818+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 7693,
+    "wordCount": 9392,
     "topic": "# LOG_MODDING_SDK_AUDIT",
     "references": [
       "Signal_Audit_Matrix.md",
@@ -10936,16 +10974,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "0fb74bda5c82471e9bf8e1921292c3cdf8bd733e2cf80f0bf1494ad6508de9f5"
+    "sha256": "c4161530dc353d476d45c29451ff0de8a9baf6471691c21995f89118cc85e0cf"
   },
   {
     "path": "Docs/AgentLogs/LOG_TERRAIN_AUDIT.md",
     "active": false,
-    "bytes": 143897,
-    "lastWriteUtc": "2026-05-27T13:04:26.482455+00:00",
+    "bytes": 166035,
+    "lastWriteUtc": "2026-05-27T17:10:50.059351+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 15167,
+    "wordCount": 17575,
     "topic": "# TERRAIN_AUDIT Log",
     "references": [
       "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
@@ -10998,7 +11036,10 @@
       "git diff --check -- Assets/_Project/Scripts/World/EcosystemDirector.cs Assets/_Project/Tests/Editor/TerrainChunkSignalContractEditTests.cs Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md Docs/Tasks/Status_TERRAIN_AUDIT.md Docs/AgentLogs/Rationale_TERRAIN_AUDIT.md Docs/AgentLogs/LOG_TERRAIN_AUDIT.md",
       "git diff --check -- Assets/_Project/Scripts/World/HectonAnomalyResourceBinding.cs Assets/_Project/Tests/Editor/TerrainChunkSignalContractEditTests.cs Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md Docs/Tasks/Status_TERRAIN_AUDIT.md Docs/AgentLogs/Rationale_TERRAIN_AUDIT.md Docs/AgentLogs/LOG_TERRAIN_AUDIT.md",
       "git diff --check -- Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs Assets/_Project/Scripts/WorldRuntimeReferenceUtility.cs Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs Assets/_Project/Tests/Editor/TerrainChunkSignalContractEditTests.cs Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md Docs/Tasks/Status_TERRAIN_AUDIT.md Docs/AgentLogs/Rationale_TERRAIN_AUDIT.md Docs/AgentLogs/LOG_TERRAIN_AUDIT.md",
-      "git diff --check -- Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs Assets/_Project/Scripts/WorldProceduralScatterDirector.cs Assets/_Project/Tests/Editor/TerrainChunkSignalContractEditTests.cs Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md Docs/Tasks/Status_TERRAIN_AUDIT.md Docs/AgentLogs/Rationale_TERRAIN_AUDIT.md"
+      "git diff --check -- Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs Assets/_Project/Scripts/WorldProceduralScatterDirector.cs Assets/_Project/Tests/Editor/TerrainChunkSignalContractEditTests.cs Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md Docs/Tasks/Status_TERRAIN_AUDIT.md Docs/AgentLogs/Rationale_TERRAIN_AUDIT.md",
+      "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -11006,16 +11047,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "d9ae94a307957f7b255c970ba5a4f3fae2a01ffb4a850a983d7b4d8ed1b0fe7c"
+    "sha256": "cc9ffdb618bfe2f22773c4e9548eba6768b40354954dc559c7da86b5c44392da"
   },
   {
     "path": "Docs/AgentLogs/LOG_TOKEN_USAGE_AUDIT.md",
     "active": false,
-    "bytes": 16799,
-    "lastWriteUtc": "2026-05-27T10:04:25.846880+00:00",
+    "bytes": 19734,
+    "lastWriteUtc": "2026-05-27T16:59:30.374366+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 2029,
+    "wordCount": 2395,
     "topic": "## 2026-05-26 TOKEN_USAGE_AUDIT model-price/statistics refresh",
     "references": [
       "TOKEN_USAGE_LEDGER.md"
@@ -11026,16 +11067,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "916d12b8270c165ca0997a37d5c898de9e24e5ae8eefeab84b54070adf7d88b5"
+    "sha256": "07ec13a60176e2d7f7193024b6a1be6c32b35e77ad4252c0c028fae6e722e865"
   },
   {
     "path": "Docs/AgentLogs/LOG_UNKNOWN.md",
     "active": false,
-    "bytes": 83978,
-    "lastWriteUtc": "2026-05-27T13:28:51.001338+00:00",
+    "bytes": 86876,
+    "lastWriteUtc": "2026-05-27T17:11:37.133560+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 8792,
+    "wordCount": 9080,
     "topic": "## 2026-05-25 NativeArray / Native Ownership Audit For 13XX Agents",
     "references": [
       "Status_UNKNOWN.md",
@@ -11088,7 +11129,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a49ebad4d9c5cf4bd6b6ae43822612084f1a0978eefb4a1f584708ebfde97e28"
+    "sha256": "02c67ad31c34b91a8fef8916faff2f9f470192e3841b7f8c00d946d8d1883269"
   },
   {
     "path": "Docs/AgentLogs/LOG_VocalRuntimeContractsMemoryAuditor.md",
@@ -11507,11 +11548,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_1301.md",
     "active": false,
-    "bytes": 128591,
-    "lastWriteUtc": "2026-05-27T13:26:12.785779+00:00",
+    "bytes": 130647,
+    "lastWriteUtc": "2026-05-27T14:31:06.324426+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 16345,
+    "wordCount": 16604,
     "topic": "# Rationale_1301",
     "references": [
       "C:\\hades\\current_batch.md",
@@ -11525,7 +11566,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "0cba3ea21c07028f01cb9ee447b2f5e75e6e77902a459ce15401e00f61506010"
+    "sha256": "f48cadb3177f6e5c6f44bb1e7f925057657be6255ea4a8720e47389dd7eb6291"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1302.md",
@@ -11621,11 +11662,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_1306.md",
     "active": false,
-    "bytes": 109506,
-    "lastWriteUtc": "2026-05-27T13:27:13.857209+00:00",
+    "bytes": 127860,
+    "lastWriteUtc": "2026-05-27T16:55:31.724311+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 14196,
+    "wordCount": 16480,
     "topic": "# Rationale_1306 - MEMORY_SOVEREIGN_CONSTRUCTION_EXORCIST",
     "references": [
       "AGENTS.md",
@@ -11637,7 +11678,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "5524f30db2184013efea714734e3a436eafb0f97b7122f9bf0b292ce9620730b"
+    "sha256": "d947a86a87206db39b0e4c458fa9e0f5e9d4422ea2a42056c1eb3feed0357e59"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1307.md",
@@ -11788,11 +11829,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_1314.md",
     "active": false,
-    "bytes": 107805,
-    "lastWriteUtc": "2026-05-27T12:00:58.768384+00:00",
+    "bytes": 132658,
+    "lastWriteUtc": "2026-05-27T16:59:24.224499+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 13679,
+    "wordCount": 16806,
     "topic": "# Rationale_1314 - AUDIO_MASTER_BUS_ALIGNMENT_REPAIRER",
     "references": [
       "Status_1308.md"
@@ -11803,16 +11844,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "cf45d731d8e54b62c32850c410577b827b4ede96176965b9080a66c7a38d3314"
+    "sha256": "5f9a4b56266e732e69c973aee1c5429d7cd6e2ed583a21b84fdfc06f7bbd18fe"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1315.md",
     "active": false,
-    "bytes": 82082,
-    "lastWriteUtc": "2026-05-27T13:26:08.032833+00:00",
+    "bytes": 89708,
+    "lastWriteUtc": "2026-05-27T16:53:13.463500+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 10719,
+    "wordCount": 11738,
     "topic": "# Rationale 1315 - MEMORY_SOVEREIGN_VOXEL_ENGINE_EXORCIST",
     "references": [],
     "staleFlags": {
@@ -11821,16 +11862,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "ba5c0fc63d42c602a6a4ab4624a5f2bab1b90abe3f02e5e981b5fd2cb79f274b"
+    "sha256": "e9f9dbc0a281c0083b032a99bd45beccb2561e847fec587142a5d5b367d0ab8e"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1316.md",
     "active": false,
-    "bytes": 137933,
-    "lastWriteUtc": "2026-05-27T12:06:17.264374+00:00",
+    "bytes": 148697,
+    "lastWriteUtc": "2026-05-27T16:55:06.008629+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 18108,
+    "wordCount": 19486,
     "topic": "# Rationale_1316 - MEMORY_SOVEREIGN_VEGETATION_EXORCIST",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -11842,7 +11883,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "b02987c8cbd00026cce4551dd4535d3b03d97a75d954c095bfd1bd060bc803f1"
+    "sha256": "90b4ae37dc0567f9530f038ede8aac9dc930a3ce2dbb66ddcddf450b583a7231"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1317.md",
@@ -11865,11 +11906,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_1318.md",
     "active": false,
-    "bytes": 132221,
-    "lastWriteUtc": "2026-05-27T13:21:17.524728+00:00",
+    "bytes": 162285,
+    "lastWriteUtc": "2026-05-27T17:05:26.747594+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 17320,
+    "wordCount": 21084,
     "topic": "# Rationale_1318",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md"
@@ -11880,7 +11921,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "92c09b3b96b995b35086f56bd234a2cc2796a25411840817fcf1dbb27acb3564"
+    "sha256": "ce345d794b0bea48b6fe1f8fae1ad1e7dab04c68376992e3cafa622fed8b4627"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1319.md",
@@ -11931,11 +11972,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_1321.md",
     "active": false,
-    "bytes": 28453,
-    "lastWriteUtc": "2026-05-26T09:10:21.164932+00:00",
+    "bytes": 44551,
+    "lastWriteUtc": "2026-05-27T17:04:21.329875+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 3740,
+    "wordCount": 5873,
     "topic": "# Rationale 1321 - MEMORY_SOVEREIGN_CARTOGRAPHY_EXORCIST",
     "references": [],
     "staleFlags": {
@@ -11944,7 +11985,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e167c1f5bc440bdeeaeb6850a81f68d4007479ffd5fe369ecfa00d23c0c81c64"
+    "sha256": "060b11bcdfca014f50f511995d548bbe798a8078843c61f34f8730648789cab4"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1322.md",
@@ -12013,11 +12054,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_1325.md",
     "active": false,
-    "bytes": 96689,
-    "lastWriteUtc": "2026-05-27T12:51:48.508718+00:00",
+    "bytes": 108020,
+    "lastWriteUtc": "2026-05-27T16:56:24.853007+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12704,
+    "wordCount": 14170,
     "topic": "# Rationale 1325 - Persistent World Registry Memory Sovereignty",
     "references": [],
     "staleFlags": {
@@ -12026,7 +12067,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "70da18401ce7e347e813b24b5ff22ffa67207fb5c11316d9212fe6e152697dad"
+    "sha256": "d236443404f80d8519ec3efb4e31fc9d5f7b08dbc9a33f80dac50c7ab636f542"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1326.md",
@@ -12067,11 +12108,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_1328.md",
     "active": false,
-    "bytes": 93455,
-    "lastWriteUtc": "2026-05-27T13:06:46.314567+00:00",
+    "bytes": 98954,
+    "lastWriteUtc": "2026-05-27T14:00:39.384237+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12061,
+    "wordCount": 12815,
     "topic": "# Agent 1328 Rationale",
     "references": [],
     "staleFlags": {
@@ -12080,16 +12121,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e232a615bc438a6db3009f1d02fd8aa35af645ff1827d55c9b8d95ed5dd1a3f2"
+    "sha256": "32aa2a6c73e19a48705a8747ec6b4a4c0d988c309876c3ffb48b3ada6706a38c"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1329.md",
     "active": false,
-    "bytes": 31694,
-    "lastWriteUtc": "2026-05-27T10:03:42.248575+00:00",
+    "bytes": 51159,
+    "lastWriteUtc": "2026-05-27T16:47:43.852387+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 4100,
+    "wordCount": 6582,
     "topic": "# Rationale 1329 - MEMORY_SOVEREIGN_FABRICATOR_EXORCIST",
     "references": [],
     "staleFlags": {
@@ -12098,7 +12139,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "851d00bfa32ac78eaae74b6fb4b469ae2724b744baa7461d2c5ce703292f2538"
+    "sha256": "d09dd146c2a2ee896134d96c8368130dce5ea0d08157cf8ed6e309b4f9f41816"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1330.md",
@@ -12148,11 +12189,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_1332.md",
     "active": false,
-    "bytes": 92487,
-    "lastWriteUtc": "2026-05-27T10:24:31.385494+00:00",
+    "bytes": 107566,
+    "lastWriteUtc": "2026-05-27T17:06:13.634488+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12113,
+    "wordCount": 14069,
     "topic": "# Agent 1332 Rationale",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -12165,16 +12206,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e123235dced23c9226913c13fb89c336f429026a2b524f0b77308927c66819c0"
+    "sha256": "528232d606e3e6aa95de61f6c2b311d2d1b27c2cbc0631510a7219d4ae00cf3e"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1333.md",
     "active": false,
-    "bytes": 99795,
-    "lastWriteUtc": "2026-05-27T13:04:40.692681+00:00",
+    "bytes": 116226,
+    "lastWriteUtc": "2026-05-27T17:07:26.734311+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12513,
+    "wordCount": 14468,
     "topic": "# Rationale 1333 - COMPUTE_SHADER_DISPATCH_SIZER_AND_AUDITOR",
     "references": [],
     "staleFlags": {
@@ -12183,7 +12224,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "92be077fcfe1615466ecaad47eee2d49d107ca7ae871a3bbed077039858f6326"
+    "sha256": "be065efd528a0d4386b8391275b35f512c4b6f167b818fb2d490dcc5af30a757"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1334.md",
@@ -12217,11 +12258,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_1335.md",
     "active": false,
-    "bytes": 114858,
-    "lastWriteUtc": "2026-05-27T12:33:21.173991+00:00",
+    "bytes": 127668,
+    "lastWriteUtc": "2026-05-27T16:57:24.735389+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 14843,
+    "wordCount": 16542,
     "topic": "# Agent 1335 Rationale - VR Somatic Comfort",
     "references": [
       "C:\\hades\\current_batch.md",
@@ -12234,13 +12275,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "f4e1b3744f89de79fc7ead6073303c2a614c049410cd83b3e58e7f1ddd14afb2"
+    "sha256": "2eb5640377e1212b0475d85f52a8300865611a67c9557c96987ab4768dad98fb"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1336.md",
     "active": false,
-    "bytes": 116906,
-    "lastWriteUtc": "2026-05-26T19:33:22.173599+00:00",
+    "bytes": 116905,
+    "lastWriteUtc": "2026-05-27T17:04:21.345797+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 14847,
@@ -12256,16 +12297,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "0121fae2d0f1d18c039049d268bdbe36415018d962a6e3ebf576c1747c926c85"
+    "sha256": "63b61578278223e7481140664e31c01e752b53735e6c789129ff3de1deed58bb"
   },
   {
     "path": "Docs/AgentLogs/Rationale_1337.md",
     "active": false,
-    "bytes": 88334,
-    "lastWriteUtc": "2026-05-27T10:09:59.519520+00:00",
+    "bytes": 103496,
+    "lastWriteUtc": "2026-05-27T17:03:51.174083+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 11639,
+    "wordCount": 13682,
     "topic": "# Rationale_1337",
     "references": [
       "current_batch.md",
@@ -12284,16 +12325,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "167b254324a017e5af5aeec4203567df01f2b15ac6d215014e96e7576250a3bb"
+    "sha256": "f58e35afd9da9cb97eef9d1951226f4d7a463e69ca633602efaa33f15191c4ed"
   },
   {
     "path": "Docs/AgentLogs/Rationale_13AI.md",
     "active": false,
-    "bytes": 30560,
-    "lastWriteUtc": "2026-05-27T13:04:16.898154+00:00",
+    "bytes": 54334,
+    "lastWriteUtc": "2026-05-27T16:51:58.682058+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 3844,
+    "wordCount": 6789,
     "topic": "# Rationale_13AI",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md"
@@ -12304,16 +12345,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "aeed93bd5dacd0f575e5d157740e6274f6336169f8c65e29ac000662bfd32be2"
+    "sha256": "7450f2a0c75c1e98b29b6fbcdcd0a22f9feb02cb50e22d262381aa1cfbd115a5"
   },
   {
     "path": "Docs/AgentLogs/Rationale_13ATMA.md",
     "active": false,
-    "bytes": 27184,
-    "lastWriteUtc": "2026-05-27T13:20:29.757693+00:00",
+    "bytes": 40204,
+    "lastWriteUtc": "2026-05-27T14:59:17.821885+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 3346,
+    "wordCount": 4940,
     "topic": "# Rationale_13ATMA",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -12325,16 +12366,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e3ffbaeed8a5a0923756257ce30ec507efe022fa03a24d89efcbb8e8b668dc8d"
+    "sha256": "397bf4ca37e411274d14d6a21d22fffbb6e37eab3be65f7bb50fab54adfa1eb8"
   },
   {
     "path": "Docs/AgentLogs/Rationale_13GEO.md",
     "active": false,
-    "bytes": 16483,
-    "lastWriteUtc": "2026-05-27T13:05:39.704456+00:00",
+    "bytes": 39352,
+    "lastWriteUtc": "2026-05-27T16:29:35.720253+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 2100,
+    "wordCount": 5010,
     "topic": "# Rationale_13GEO",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md"
@@ -12345,16 +12386,39 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a19055451ac8d87ef146f701ca690fdcb8e5c74a2a75296574bf82fb475354e9"
+    "sha256": "004cb6bc7ed8093531b8c818092e5d5fe98b915c630a61e3e6f3605e6a3afbd4"
+  },
+  {
+    "path": "Docs/AgentLogs/Rationale_13GPU.md",
+    "active": false,
+    "bytes": 32367,
+    "lastWriteUtc": "2026-05-27T17:10:27.138827+00:00",
+    "encodingReadAs": "utf-8-sig",
+    "utf8Sig": false,
+    "wordCount": 4100,
+    "topic": "# Rationale_13GPU",
+    "references": [
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Status_13GPU.md",
+      "Rationale_13GPU.md",
+      "LOG_13GPU.md"
+    ],
+    "staleFlags": {
+      "signalBusRegistry256": 0,
+      "dataMonolithAbsent": 0,
+      "h8dmHeader16": 0,
+      "saveVersion000AWriter": 0
+    },
+    "sha256": "395c1d013cc0811b7fa2999a722e5d5a0b7256e16c59d5fc87cc6410ad7f1997"
   },
   {
     "path": "Docs/AgentLogs/Rationale_13j.md",
     "active": false,
-    "bytes": 38453,
-    "lastWriteUtc": "2026-05-27T13:13:13.161630+00:00",
+    "bytes": 51358,
+    "lastWriteUtc": "2026-05-27T16:55:49.617788+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 4951,
+    "wordCount": 6554,
     "topic": "# Rationale_13j",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -12369,16 +12433,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c04a2e814569dacedc949b3010d799ff5585c4ed083f2559d7d4e2ecf71b4749"
+    "sha256": "43fe384d1d8097f35ef4e82337c5b0dec1e73a0b7408b03eb41cd968103aea30"
   },
   {
     "path": "Docs/AgentLogs/Rationale_13KRA.md",
     "active": false,
-    "bytes": 44201,
-    "lastWriteUtc": "2026-05-27T13:15:18.597926+00:00",
+    "bytes": 52673,
+    "lastWriteUtc": "2026-05-27T16:58:35.888036+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 5469,
+    "wordCount": 6515,
     "topic": "# 13KRA Rationale",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -12391,16 +12455,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "944f356536e8c9f959235ffeffca91b33e7ca859400ce6e0811e8881702f3f0f"
+    "sha256": "8dd0433094bfe1f0e06978f9ca3af79bfd26c18ab1282eff103fbae1fcdb4724"
   },
   {
     "path": "Docs/AgentLogs/Rationale_13pro.md",
     "active": false,
-    "bytes": 64705,
-    "lastWriteUtc": "2026-05-27T13:25:02.347899+00:00",
+    "bytes": 69808,
+    "lastWriteUtc": "2026-05-27T13:50:33.841828+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 8331,
+    "wordCount": 8959,
     "topic": "# Rationale_13pro",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -12420,16 +12484,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a6c368936a51f74c91e3f8b2dde6689e8de3ae9d1e6db27f06bd4c5720514110"
+    "sha256": "53e276516a52cca5b44261a137ea85aa6a684059e0500181901edbe9cc5fc02b"
   },
   {
     "path": "Docs/AgentLogs/Rationale_13SIK.md",
     "active": false,
-    "bytes": 75540,
-    "lastWriteUtc": "2026-05-27T13:21:42.073569+00:00",
+    "bytes": 89816,
+    "lastWriteUtc": "2026-05-27T16:54:25.274394+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 9466,
+    "wordCount": 11285,
     "topic": "# Rationale_13SIK",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md"
@@ -12440,16 +12504,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a106ae23d2551807561330e637f221a10451324fa57cb62ef0714464025955b8"
+    "sha256": "45570876d43411d165831f0bddddb622b46d8045e8f2132c7fbab4d6677118bc"
   },
   {
     "path": "Docs/AgentLogs/Rationale_13US.md",
     "active": false,
-    "bytes": 44763,
-    "lastWriteUtc": "2026-05-27T13:21:13.226253+00:00",
+    "bytes": 52465,
+    "lastWriteUtc": "2026-05-27T16:47:17.433075+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 5568,
+    "wordCount": 6572,
     "topic": "# Rationale_13US",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -12461,16 +12525,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "8011c6a6dbc37f5d32106fb33ea0aa8f2aa72ff6d87de502845f8d82785ccb95"
+    "sha256": "f6be49f73d76f4be134c0dd6b4ec7b4e4a707dbe4361c13f6b91982cde3628b0"
   },
   {
     "path": "Docs/AgentLogs/Rationale_13VOD.md",
     "active": false,
-    "bytes": 88996,
-    "lastWriteUtc": "2026-05-27T13:27:14.086676+00:00",
+    "bytes": 112028,
+    "lastWriteUtc": "2026-05-27T16:39:38.254200+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 11065,
+    "wordCount": 13909,
     "topic": "# Rationale_13VOD",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md"
@@ -12481,7 +12545,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e9231a16a0f8064861bc9ca8dd802c348a89cd4c55908322c2692af22b541ace"
+    "sha256": "f30eab098872cdc38bacdd5e8d489cbd1e66990260afe61c0f8bd4cf3ee5812c"
   },
   {
     "path": "Docs/AgentLogs/Rationale_ADHOC_TASTE_AUDIT.md",
@@ -12518,11 +12582,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_AUDIT_NATIVE_STATE.md",
     "active": false,
-    "bytes": 15157,
-    "lastWriteUtc": "2026-05-27T13:28:02.652033+00:00",
+    "bytes": 30620,
+    "lastWriteUtc": "2026-05-27T17:04:33.879757+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 1837,
+    "wordCount": 3680,
     "topic": "# AUDIT_NATIVE_STATE Rationale",
     "references": [],
     "staleFlags": {
@@ -12531,7 +12595,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "26f905de2f9a71e85a1a6d520a9805c319280d56f5932ed70bbca244c142753d"
+    "sha256": "09eede465ed90e736f1528e9d57ba553309568fd563c377810151816d5874ec0"
   },
   {
     "path": "Docs/AgentLogs/Rationale_CSharpComputeDispatchAuditor.md",
@@ -12620,29 +12684,32 @@
   {
     "path": "Docs/AgentLogs/Rationale_MODDING_SDK_AUDIT.md",
     "active": false,
-    "bytes": 64441,
-    "lastWriteUtc": "2026-05-27T12:31:42.910172+00:00",
+    "bytes": 76320,
+    "lastWriteUtc": "2026-05-27T16:45:59.954278+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 8306,
+    "wordCount": 9845,
     "topic": "# Rationale_MODDING_SDK_AUDIT",
-    "references": [],
+    "references": [
+      "Runtime_Verification_Playbook.md",
+      "Mod_API_Specification.md"
+    ],
     "staleFlags": {
       "signalBusRegistry256": 0,
       "dataMonolithAbsent": 0,
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "6472d590a7dc20688498c495b083c14265aeaa4c542debcd3299fe2050a62c22"
+    "sha256": "bd047b20d2f728619d2a97e32162397c4985e0e959b141de18dfb15b55a54610"
   },
   {
     "path": "Docs/AgentLogs/Rationale_TERRAIN_AUDIT.md",
     "active": false,
-    "bytes": 82023,
-    "lastWriteUtc": "2026-05-27T13:00:24.753263+00:00",
+    "bytes": 99549,
+    "lastWriteUtc": "2026-05-27T17:10:42.068079+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 10053,
+    "wordCount": 12211,
     "topic": "# TERRAIN_AUDIT Rationale",
     "references": [
       "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md"
@@ -12653,16 +12720,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "365ec4f6649f7768926663b5aafe38f1e0c8b0e238679f14d6e26cf5d3a24dc5"
+    "sha256": "883ce17bcc8d5790770791b3278c136db440a8ffd9bd0bc8b182d9e1b3ec1976"
   },
   {
     "path": "Docs/AgentLogs/Rationale_TOKEN_USAGE_AUDIT.md",
     "active": false,
-    "bytes": 10381,
-    "lastWriteUtc": "2026-05-27T10:00:06.026753+00:00",
+    "bytes": 11293,
+    "lastWriteUtc": "2026-05-27T16:57:33.028186+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 1334,
+    "wordCount": 1452,
     "topic": "## Decision 9 - 2026-05-26 model-price forensics",
     "references": [
       "Docs/TOKEN_USAGE_LEDGER.md"
@@ -12673,16 +12740,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "40c91f865dcee66de086c64077437d2e2791644be0db4eeddb6b0c602120ddac"
+    "sha256": "84e42b738dd793e2a3ce18236f1cbcf12dfa0aaaa1fdd315bd6a753c18539154"
   },
   {
     "path": "Docs/AgentLogs/Rationale_UNKNOWN.md",
     "active": false,
-    "bytes": 126100,
-    "lastWriteUtc": "2026-05-27T13:24:38.268542+00:00",
+    "bytes": 132228,
+    "lastWriteUtc": "2026-05-27T17:11:37.131214+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 15807,
+    "wordCount": 16612,
     "topic": "# Rationale UNKNOWN - 13XX NativeArray / Native Ownership Audit",
     "references": [
       "LOG_UNKNOWN.md",
@@ -12702,7 +12769,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e929b091c53d0ec23bf8fac0ad39173797511daa122a85511d96dacff4f1d86e"
+    "sha256": "2cadf84e995e8f687e26ac5b26b8d05fb5490885dea0fcb48b248ef7623344eb"
   },
   {
     "path": "Docs/AgentLogs/Rationale_VocalRuntimeContractsMemoryAuditor.md",
@@ -14032,11 +14099,11 @@
   {
     "path": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
     "active": true,
-    "bytes": 16572,
-    "lastWriteUtc": "2026-05-27T13:24:38.274317+00:00",
+    "bytes": 17801,
+    "lastWriteUtc": "2026-05-27T17:11:37.109593+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1417,
+    "wordCount": 1508,
     "topic": "# HECTON-8 Documentation Actuality Ledger",
     "references": [
       "../_Archive/Architecture_X_012_APEX_2026-05-23/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.full.md",
@@ -14077,7 +14144,10 @@
       "../Reports/UNITY_SIGNAL_AUDIT_CLASSIFIER_AND_SEAM_MPB_PASS_UNKNOWN_20260527.md",
       "../Reports/UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527.md",
       "../Reports/UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527.md",
-      "../Reports/UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527.md"
+      "../Reports/UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527.md",
+      "../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md",
+      "../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md",
+      "../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -14085,7 +14155,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a98a7fc8b0941b869064fa02deeef55301acb16726ceebe7bcd703650d02b053"
+    "sha256": "2c89f36f60d3dfd1b699736150689c3ff1b832e0174179aba09aee1af5fb18d9"
   },
   {
     "path": "Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md",
@@ -15494,8 +15564,8 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_303_LEVIATHAN_STEERING_ROUTE.md",
     "active": true,
-    "bytes": 3733,
-    "lastWriteUtc": "2026-05-25T01:52:50.548523+00:00",
+    "bytes": 3719,
+    "lastWriteUtc": "2026-05-27T16:32:17.752660+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 394,
@@ -15507,13 +15577,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3e6eef00fb14cf6f9be0c2fcfc91a85b663a4a2d69588753e21e70e4db42ed69"
+    "sha256": "ac3e9a171c3b61019fefecc68074097538699d9f166e1cf271a2d2501ec2b996"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_311_ACOUSTIC_SENSORY_ROUTE.md",
     "active": true,
-    "bytes": 5462,
-    "lastWriteUtc": "2026-05-25T01:51:11.244499+00:00",
+    "bytes": 5455,
+    "lastWriteUtc": "2026-05-27T16:32:27.931450+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 665,
@@ -15525,7 +15595,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "fa8445c38a501fa55ca887a3c0b40ecca87ec6482aefb5bd23910f7d0f8510eb"
+    "sha256": "b7583422b8042be0787a693e4c13a3ac5a0ab9c54646bed5c621b01762af762b"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_317_CRAFTING_FAST_FAIL_ROUTE.md",
@@ -16178,11 +16248,11 @@
   {
     "path": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
     "active": true,
-    "bytes": 13572,
-    "lastWriteUtc": "2026-05-27T13:24:38.280350+00:00",
+    "bytes": 16517,
+    "lastWriteUtc": "2026-05-27T17:08:49.603413+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1513,
+    "wordCount": 1800,
     "topic": "# Terrain Runtime Authority Route",
     "references": [],
     "staleFlags": {
@@ -16191,7 +16261,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "52849129e23baab7ac50e6289ffd15c54d0059a1e8e4e282530c0a49f7766065"
+    "sha256": "79cd10477ca83c3f1b3787f96489a6ad881b4bb4e6ddbb5708b9ea90b0dae718"
   },
   {
     "path": "Docs/ARCHITECTURE/TERRESTRIAL_HEIGHTMAP_REFORMATTER_SHINOBU_240.md",
@@ -110997,11 +111067,11 @@
   {
     "path": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-27.md",
     "active": false,
-    "bytes": 60992,
-    "lastWriteUtc": "2026-05-27T09:57:10.328028+00:00",
+    "bytes": 60983,
+    "lastWriteUtc": "2026-05-27T16:54:56.967339+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 7424,
+    "wordCount": 7425,
     "topic": "# TOKEN USAGE AUDIT 2026-05-27",
     "references": [],
     "staleFlags": {
@@ -111010,16 +111080,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "86bc6f4536ae66f3c98e0b0ec3a6b2bb37555ec83e116632c66b19c2588fc1a2"
+    "sha256": "1b94e8cb6b6125520957a2ed8b711039bfe461d3848476a06008adeae96278ca"
   },
   {
     "path": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_LEDGER.md",
     "active": false,
-    "bytes": 8346,
-    "lastWriteUtc": "2026-05-27T09:57:10.330040+00:00",
+    "bytes": 8349,
+    "lastWriteUtc": "2026-05-27T16:54:56.971362+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 789,
+    "wordCount": 790,
     "topic": "# Codex Token Usage Ledger",
     "references": [
       "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-27.md"
@@ -111030,7 +111100,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "b51f7a9be7f0d6afe9b3742b3ad444338ba20cf0c0dec5ccecd9f57c4453bbd2"
+    "sha256": "cd01f615040fb70d933820c84057bbdd76dbc16ea8d754a83886f251338e75ee"
   },
   {
     "path": "Docs/DEPRECATED/Root_Generated_Snapshots_2026-05-26/ARCHITECT_HANDBOOK.md",
@@ -114083,11 +114153,11 @@
   {
     "path": "Docs/Modding/API_Surface_Audit_Matrix.md",
     "active": true,
-    "bytes": 10546,
-    "lastWriteUtc": "2026-05-27T13:28:11.112166+00:00",
+    "bytes": 10942,
+    "lastWriteUtc": "2026-05-27T16:33:11.246317+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1149,
+    "wordCount": 1198,
     "topic": "# HECTON-8 Mod API Surface Audit Matrix",
     "references": [
       "Mod_API_Sandbox_Quarantine.md",
@@ -114101,7 +114171,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "d25ceee6675bd53a32998c6154af34f4fa2815dcf8dbed03d0d44be0055e70c9"
+    "sha256": "81e4a142a517f6df6f2d72520656c49b8117e43edcd32a89c7921f1aaa0ad561"
   },
   {
     "path": "Docs/Modding/Change_Control_Checklist.md",
@@ -114196,11 +114266,11 @@
   {
     "path": "Docs/Modding/Event_Subscription_Audit_Matrix.md",
     "active": true,
-    "bytes": 7051,
-    "lastWriteUtc": "2026-05-27T12:29:47.154623+00:00",
+    "bytes": 7317,
+    "lastWriteUtc": "2026-05-27T14:34:08.223265+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 766,
+    "wordCount": 798,
     "topic": "# Event Subscription Audit Matrix",
     "references": [
       "SDK_Authoring_Interface_Plan.md"
@@ -114211,7 +114281,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "11aef493b2c60a315822e32248a8ea80d07dac1714a0f77a0af035081cbb1ddc"
+    "sha256": "88155d6caa172a57065dddfe2121b9eb96c403f9da1cf6a3c61bd75d7e33d7d9"
   },
   {
     "path": "Docs/Modding/Future_Command_Kernel_Reservations.md",
@@ -114239,11 +114309,11 @@
   {
     "path": "Docs/Modding/Loader_Save_Audit_Matrix.md",
     "active": true,
-    "bytes": 9878,
-    "lastWriteUtc": "2026-05-27T10:27:52.735874+00:00",
+    "bytes": 10425,
+    "lastWriteUtc": "2026-05-27T16:32:58.573233+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1079,
+    "wordCount": 1144,
     "topic": "# Loader And Save Audit Matrix",
     "references": [
       "SDK_Authoring_Interface_Plan.md",
@@ -114256,7 +114326,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3ab5f80616c4b1d15bbd8704b35d8153b7b33c75f775995d3cbe3041b795b019"
+    "sha256": "50a6c4a3c4657141e77170b96e19d03b77fc190ff0132d0f2144b535b58567bd"
   },
   {
     "path": "Docs/Modding/Mod_API_Sandbox_Quarantine.md",
@@ -114281,11 +114351,11 @@
   {
     "path": "Docs/Modding/Mod_API_Specification.md",
     "active": true,
-    "bytes": 35227,
-    "lastWriteUtc": "2026-05-27T13:27:59.481015+00:00",
+    "bytes": 36636,
+    "lastWriteUtc": "2026-05-27T16:34:22.252064+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 3857,
+    "wordCount": 4039,
     "topic": "# HECTON-8 Mod API Specification",
     "references": [
       "SDK_Authoring_Interface_Plan.md",
@@ -114307,7 +114377,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "99956c19aa6ce4016e055c1a8431fa2c36ff42a6ef3509fe9576c91a72f0f8d1"
+    "sha256": "8cb7bd7c6c83799be85ad8e8d9a3f1f7800c14afb0a87f1a5101ef1d6f95cc94"
   },
   {
     "path": "Docs/Modding/Net_Protocol_v1.md",
@@ -114365,11 +114435,11 @@
   {
     "path": "Docs/Modding/README.md",
     "active": true,
-    "bytes": 7098,
-    "lastWriteUtc": "2026-05-27T13:26:57.039306+00:00",
+    "bytes": 7674,
+    "lastWriteUtc": "2026-05-27T16:32:37.503496+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 763,
+    "wordCount": 833,
     "topic": "# HECTON-8 Modding API Contract Index",
     "references": [
       "Mod_API_Sandbox_Quarantine.md",
@@ -114397,16 +114467,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "11252a7e31714bc51871bf623c37023077f6df09daa0a7b55e5030124afd42e4"
+    "sha256": "90b1b91502c431b1c17ada762ff7fae2587df2e751e9271ef1cada4215faa85d"
   },
   {
     "path": "Docs/Modding/Resource_Content_Audit_Matrix.md",
     "active": true,
-    "bytes": 4782,
-    "lastWriteUtc": "2026-05-26T19:31:45.601483+00:00",
+    "bytes": 4988,
+    "lastWriteUtc": "2026-05-27T13:42:20.362258+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 489,
+    "wordCount": 514,
     "topic": "# Resource And Content Audit Matrix",
     "references": [
       "SDK_Authoring_Interface_Plan.md"
@@ -114417,16 +114487,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "bf9a1abf2e00ae4af8dc1b58ef7f4857d52c8e50968b013c3c8445fb78f0b52e"
+    "sha256": "6f5a5c7bec247ecac61d935f7bd3e833991b005944e5359aaa0fc02b0192c257"
   },
   {
     "path": "Docs/Modding/Runtime_Verification_Playbook.md",
     "active": true,
-    "bytes": 21858,
-    "lastWriteUtc": "2026-05-27T13:28:38.472629+00:00",
+    "bytes": 22389,
+    "lastWriteUtc": "2026-05-27T16:35:10.586724+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 2209,
+    "wordCount": 2250,
     "topic": "# HECTON-8 Mod API Runtime Verification Playbook",
     "references": [
       "Docs/Modding/Signal_Audit_Matrix.md",
@@ -114455,7 +114525,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "815c4708b2a6f5d2e8f0e817890f9c2b7f7af18e56607b40795f78f14ab13b06"
+    "sha256": "de6db0f7156cdee80e47c1ccbf73b3bfe248f871ee1ff4e8c94517d6473f3e22"
   },
   {
     "path": "Docs/Modding/Sample_InfiniteO2_Mod.md",
@@ -115737,8 +115807,8 @@
   {
     "path": "Docs/Reports/NATIVE_MEMORY_CLEANUP_PROGRESS_UNKNOWN_20260526.md",
     "active": true,
-    "bytes": 6832,
-    "lastWriteUtc": "2026-05-26T08:39:25.755065+00:00",
+    "bytes": 6831,
+    "lastWriteUtc": "2026-05-27T17:04:21.347878+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 705,
@@ -115753,7 +115823,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "4457efd0e937b8d888ec34170e7a852a1d33c9e697f2f17df76937bb16e51aee"
+    "sha256": "4402df6f247fda0370edd6d5856950d340af0e6ba93761e185c5922e5314796f"
   },
   {
     "path": "Docs/Reports/NETWORK_ROLLBACK_DESYNC_PREVENTION_PROOF_X_014.md",
@@ -116196,11 +116266,11 @@
   {
     "path": "Docs/Reports/README.md",
     "active": true,
-    "bytes": 2968,
-    "lastWriteUtc": "2026-05-27T13:24:38.272562+00:00",
+    "bytes": 3041,
+    "lastWriteUtc": "2026-05-27T17:11:37.107638+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 244,
+    "wordCount": 253,
     "topic": "# Reports Index",
     "references": [
       "Docs/DEPRECATED/Reports_2026-05-21_LOOP11_STALE_HANDOFF/README.md"
@@ -116211,7 +116281,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c1724cd805fd669bb2b2022aa3b33e0712c3720ea9c19ce94dbc89aeb9f5e3ba"
+    "sha256": "6711831dfa202cc1c99286d9fc09990aa29334f522935231abcc7cdb3a430b55"
   },
   {
     "path": "Docs/Reports/ROOT_DOCS_BUILD_EVIDENCE_REFRESH_UNKNOWN_20260526.md",
@@ -116405,8 +116475,8 @@
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_CLASSIFIER_RECHECK.md",
     "active": true,
-    "bytes": 414586,
-    "lastWriteUtc": "2026-05-27T06:29:45.715255+00:00",
+    "bytes": 414416,
+    "lastWriteUtc": "2026-05-27T17:04:21.392754+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 35770,
@@ -116418,13 +116488,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "2d167302aa4fb616e77f783348164f9f8ed19c19cc304e20efb94e74d978e7b2"
+    "sha256": "ad42570a8c4b5827e438ca1e8b1563c55282b3f90c08328a837f687ce7b36099"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_COLD_ALLOC_RECHECK.md",
     "active": true,
-    "bytes": 426805,
-    "lastWriteUtc": "2026-05-27T10:02:31.729357+00:00",
+    "bytes": 426694,
+    "lastWriteUtc": "2026-05-27T17:04:21.424461+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 37215,
@@ -116436,13 +116506,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "b511509a2a2c9f28b7c1252de0a05bb076760890a3cc70c483bf6e9170877902"
+    "sha256": "2c1d0127d01f1635bdb09c68bf3d6287090ec201cf53e12d650f336740f1402b"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_CONTRACT_RENAME_RECHECK.md",
     "active": true,
-    "bytes": 458940,
-    "lastWriteUtc": "2026-05-27T10:05:35.904892+00:00",
+    "bytes": 458866,
+    "lastWriteUtc": "2026-05-27T17:04:21.472045+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 39965,
@@ -116454,13 +116524,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3ba8ee3760356b3b90711884f5680ec64a41ee108ea4443a36c469c290b569dd"
+    "sha256": "ecb75e872d87d20f0eed54247ea1f07fe848200a118873ca0fc056e31937ecf7"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_EXEC_CARRIER_RECHECK.md",
     "active": true,
-    "bytes": 479569,
-    "lastWriteUtc": "2026-05-27T11:22:58.419535+00:00",
+    "bytes": 479500,
+    "lastWriteUtc": "2026-05-27T17:04:21.535409+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 42435,
@@ -116472,13 +116542,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "aec85641b251785d3d3666a5ed7636d799e3b8e8d0ec54043b124f823b3dd71b"
+    "sha256": "b1cf459fe030100f331bf75393270638499b0e8b1756a8efafb10974ea5c1da2"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_GPU_CLASSIFIER_RECHECK.md",
     "active": true,
-    "bytes": 419342,
-    "lastWriteUtc": "2026-05-27T06:29:45.715255+00:00",
+    "bytes": 419170,
+    "lastWriteUtc": "2026-05-27T17:04:21.585263+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 36399,
@@ -116490,13 +116560,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e80f6595c5adfe310f30d1bc107b892208174c78dfdc0cb9bd829584fd947e94"
+    "sha256": "ccdbc756d05097402a2c82912f33f7626263e3cd7e03bfed5cce8fb55e256360"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_JOB_CLASSIFIER_RECHECK.md",
     "active": true,
-    "bytes": 461000,
-    "lastWriteUtc": "2026-05-27T11:22:58.392617+00:00",
+    "bytes": 460924,
+    "lastWriteUtc": "2026-05-27T17:04:21.641931+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 40893,
@@ -116508,13 +116578,67 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "34269e47fc3b2863855ba89897a6f146a3f630ab66ba3c47dacf852439c773ac"
+    "sha256": "f5ce35ed00425a741dbfffdb9abcad48b1902505cd3b4dfa6e2e874520668a55"
+  },
+  {
+    "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_FINAL.md",
+    "active": true,
+    "bytes": 639132,
+    "lastWriteUtc": "2026-05-27T17:11:37.089943+00:00",
+    "encodingReadAs": "utf-8-sig",
+    "utf8Sig": true,
+    "wordCount": 55050,
+    "topic": "# SHINOBU_02 Signal Bus Contract Audit CLI",
+    "references": [],
+    "staleFlags": {
+      "signalBusRegistry256": 0,
+      "dataMonolithAbsent": 0,
+      "h8dmHeader16": 0,
+      "saveVersion000AWriter": 0
+    },
+    "sha256": "5375f44dc426f80d666778654097793a174d9586f9b3459077baa4d13c73b50a"
+  },
+  {
+    "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_RECHECK.md",
+    "active": true,
+    "bytes": 647908,
+    "lastWriteUtc": "2026-05-27T17:01:07.210832+00:00",
+    "encodingReadAs": "utf-8-sig",
+    "utf8Sig": true,
+    "wordCount": 57709,
+    "topic": "# SHINOBU_02 Signal Bus Contract Audit CLI",
+    "references": [],
+    "staleFlags": {
+      "signalBusRegistry256": 0,
+      "dataMonolithAbsent": 0,
+      "h8dmHeader16": 0,
+      "saveVersion000AWriter": 0
+    },
+    "sha256": "3e8b995651d84c83c0937dfd8e0b0a10189882965b1efc72bd0ce9daba5ba953"
+  },
+  {
+    "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_RECHECK2.md",
+    "active": true,
+    "bytes": 642696,
+    "lastWriteUtc": "2026-05-27T17:01:07.312350+00:00",
+    "encodingReadAs": "utf-8-sig",
+    "utf8Sig": true,
+    "wordCount": 56159,
+    "topic": "# SHINOBU_02 Signal Bus Contract Audit CLI",
+    "references": [],
+    "staleFlags": {
+      "signalBusRegistry256": 0,
+      "dataMonolithAbsent": 0,
+      "h8dmHeader16": 0,
+      "saveVersion000AWriter": 0
+    },
+    "sha256": "b2a259aa683b67087ce5c0805508285e53b83631c849796319cd46bcb8331909"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ATTR_RECHECK.md",
     "active": true,
-    "bytes": 466416,
-    "lastWriteUtc": "2026-05-27T10:02:31.749084+00:00",
+    "bytes": 466342,
+    "lastWriteUtc": "2026-05-27T17:04:21.678511+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 40523,
@@ -116526,13 +116650,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "ead8901f01059502bf8957c1ad7f2985922d9b6fffbafb82c5ee505e6f7f5153"
+    "sha256": "bf26498c4f3a52cca3c15c0ac8ccf9950dfa54d57868a17f0a226204ad2d7019"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LOCAL_RENAME_RECHECK.md",
     "active": true,
-    "bytes": 457348,
-    "lastWriteUtc": "2026-05-27T11:22:58.332171+00:00",
+    "bytes": 457272,
+    "lastWriteUtc": "2026-05-27T17:04:21.726059+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 39840,
@@ -116544,13 +116668,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "4a25fd5faec3470d28a23f077e2f1eb333fe88aad81b5bd3a7b47d1f1053f6f8"
+    "sha256": "f784ab05750211627222615e8974d35491c96dc9fccd1c0cafd4e1a14fe980ce"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_MATERIAL_RECHECK.md",
     "active": true,
-    "bytes": 417926,
-    "lastWriteUtc": "2026-05-27T06:29:45.731101+00:00",
+    "bytes": 417754,
+    "lastWriteUtc": "2026-05-27T17:04:21.788173+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 36182,
@@ -116562,13 +116686,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e371b8a223d841212e52ddd3b746c305b89a46853b62e2e63282f19bff1a4341"
+    "sha256": "0da044db8a3b97d78225f10ae6d854b4c0c55d6217b3a7e36bfa5742896c6e89"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_METHOD_STATE_RECHECK.md",
     "active": true,
-    "bytes": 410787,
-    "lastWriteUtc": "2026-05-27T10:02:31.760949+00:00",
+    "bytes": 410589,
+    "lastWriteUtc": "2026-05-27T17:04:21.835144+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 35601,
@@ -116580,13 +116704,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "534a8b5126ce33624a0038ce401a3129ec13907d1ee89cd8874dab71c19742f7"
+    "sha256": "18e59759db0a08e2e3ebd2c5431ed2a8b369cf970f5514e00389ebf6b2352f92"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_QUEUE_RECHECK.md",
     "active": true,
-    "bytes": 554485,
-    "lastWriteUtc": "2026-05-27T05:38:02.143664+00:00",
+    "bytes": 554334,
+    "lastWriteUtc": "2026-05-27T17:04:21.909325+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 47770,
@@ -116598,13 +116722,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3d6d046af7cb953ca0b2633d6be0d8ce0fe4ed942a474c01e2658158566415c1"
+    "sha256": "fc98f03eb4b89227d24de70f0319ec90161e97eb780ba504502a95e75f4fab78"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_SAFE_RENAME_RECHECK.md",
     "active": true,
-    "bytes": 453627,
-    "lastWriteUtc": "2026-05-27T11:22:58.370609+00:00",
+    "bytes": 453551,
+    "lastWriteUtc": "2026-05-27T17:04:21.956295+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 39561,
@@ -116616,13 +116740,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "6b03ac1fcc52226269ea2f6ccb2290ab87debd4fabc0fd6a3219e55200cb5993"
+    "sha256": "ded66336328d8c97b215f2688f4cd2bc7641e329f960aa3028c4fcd1f32a531f"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_SEAM_MPB_RECHECK2.md",
     "active": true,
-    "bytes": 419550,
-    "lastWriteUtc": "2026-05-27T06:29:45.736823+00:00",
+    "bytes": 419378,
+    "lastWriteUtc": "2026-05-27T17:04:22.045748+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 36423,
@@ -116634,13 +116758,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "4245f153677fe5103f473102c6d9cc40e4bea4e061d8ae12971deb920f45978b"
+    "sha256": "56d3c51d4441a370df9205cc77260ff6e56e8bab59a64911cee97b50e5cf040a"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TELEMETRY_CLASSIFIER_RECHECK.md",
     "active": true,
-    "bytes": 419756,
-    "lastWriteUtc": "2026-05-27T06:29:45.767004+00:00",
+    "bytes": 419584,
+    "lastWriteUtc": "2026-05-27T17:04:22.118408+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 36459,
@@ -116652,13 +116776,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a27d8397025d5eb22201afa7747e98f86fea6bd586b3146e563fb8e392703106"
+    "sha256": "3c822bf3254e44b8087e5f37a9df76d11e24ea3f5a8dc544fd296632656bfc9c"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TELEMETRY_OWNERSHIP_RECHECK.md",
     "active": true,
-    "bytes": 480148,
-    "lastWriteUtc": "2026-05-27T13:14:13.617131+00:00",
+    "bytes": 480079,
+    "lastWriteUtc": "2026-05-27T17:04:22.176789+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 42491,
@@ -116670,13 +116794,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "84a91155f29956ee78271af064f2291d8a1a272ed19862747f646dbefe0642f7"
+    "sha256": "88fceab2d260301946dbf44bf3e04a3b6ad90259bbb95a103ffb16e9b4c16ca3"
   },
   {
     "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TELEMETRY_OWNERSHIP_RECHECK2.md",
     "active": true,
-    "bytes": 480152,
-    "lastWriteUtc": "2026-05-27T13:14:13.659757+00:00",
+    "bytes": 480083,
+    "lastWriteUtc": "2026-05-27T17:04:22.224302+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 42482,
@@ -116688,7 +116812,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3cb0fc02c02963394637fce22b62535052235660554a3293203deb7dcad785a3"
+    "sha256": "c8ddc06c146a4ac470696c9a345f59fb8e4f32f1db47bff595ceb7a56bce4588"
   },
   {
     "path": "Docs/Reports/SIGNAL_CANONICAL_LANE_CONTRACTS_X_001.md",
@@ -121459,6 +121583,24 @@
     "sha256": "a4385af9b4737766af8c9a9fbc44dc35617be9104837d1d42a436b1fc4ae1832"
   },
   {
+    "path": "Docs/Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md",
+    "active": true,
+    "bytes": 4160,
+    "lastWriteUtc": "2026-05-27T17:11:37.080572+00:00",
+    "encodingReadAs": "utf-8-sig",
+    "utf8Sig": true,
+    "wordCount": 430,
+    "topic": "# Unity Signal Layout/Alias Classifier Pass - UNKNOWN - 2026-05-27",
+    "references": [],
+    "staleFlags": {
+      "signalBusRegistry256": 0,
+      "dataMonolithAbsent": 0,
+      "h8dmHeader16": 0,
+      "saveVersion000AWriter": 0
+    },
+    "sha256": "631def4f4df5f7c267728f34eebe9d693bcc2000ce17d79b1d777f0f6c739211"
+  },
+  {
     "path": "Docs/Reports/UNITY_SIGNAL_QUEUE_DIAGNOSTICS_PASS_UNKNOWN_20260527.md",
     "active": true,
     "bytes": 2744,
@@ -121479,8 +121621,8 @@
   {
     "path": "Docs/Reports/UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527.md",
     "active": true,
-    "bytes": 4494,
-    "lastWriteUtc": "2026-05-27T13:28:51.003340+00:00",
+    "bytes": 4495,
+    "lastWriteUtc": "2026-05-27T13:33:23.514008+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 417,
@@ -121500,7 +121642,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "d5466dda2a818126520c2bfe569e9ac9045b3b5690c23f2058c37647ca00858a"
+    "sha256": "3bd02d36eb50208376c91d146dd5b6c107945a7fc2b5d3596127b1d9f65ef7db"
   },
   {
     "path": "Docs/Reports/UNITY_VOXEL_CTS_UNLINK_UNKNOWN_20260526.md",
@@ -122166,6 +122308,42 @@
     "sha256": "eff0c24963bcf6c5230a65dc81cdcefe5b4ab058dce04553c07355d83c14955c"
   },
   {
+    "path": "Docs/Tasks/_1315_extracted_prompt_pass35.tmp.md",
+    "active": false,
+    "bytes": 26513,
+    "lastWriteUtc": "2026-05-27T13:34:21.727464+00:00",
+    "encodingReadAs": "utf-8-sig",
+    "utf8Sig": false,
+    "wordCount": 3492,
+    "topic": "<AGENT_PROMPT id=\"1315\" role=\"MEMORY_SOVEREIGN_VOXEL_ENGINE_EXORCIST\" chat_name=\"1315\">",
+    "references": [],
+    "staleFlags": {
+      "signalBusRegistry256": 0,
+      "dataMonolithAbsent": 0,
+      "h8dmHeader16": 0,
+      "saveVersion000AWriter": 0
+    },
+    "sha256": "56920750a11c6fabf89fbf11620ba8fcb12165ca0534a5def36fcb26cecbdbc8"
+  },
+  {
+    "path": "Docs/Tasks/_1315_extracted_prompt_pass36.tmp.md",
+    "active": false,
+    "bytes": 26518,
+    "lastWriteUtc": "2026-05-27T13:56:50.582389+00:00",
+    "encodingReadAs": "utf-8-sig",
+    "utf8Sig": false,
+    "wordCount": 3493,
+    "topic": "<AGENT_PROMPT id=\"1315\" role=\"MEMORY_SOVEREIGN_VOXEL_ENGINE_EXORCIST\" chat_name=\"1315\">",
+    "references": [],
+    "staleFlags": {
+      "signalBusRegistry256": 0,
+      "dataMonolithAbsent": 0,
+      "h8dmHeader16": 0,
+      "saveVersion000AWriter": 0
+    },
+    "sha256": "5592285796d1fa87c4a5afb8b8e6dc9277ed58ed09bc4e3654d81f1ae768888c"
+  },
+  {
     "path": "Docs/Tasks/_1317_extracted_prompt.tmp.md",
     "active": false,
     "bytes": 25012,
@@ -122186,8 +122364,8 @@
   {
     "path": "Docs/Tasks/CURRENT_BATCH.md",
     "active": false,
-    "bytes": 501524,
-    "lastWriteUtc": "2026-05-26T09:48:49.813771+00:00",
+    "bytes": 501509,
+    "lastWriteUtc": "2026-05-27T17:04:22.303221+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
     "wordCount": 65969,
@@ -122215,7 +122393,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "459664d1f3b97d621f3afe4313e203d50e9bc1a5e7426e51326932bde7436c1a"
+    "sha256": "78391ee4859f3cbb8f555484e87c2b5269a7f8421692af7b745beb43f4423fe3"
   },
   {
     "path": "Docs/Tasks/Status_1300-B.md",
@@ -122276,11 +122454,11 @@
   {
     "path": "Docs/Tasks/Status_1301.md",
     "active": false,
-    "bytes": 99310,
-    "lastWriteUtc": "2026-05-27T13:25:56.122742+00:00",
+    "bytes": 101911,
+    "lastWriteUtc": "2026-05-27T14:30:26.813256+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 9144,
+    "wordCount": 9389,
     "topic": "# Status_1301",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -122296,7 +122474,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3bf42a636c2d175dd7c7355637be14a16ab179b8cd80ae2f2e773a3346703d73"
+    "sha256": "ed4adb8bcb6f121c9a562474415f537cd8943cab89197601d8144b81cea54639"
   },
   {
     "path": "Docs/Tasks/Status_1302.md",
@@ -122458,11 +122636,11 @@
   {
     "path": "Docs/Tasks/Status_1306.md",
     "active": false,
-    "bytes": 73271,
-    "lastWriteUtc": "2026-05-27T13:26:37.736537+00:00",
+    "bytes": 87010,
+    "lastWriteUtc": "2026-05-27T16:55:16.941865+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 7886,
+    "wordCount": 9414,
     "topic": "# Status_1306 - MEMORY_SOVEREIGN_CONSTRUCTION_EXORCIST",
     "references": [
       "Docs/Reports/VAULT_EXORCISM_PHASE0_1306.md",
@@ -122489,7 +122667,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a3169dc2341986a7e1c76f7a924d51a707c051835901a79ecb33aef61bb87abb"
+    "sha256": "bc860ebc46ddba609d18492ae93a6ae7ee7f9f59d0f5c51008654c4dee584abb"
   },
   {
     "path": "Docs/Tasks/Status_1307.md",
@@ -122718,11 +122896,11 @@
   {
     "path": "Docs/Tasks/Status_1314.md",
     "active": false,
-    "bytes": 86950,
-    "lastWriteUtc": "2026-05-27T12:00:58.764360+00:00",
+    "bytes": 105705,
+    "lastWriteUtc": "2026-05-27T16:58:42.604987+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 9900,
+    "wordCount": 12026,
     "topic": "# Status_1314 - AUDIO_MASTER_BUS_ALIGNMENT_REPAIRER",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -122812,16 +122990,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "f0818dc0a91cac7815705e06afccb96e1d55d20c27e71c332de2f8af8cd44265"
+    "sha256": "29f21f83c62e15c889256a8c795cc1fec7d44677ac2227a30dd965ac2ff20532"
   },
   {
     "path": "Docs/Tasks/Status_1315.md",
     "active": false,
-    "bytes": 73945,
-    "lastWriteUtc": "2026-05-27T13:24:58.176804+00:00",
+    "bytes": 84281,
+    "lastWriteUtc": "2026-05-27T17:13:53.732711+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 7592,
+    "wordCount": 8659,
     "topic": "# Status 1315 - MEMORY_SOVEREIGN_VOXEL_ENGINE_EXORCIST",
     "references": [
       "current_batch.md",
@@ -122869,7 +123047,11 @@
       "Docs/Tasks/_1315_extracted_prompt_pass33.tmp.md",
       "current_batch.md",
       "Docs/Tasks/CURRENT_BATCH.md",
-      "Docs/Tasks/_1315_extracted_prompt_pass34.tmp.md"
+      "Docs/Tasks/_1315_extracted_prompt_pass34.tmp.md",
+      "current_batch.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/_1315_extracted_prompt_pass35.tmp.md",
+      "Docs/Tasks/CURRENT_BATCH.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -122877,16 +123059,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "20be9e5e04596b461d1f2cab78e089bbc400608f4d9a47afc5bfbf47244230f0"
+    "sha256": "c9ca7c58b9ab7098dc8dfd0823e192243338859a3335dc7f6cc10b9f606c7334"
   },
   {
     "path": "Docs/Tasks/Status_1316.md",
     "active": false,
-    "bytes": 80925,
-    "lastWriteUtc": "2026-05-27T12:20:29.317775+00:00",
+    "bytes": 94115,
+    "lastWriteUtc": "2026-05-27T17:00:43.204190+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 8953,
+    "wordCount": 10268,
     "topic": "# Status_1316 - MEMORY_SOVEREIGN_VEGETATION_EXORCIST",
     "references": [
       "Docs/ARCHITECTURE/VOXEL_DYNAMIC_NAVGRID_VAULT_ROUTE_1316.md",
@@ -122898,7 +123080,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "54627a6ef700322a4e009c725b4db3d87505272465fab787c073aea1f84c2b1c"
+    "sha256": "3488ad2ead2f7eb52a17498c175409d3c48b208af1300aef9fac922cc91d7cf0"
   },
   {
     "path": "Docs/Tasks/Status_1317.md",
@@ -122943,11 +123125,11 @@
   {
     "path": "Docs/Tasks/Status_1318.md",
     "active": false,
-    "bytes": 46430,
-    "lastWriteUtc": "2026-05-27T13:19:11.625647+00:00",
+    "bytes": 56571,
+    "lastWriteUtc": "2026-05-27T17:05:15.309775+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 5316,
+    "wordCount": 6485,
     "topic": "# Status_1318",
     "references": [],
     "staleFlags": {
@@ -122956,7 +123138,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "eb5f09f2b3be809ddfc1d6660de6c1933f58463efda221248a1b69cb0ec41f3a"
+    "sha256": "a12c2ac513af9f031c4c3ce41861ce57e945601823889f2ee99f539108442034"
   },
   {
     "path": "Docs/Tasks/Status_1319.md",
@@ -123047,15 +123229,22 @@
   {
     "path": "Docs/Tasks/Status_1321.md",
     "active": false,
-    "bytes": 20048,
-    "lastWriteUtc": "2026-05-26T09:10:06.429016+00:00",
+    "bytes": 28595,
+    "lastWriteUtc": "2026-05-27T16:47:40.254868+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 2267,
+    "wordCount": 3232,
     "topic": "# Status 1321 - MEMORY_SOVEREIGN_CARTOGRAPHY_EXORCIST",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
       "C:\\hades\\current_batch.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "C:\\hades\\current_batch.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "C:\\hades\\current_batch.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md"
     ],
@@ -123065,7 +123254,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "d2e33d6db2a18f9419672f7babb6bb8bb2c99a657e753f413c8663ed1b6cac02"
+    "sha256": "39526f00281e0c44df6884f8c685ea4481014c2780073bb78044a2dd864335c6"
   },
   {
     "path": "Docs/Tasks/Status_1322.md",
@@ -123159,11 +123348,11 @@
   {
     "path": "Docs/Tasks/Status_1325.md",
     "active": false,
-    "bytes": 89026,
-    "lastWriteUtc": "2026-05-27T13:30:14.948300+00:00",
+    "bytes": 94760,
+    "lastWriteUtc": "2026-05-27T16:56:05.261297+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 10248,
+    "wordCount": 10868,
     "topic": "# Status 1325 - MEMORY_SOVEREIGN_PERSISTENT_WORLD_REGISTRY_EXORCIST",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123224,6 +123413,10 @@
       "current_batch.md",
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
+      "current_batch.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "current_batch.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
       "current_batch.md"
     ],
     "staleFlags": {
@@ -123232,7 +123425,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "863e0fbd2545eba5250f1a446e9286625763420361fd5cc45bdfab1509447a05"
+    "sha256": "3d55ef651c2a292c02c0e08f0b5c77b40089942d09167d67c4132c05963fa10d"
   },
   {
     "path": "Docs/Tasks/Status_1326.md",
@@ -123281,11 +123474,11 @@
   {
     "path": "Docs/Tasks/Status_1328.md",
     "active": false,
-    "bytes": 38255,
-    "lastWriteUtc": "2026-05-27T13:10:08.599490+00:00",
+    "bytes": 40022,
+    "lastWriteUtc": "2026-05-27T14:03:47.796626+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 4483,
+    "wordCount": 4707,
     "topic": "# Agent 1328 Status",
     "references": [
       "current_batch.md",
@@ -123299,16 +123492,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "5ef4d63b1957cd4092116611337763df4274568dc455c339be5a3d65830106b0"
+    "sha256": "2afed4f5140afda6cdb77d0eb965ed52b1ae5d1a53b216099f0b378de1aa67e3"
   },
   {
     "path": "Docs/Tasks/Status_1329.md",
     "active": false,
-    "bytes": 21132,
-    "lastWriteUtc": "2026-05-27T10:02:49.738995+00:00",
+    "bytes": 33845,
+    "lastWriteUtc": "2026-05-27T16:46:59.061631+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 2308,
+    "wordCount": 3770,
     "topic": "# Status 1329 - MEMORY_SOVEREIGN_FABRICATOR_EXORCIST",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123325,13 +123518,13 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "258485c088154fe5555e5f9a1affa21a07d426fb263b823c916c1044f29b8be9"
+    "sha256": "b045f17055472f50b18af30224108b23ac0461c1d94b1f96b6fcbb98bc66b60f"
   },
   {
     "path": "Docs/Tasks/Status_1330.md",
     "active": false,
-    "bytes": 45887,
-    "lastWriteUtc": "2026-05-27T05:21:27.356646+00:00",
+    "bytes": 45886,
+    "lastWriteUtc": "2026-05-27T17:04:22.303221+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 4861,
@@ -123369,7 +123562,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c8305bb72806affd784afada8fd1605144c048c216a2c3df252c647c2d46a351"
+    "sha256": "3a9852e393f1063277654c77fa9fbbbe0ca22c22f617e89b1b3deb4c3630feeb"
   },
   {
     "path": "Docs/Tasks/Status_1331.md",
@@ -123395,11 +123588,11 @@
   {
     "path": "Docs/Tasks/Status_1332.md",
     "active": false,
-    "bytes": 96632,
-    "lastWriteUtc": "2026-05-27T10:23:33.726196+00:00",
+    "bytes": 115776,
+    "lastWriteUtc": "2026-05-27T17:06:04.123237+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 11471,
+    "wordCount": 13665,
     "topic": "# Agent 1332 Status",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123414,7 +123607,13 @@
       "Docs/Tasks/CURRENT_BATCH.md",
       "INPUT_MIGRATION_GUIDE.md",
       "Status_1332.md",
-      "Rationale_1332.md"
+      "Rationale_1332.md",
+      "Status_1332.md",
+      "Rationale_1332.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Status_1332.md",
+      "Rationale_1332.md",
+      "Docs/Tasks/CURRENT_BATCH.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -123422,16 +123621,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "ccf7a68cd2ba85d99aa24481b73ef21d1085f4992473bff64aea9cb546665cd7"
+    "sha256": "0f5792980501beb07227fae6d8900b65f5d5e7ba20276e75048267a1ac674f45"
   },
   {
     "path": "Docs/Tasks/Status_1333.md",
     "active": false,
-    "bytes": 46820,
-    "lastWriteUtc": "2026-05-27T13:30:58.017286+00:00",
+    "bytes": 53639,
+    "lastWriteUtc": "2026-05-27T17:12:14.434831+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 5433,
+    "wordCount": 6208,
     "topic": "# Status 1333 - COMPUTE_SHADER_DISPATCH_SIZER_AND_AUDITOR",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123449,7 +123648,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "796394c2e4752b10af8c43c8d3be2e4eb7d03e2958df53cd6f21a15944abae23"
+    "sha256": "9c0a9bb2569f91d314a503e8e71db3021f896fb0b3e6e2aba1a7a51332fb4d6b"
   },
   {
     "path": "Docs/Tasks/Status_1334.md",
@@ -123489,11 +123688,11 @@
   {
     "path": "Docs/Tasks/Status_1335.md",
     "active": false,
-    "bytes": 72716,
-    "lastWriteUtc": "2026-05-27T12:33:21.171991+00:00",
+    "bytes": 80369,
+    "lastWriteUtc": "2026-05-27T16:57:24.731086+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 8296,
+    "wordCount": 9149,
     "topic": "# Agent 1335 Status - VR Somatic Comfort",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123532,6 +123731,9 @@
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md"
     ],
     "staleFlags": {
@@ -123540,7 +123742,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "9626a48a3ce7b381bc8bf728c041b0c518a6ea2e31f8149155e534396dbdd942"
+    "sha256": "7bbb227931d21997684b48d5fda2e0dcc788daa80e5ca6522dd6669a15e9aaa7"
   },
   {
     "path": "Docs/Tasks/Status_1336.md",
@@ -123617,11 +123819,11 @@
   {
     "path": "Docs/Tasks/Status_1337.md",
     "active": false,
-    "bytes": 52444,
-    "lastWriteUtc": "2026-05-27T10:09:20.116703+00:00",
+    "bytes": 61447,
+    "lastWriteUtc": "2026-05-27T17:04:19.970394+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 5994,
+    "wordCount": 7032,
     "topic": "# Status_1337",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123642,6 +123844,11 @@
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md"
     ],
     "staleFlags": {
@@ -123650,16 +123857,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "4d123506d91120cf48a577e2326d1abce661f770a595834513960bdb698d954a"
+    "sha256": "5d7f5c803cd813947772f5aeaea071d6e73573b4c63fd1ef8579ae884d2b6945"
   },
   {
     "path": "Docs/Tasks/Status_13AI.md",
     "active": false,
-    "bytes": 29118,
-    "lastWriteUtc": "2026-05-27T13:03:56.245789+00:00",
+    "bytes": 58890,
+    "lastWriteUtc": "2026-05-27T16:51:30.270891+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 3485,
+    "wordCount": 7049,
     "topic": "# Status_13AI",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123677,6 +123884,12 @@
       "Docs/Actual Domains of Project.txt",
       "TASTE.md",
       "Docs/AgentLogs/LOG_13AI.md",
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
+      "SHINOBU_303_LEVIATHAN_STEERING_ROUTE.md",
+      "SHINOBU_311_ACOUSTIC_SENSORY_ROUTE.md",
       "CURRENT_BATCH.md"
     ],
     "staleFlags": {
@@ -123685,16 +123898,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "6b59cfa1092e16ca237f9fdb419586f4da92d3a90ec0034c9f2803adf07c07ca"
+    "sha256": "e1115630edba923c2d116fc4ef966cb4895f03e152546aa55b6b4ee7c033d988"
   },
   {
     "path": "Docs/Tasks/Status_13ATMA.md",
     "active": false,
-    "bytes": 33619,
-    "lastWriteUtc": "2026-05-27T13:22:16.405329+00:00",
+    "bytes": 48466,
+    "lastWriteUtc": "2026-05-27T14:58:28.059858+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 4089,
+    "wordCount": 5908,
     "topic": "# Status_13ATMA",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123702,6 +123915,16 @@
       "Rationale_13ATMA.md",
       "Docs/AgentLogs/LOG_13ATMA.md",
       "Docs/Tasks/CURRENT_BATCH.md",
+      "Status_13ATMA.md",
+      "Rationale_13ATMA.md",
+      "Status_13ATMA.md",
+      "Rationale_13ATMA.md",
+      "Status_13ATMA.md",
+      "Rationale_13ATMA.md",
+      "Status_13ATMA.md",
+      "Rationale_13ATMA.md",
+      "Status_13ATMA.md",
+      "Rationale_13ATMA.md",
       "Status_13ATMA.md",
       "Rationale_13ATMA.md",
       "Status_13ATMA.md",
@@ -123725,16 +123948,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "413ae7eafd21ce50d1e3eb5deb81514e30faedc8196f4d892c56bd48d513320d"
+    "sha256": "6ba1b7555b3a1b817371fdef2f54663099a9a71acfe416e5fd83b1a9c2edea9a"
   },
   {
     "path": "Docs/Tasks/Status_13GEO.md",
     "active": false,
-    "bytes": 13265,
-    "lastWriteUtc": "2026-05-27T13:10:46.262019+00:00",
+    "bytes": 39649,
+    "lastWriteUtc": "2026-05-27T16:33:26.554665+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 1564,
+    "wordCount": 4677,
     "topic": "# Status_13GEO",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123751,6 +123974,15 @@
       "Docs/AgentLogs/LOG_13GEO.md",
       "Docs/AgentLogs/LOG_13GEO.md",
       "Docs/AgentLogs/LOG_13GEO.md",
+      "Docs/AgentLogs/LOG_13GEO.md",
+      "Docs/AgentLogs/LOG_13GEO.md",
+      "Docs/AgentLogs/LOG_13GEO.md",
+      "Docs/AgentLogs/LOG_13GEO.md",
+      "Docs/AgentLogs/LOG_13GEO.md",
+      "Docs/AgentLogs/LOG_13GEO.md",
+      "CURRENT_BATCH.md",
+      "git diff --check -- Assets/_Project/Scripts/HectonVoxelEngine.cs Docs/Tasks/Status_13GEO.md Docs/AgentLogs/Rationale_13GEO.md Docs/AgentLogs/LOG_13GEO.md",
+      "git diff --check -- Assets/_Project/Scripts/HectonVoxelVolume.cs Docs/Tasks/Status_13GEO.md Docs/AgentLogs/Rationale_13GEO.md Docs/AgentLogs/LOG_13GEO.md",
       "Docs/AgentLogs/LOG_13GEO.md"
     ],
     "staleFlags": {
@@ -123759,16 +123991,45 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3a108d5e4f547858e074b479d2874bda95ad95b8ec72ce99c84f71761c2140cf"
+    "sha256": "09733115ca7b637de112e4c7d334d56d983f6de77007de281bbb1a1b5e767b94"
+  },
+  {
+    "path": "Docs/Tasks/Status_13GPU.md",
+    "active": false,
+    "bytes": 20919,
+    "lastWriteUtc": "2026-05-27T17:10:14.894028+00:00",
+    "encodingReadAs": "utf-8-sig",
+    "utf8Sig": false,
+    "wordCount": 2316,
+    "topic": "# Status_13GPU",
+    "references": [
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "REND_Instanced_Flora_Physics.txt",
+      "REND_GPU_Sovereignty.txt",
+      "GPU_Compute_Kernels_Kernels_Optimization_MX350.txt",
+      "GPU_Compute_Warp_Sizing_Mobile.txt",
+      "REND_GPU_Occlusion_Culling_6000.txt",
+      "REND_URP_Graphics_HotPath_Optimization_HLOD.txt",
+      "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt",
+      "OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt",
+      "CURRENT_BATCH.md"
+    ],
+    "staleFlags": {
+      "signalBusRegistry256": 0,
+      "dataMonolithAbsent": 0,
+      "h8dmHeader16": 0,
+      "saveVersion000AWriter": 0
+    },
+    "sha256": "7fff307be9e751df0b6aff969b2ee8cf62b7d7e721053cfb4c9a17c866be95b6"
   },
   {
     "path": "Docs/Tasks/Status_13j.md",
     "active": false,
-    "bytes": 21231,
-    "lastWriteUtc": "2026-05-27T13:13:13.160632+00:00",
+    "bytes": 31172,
+    "lastWriteUtc": "2026-05-27T16:55:49.533123+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 2529,
+    "wordCount": 3745,
     "topic": "# Status_13j",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123790,16 +124051,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "7be40d5473ceee01c0daf47fb27c07e46ae92aaf60b92d79ddf6f271c0312f3b"
+    "sha256": "a4fb3a67c1502d61c7a5672ed917cbf1ad3270398bf39864461b86cc89df492d"
   },
   {
     "path": "Docs/Tasks/Status_13KRA.md",
     "active": false,
-    "bytes": 47340,
-    "lastWriteUtc": "2026-05-27T13:19:18.608866+00:00",
+    "bytes": 58499,
+    "lastWriteUtc": "2026-05-27T17:01:35.373560+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 5049,
+    "wordCount": 6307,
     "topic": "# 13KRA Status",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123825,16 +124086,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "7a640e6f298ab18f5a20c29461a6c5db86463b957526fb1f64d5e45f3a74d9a1"
+    "sha256": "52a3bce66280bea79d228ca8e63be65c1151ee3d2c9708558f98a5a974e1ecb4"
   },
   {
     "path": "Docs/Tasks/Status_13pro.md",
     "active": false,
-    "bytes": 33811,
-    "lastWriteUtc": "2026-05-27T13:25:02.346149+00:00",
+    "bytes": 36043,
+    "lastWriteUtc": "2026-05-27T13:51:07.909731+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 4255,
+    "wordCount": 4497,
     "topic": "# Status_13pro",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123858,16 +124119,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "39f1af7aa86abc226b90f993b726016ba461ab857f656abc81cbdf8abeaa8594"
+    "sha256": "aa041c614cdba90141e4109ba573065b0a9170059ce23c4796bab1bc5b3298f8"
   },
   {
     "path": "Docs/Tasks/Status_13SIK.md",
     "active": false,
-    "bytes": 65876,
-    "lastWriteUtc": "2026-05-27T13:20:47.722690+00:00",
+    "bytes": 84423,
+    "lastWriteUtc": "2026-05-27T16:52:00.053137+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 7786,
+    "wordCount": 9896,
     "topic": "# Status_13SIK",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123935,7 +124196,21 @@
       "CURRENT_BATCH.md",
       "Status_13SIK.md",
       "Rationale_13SIK.md",
-      "CURRENT_BATCH.md"
+      "CURRENT_BATCH.md",
+      "Status_13SIK.md",
+      "Rationale_13SIK.md",
+      "AGENTS.md",
+      "CURRENT_BATCH.md",
+      "Status_13SIK.md",
+      "Rationale_13SIK.md",
+      "CURRENT_BATCH.md",
+      "Status_13SIK.md",
+      "Rationale_13SIK.md",
+      "AGENTS.md",
+      "CURRENT_BATCH.md",
+      "Status_13SIK.md",
+      "Rationale_13SIK.md",
+      "AGENTS.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -123943,16 +124218,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "21156f7ebe7f59e0e3fbdbbf0829fdbaee8d9e2471bea32236144e54abd80ba7"
+    "sha256": "b1b11a4f2a4862e4eb920a90f641c6bd686a35946076c1dc164fd349a9733575"
   },
   {
     "path": "Docs/Tasks/Status_13US.md",
     "active": false,
-    "bytes": 57211,
-    "lastWriteUtc": "2026-05-27T13:20:34.551028+00:00",
+    "bytes": 70363,
+    "lastWriteUtc": "2026-05-27T16:47:01.388407+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 6697,
+    "wordCount": 8224,
     "topic": "# Status_13US",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -123982,6 +124257,13 @@
       "git diff --check -- Assets/_Project/Scripts/PlayerTool.cs Assets/_Project/Scripts/Tools/TOOL_SYSTEM_INTEGRATION_GUIDE.md",
       "LOG_13US.md",
       "LOG_13US.md",
+      "LOG_13US.md",
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
+      "LOG_13US.md",
+      "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
       "LOG_13US.md"
     ],
     "staleFlags": {
@@ -123990,20 +124272,27 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e5564c5efee5c32c660c17176499fb6120d21f8561ed7dc5ada93b0d0e361d55"
+    "sha256": "4f6ae4324db4fd91bb42cd1825f5d0c1bf3b2daca132222f6fdf53e36393f147"
   },
   {
     "path": "Docs/Tasks/Status_13VOD.md",
     "active": false,
-    "bytes": 37126,
-    "lastWriteUtc": "2026-05-27T13:30:35.232463+00:00",
+    "bytes": 48550,
+    "lastWriteUtc": "2026-05-27T16:41:12.041180+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 4535,
+    "wordCount": 5839,
     "topic": "# Status_13VOD",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
       "CURRENT_BATCH.md",
+      "CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -124028,7 +124317,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "edf3ab6f889ba563c17abd5d1025c9525d5a26b6368ef2c1b25bd53ab4b411bd"
+    "sha256": "8efeecc2e57105391ff4b701179447b7c530adc36d41c8117162941cfcc0b339"
   },
   {
     "path": "Docs/Tasks/Status_ADHOC_TASTE_AUDIT.md",
@@ -124064,11 +124353,11 @@
   {
     "path": "Docs/Tasks/Status_AUDIT_NATIVE_STATE.md",
     "active": false,
-    "bytes": 11049,
-    "lastWriteUtc": "2026-05-27T13:30:18.477473+00:00",
+    "bytes": 23468,
+    "lastWriteUtc": "2026-05-27T17:04:33.697672+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 1236,
+    "wordCount": 2590,
     "topic": "# AUDIT_NATIVE_STATE Status",
     "references": [
       "Status_AUDIT_NATIVE_STATE.md",
@@ -124079,7 +124368,14 @@
       "Rationale_AUDIT_NATIVE_STATE.md",
       "LOG_*.md",
       "Status_*.md",
-      "Status_TERRAIN_AUDIT.md"
+      "Status_TERRAIN_AUDIT.md",
+      "Status_AUDIT_NATIVE_STATE.md",
+      "Rationale_AUDIT_NATIVE_STATE.md",
+      "AGENTS.md",
+      "OPT_Native_Memory_Collections_JobSystem_Protocol.txt",
+      "Status_AUDIT_NATIVE_STATE.md",
+      "Rationale_AUDIT_NATIVE_STATE.md",
+      "AGENTS.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -124087,7 +124383,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "261fe0f8fe07ee54474f082f70b0205061881920cf0b0239557bd8887a18bd37"
+    "sha256": "fb66c261938987b14b2dad1c24098573bc74296767d97fca65a561f2820abf90"
   },
   {
     "path": "Docs/Tasks/Status_CSharpComputeDispatchAuditor.md",
@@ -124225,29 +124521,31 @@
   {
     "path": "Docs/Tasks/Status_MODDING_SDK_AUDIT.md",
     "active": false,
-    "bytes": 60352,
-    "lastWriteUtc": "2026-05-27T12:34:06.476489+00:00",
+    "bytes": 76395,
+    "lastWriteUtc": "2026-05-27T16:45:28.363364+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 6980,
+    "wordCount": 8886,
     "topic": "# Status_MODDING_SDK_AUDIT",
-    "references": [],
+    "references": [
+      "Mod_API_Specification.md"
+    ],
     "staleFlags": {
       "signalBusRegistry256": 0,
       "dataMonolithAbsent": 0,
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "b153a99d4029f15b0bb99206d28433ade364c53cb5dee7011547ec72eaeb0e73"
+    "sha256": "a5143cd42fac692a9d511425e9d4fde843c148b32dc38103e2f47b7266d0102c"
   },
   {
     "path": "Docs/Tasks/Status_TERRAIN_AUDIT.md",
     "active": false,
-    "bytes": 61161,
-    "lastWriteUtc": "2026-05-27T13:04:15.392029+00:00",
+    "bytes": 74107,
+    "lastWriteUtc": "2026-05-27T17:10:33.290577+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 7353,
+    "wordCount": 8846,
     "topic": "# TERRAIN_AUDIT Status",
     "references": [],
     "staleFlags": {
@@ -124256,16 +124554,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "95ae927bdb0898775f6d987397a53d15f5f8df3f4a09d4589a574bbab9939443"
+    "sha256": "e33f24bab4d8bae6d3e6a347799fcc0036cb7df946db54c228499dd669651d15"
   },
   {
     "path": "Docs/Tasks/Status_TOKEN_USAGE_AUDIT.md",
     "active": false,
-    "bytes": 12411,
-    "lastWriteUtc": "2026-05-27T10:04:04.662914+00:00",
+    "bytes": 13686,
+    "lastWriteUtc": "2026-05-27T16:59:22.451581+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 1518,
+    "wordCount": 1677,
     "topic": "## Model Forensics Refresh 2026-05-26 02:19 Europe/Samara",
     "references": [],
     "staleFlags": {
@@ -124274,16 +124572,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "1a59a73edea17fed49d3dcc3f4585e91137191d1173eaa3fe5ee4d871450d781"
+    "sha256": "38ec67381ba442cf01cbf5fbe8b2adf99071abc74324ec4795894630ebf7e75f"
   },
   {
     "path": "Docs/Tasks/Status_UNKNOWN.md",
     "active": false,
-    "bytes": 79980,
-    "lastWriteUtc": "2026-05-27T13:28:50.987725+00:00",
+    "bytes": 82853,
+    "lastWriteUtc": "2026-05-27T17:11:37.128811+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 9320,
+    "wordCount": 9647,
     "topic": "# Status UNKNOWN - 13XX NativeArray / Native Ownership Audit",
     "references": [
       "Docs/Tasks/Status_UNKNOWN.md",
@@ -124307,7 +124605,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3c8f440b396c482c01dbc9912f6a3732e7f0b6c8eb5f134bdd3aa4b66979d5f9"
+    "sha256": "3d86731e8b361f90f5ae815ef6690c273812ef8b34cd85c2a6595b3a1dbdb4f4"
   },
   {
     "path": "Docs/Tasks/Status_VocalRuntimeContractsMemoryAuditor.md",

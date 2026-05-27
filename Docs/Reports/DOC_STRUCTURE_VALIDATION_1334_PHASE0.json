@@ -1,0 +1,18 @@
+﻿{
+  "schema": "hecton8.doc_structure.v1",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "activeDocCount": 712,
+  "rootTextDocs": [
+    "AGENTS.md",
+    "BUILD_PLAYTEST_ISSUES.md",
+    "MASTER_RELEASE_WORK_PLAN.md"
+  ],
+  "rootTextDocCount": 3,
+  "rootTextDocPolicyPass": true,
+  "duplicateHeaderFiles": [],
+  "brokenLinkFiles": [],
+  "fenceIssueFiles": [],
+  "encodingWithoutUtf8Sig": [],
+  "staleParameterFiles": [],
+  "pass": true
+}

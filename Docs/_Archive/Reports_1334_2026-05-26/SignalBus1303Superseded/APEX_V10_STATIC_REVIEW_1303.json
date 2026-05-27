@@ -1,0 +1,122 @@
+﻿{
+    "schema":  "hecton8.apex_static_review_1303.v10",
+    "agentId":  "1303",
+    "generatedUtc":  "2026-05-25T18:29:31.5939938Z",
+    "prompt":  {
+                   "path":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "rawUtf8Sha256":  "6a477d1c3c9f2028d788ea18d9fa530be4c4852ce05d44792c82133ad30482c0",
+                   "taskCount":  20
+               },
+    "patch":  {
+                  "issue":  "SubsystemRegistration idle dump worker could exit after the first short join, leaving the Sentinel-registered snapshot allocated until a later cleanup opportunity.",
+                  "behavior":  "signal, first join, dispose signal, second join, release snapshot only after stopped/observably dead",
+                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                  "fixLines":  "364-409, 412-437"
+              },
+    "staticScans":  {
+                        "jobCompletion":  {
+                                              "ownedFindings":  4,
+                                              "rawRuntimeBlockers":  2,
+                                              "owned":  [
+                                                            {
+                                                                "path":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                                                "line":  748,
+                                                                "classification":  "RuntimeOtherForcedDispatcherComplete",
+                                                                "method":  "RunDefragRaceFuzzer"
+                                                            },
+                                                            {
+                                                                "path":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                                                "line":  768,
+                                                                "classification":  "RuntimeOtherForcedDispatcherComplete",
+                                                                "method":  "RunDefragRaceFuzzer"
+                                                            },
+                                                            {
+                                                                "path":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                                                "line":  787,
+                                                                "classification":  "RuntimeOtherForcedDispatcherComplete",
+                                                                "method":  "RunDefragRaceFuzzer"
+                                                            },
+                                                            {
+                                                                "path":  "Assets/_Project/Scripts/TetherInstance.cs",
+                                                                "line":  3041,
+                                                                "classification":  "RuntimeOtherForcedDispatcherComplete",
+                                                                "method":  "FinalizePendingVerletSolveForBarrier"
+                                                            }
+                                                        ],
+                                              "framePathBlockers":  0
+                                          },
+                        "dto":  {
+                                    "structCount":  24,
+                                    "sizeMultipleOf8Failures":  0,
+                                    "legacyOrderExceptions":  [
+                                                                  {
+                                                                      "struct":  "TetherAupTelemetryEntry",
+                                                                      "line":  298,
+                                                                      "sizeBytes":  64
+                                                                  },
+                                                                  {
+                                                                      "struct":  "TetherTelemetryEntry",
+                                                                      "line":  320,
+                                                                      "sizeBytes":  64
+                                                                  }
+                                                              ]
+                                },
+                        "signalBus":  {
+                                          "projectErrors":  2,
+                                          "confirmedErrors":  2,
+                                          "owned":  {
+                                                        "file":  null,
+                                                        "path":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                                        "line":  438,
+                                                        "severity":  "WARN",
+                                                        "rule":  "SIGNAL_LAYOUT_REVIEW",
+                                                        "message":  null
+                                                    },
+                                          "ownedFindings":  1
+                                      },
+                        "nativeAlias":  {
+                                            "strictRootHash":  "254906112e60fba00917c34dafe995f2cc66cd70ff89c10a0df3faa68edf7087",
+                                            "strictRootForbidden":  0,
+                                            "wholeScriptsHash":  "0994f81a4a2def4d40239687ba4a6e97c7ac10a9a8384bb05c359d02447d1988",
+                                            "ownedFindings":  28,
+                                            "ownedForbidden":  0,
+                                            "wholeParseFailures":  0
+                                        },
+                        "zeroGcText":  {
+                                           "rawNew":  17,
+                                           "rawUnsafeMalloc":  1,
+                                           "managedHeapNewInAuditedSolverFrameHotRanges":  0,
+                                           "sentinelRegister":  1,
+                                           "sentinelUnregister":  1,
+                                           "rawUnsafeFree":  2,
+                                           "forbiddenPatterns":  0
+                                       },
+                        "hotPathRoslyn":  {
+                                              "parseFailures":  0,
+                                              "toString":  0,
+                                              "scannedFiles":  4,
+                                              "managedRiskCreations":  5,
+                                              "stringFormat":  0,
+                                              "stringConcat":  0,
+                                              "foreach":  0,
+                                              "objectCreations":  6,
+                                              "linq":  0,
+                                              "interpolatedStrings":  0,
+                                              "hash":  "7b8b527d31275961907deffda176d81af60a13311e0e8a4fa42cbd32ac2c5212"
+                                          }
+                    },
+    "assemblyIsolation":  {
+                              "newGpuContractAsmdef":  "Assets/_Project/Scripts/Core/Contracts/Hecton8.Core.Contracts.asmdef",
+                              "directLegacyUsings":  "TetherInstance.cs still has legacy Hecton8.Caves/Hecton8.Gameplay/Hecton8.World using directives; v10 did not add new domain dependency.",
+                              "tethersContractsAsmdef":  "Assets/_Project/Scripts/Physics/Tethers/Contracts/Hecton8.Physics.Tethers.Contracts.asmdef",
+                              "tethersContractsReferences":  "none; noEngineReferences=true",
+                              "rootAsmdef":  "Assets/_Project/Scripts/Hecton8.Core.asmdef",
+                              "rootReferences":  "Core.Contracts/Database/Scheduling/Bucketing/Persistence.Paging/Core.Memory/contracts-only domain refs plus Unity packages",
+                              "newGpuContractReferences":  "Unity.Collections, Unity.Jobs, Unity.Mathematics; no UnityEngine"
+                          },
+    "verification":  {
+                         "unityEditorFuzzer":  "implemented but not executed in this shell",
+                         "dotnetBuild":  "not launched by direct user instruction",
+                         "diffCheck":  "exit 0; CRLF warnings only"
+                     }
+}

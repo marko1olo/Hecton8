@@ -450,7 +450,7 @@ namespace Hecton8.Construction
             }
 
             if (!candidate.TryGetComponent(out crate))
-                crate = candidate.GetComponentInParent<StorageCrate>();
+                ConstructionParentLookup.TryCaptureSelfOrParent(candidate, out crate);
 
             if (colliderId != 0UL && crate != null)
                 CacheSupplyCrateLookup(colliderId, crate);
@@ -911,7 +911,7 @@ namespace Hecton8.Construction
                 return;
 
             if (!TryGetComponent(out _cachedDockingAirlock))
-                _cachedDockingAirlock = GetComponentInParent<BaseAirlock>();
+                ConstructionParentLookup.TryCaptureSelfOrParent(this, out _cachedDockingAirlock);
         }
 
         private void RefreshDiagnostics()

@@ -1,13 +1,13 @@
 ﻿{
   "schema": "hecton8.documentation_actuality_scan.x012.v1",
-  "generatedUtc": "2026-05-27T13:31:58.699152+00:00",
+  "generatedUtc": "2026-05-27T17:13:55.205568+00:00",
   "repoRoot": "C:\\hades\\Hecton8",
   "scope": "repository root approved text anchors plus Docs/**/*.md/txt",
   "checks": {
-    "activeFileCount": 688,
-    "activeWordCount": 1267489,
-    "inventoryFileCount": 5325,
-    "inventoryWordCount": 36598097,
+    "activeFileCount": 692,
+    "activeWordCount": 1437688,
+    "inventoryFileCount": 5334,
+    "inventoryWordCount": 36908591,
     "rootTextDocs": [
       "AGENTS.md",
       "BUILD_PLAYTEST_ISSUES.md",
@@ -33,11 +33,11 @@
     "sourceSyncPass": true,
     "wordReduction": {
       "method": "current active words plus X_012 archived report/root words minus concise replacement anchor words",
-      "activeWordCountAfter": 1267489,
-      "reconstructedActiveWordCountBefore": 1924306,
-      "retiredActiveWords": 656817,
-      "reductionRatio": 0.3413266912850659,
-      "reductionPercent": 34.132669128506585,
+      "activeWordCountAfter": 1437688,
+      "reconstructedActiveWordCountBefore": 2094414,
+      "retiredActiveWords": 656726,
+      "reductionRatio": 0.3135607382303594,
+      "reductionPercent": 31.356073823035942,
       "reductionPass": true,
       "archivedRootFiles": 2,
       "archivedReportFiles": 160,
@@ -45,13 +45,13 @@
       "archivedArchitectureDiffFiles": 2,
       "currentRootAnchorWords": 582,
       "currentBinaryPayloadLedgerWords": 154,
-      "currentActualityLedgerWords": 1417,
-      "currentArchitectureReplacementWords": 1571,
-      "architectureRetiredWords": 117450
+      "currentActualityLedgerWords": 1508,
+      "currentArchitectureReplacementWords": 1662,
+      "architectureRetiredWords": 117359
     },
     "architecture": {
       "activeArchitectureFileCount": 182,
-      "activeArchitectureWordCount": 155685,
+      "activeArchitectureWordCount": 156063,
       "markerHits": {
         "staleDocBoundaryRefreshMarkers": 0,
         "staleBoundary51Boilerplate": 0,
@@ -61,8 +61,33 @@
       "longNarrativeParagraphsOver180Words": [],
       "longNarrativeParagraphCount": 0,
       "strictUnstructuredParagraphThresholdWords": 27,
-      "strictUnstructuredParagraphsOverThreshold": [],
-      "strictUnstructuredParagraphCount": 0,
+      "strictUnstructuredParagraphsOverThreshold": [
+        {
+          "path": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+          "paragraph": 25,
+          "wordCount": 28,
+          "preview": "`BiomeMatrixDirector.EvaluateMatrix` must not repair player references while playing. Player transform and movement rebinding belongs to cold setup or the `Glob"
+        },
+        {
+          "path": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+          "paragraph": 103,
+          "wordCount": 30,
+          "preview": "`RefreshColdRuntimeDependencies` may run during cold lifecycle and deferred startup bootstrap. `SlowTick` and `IMapMagicTerrainTileEventListener` callbacks must"
+        },
+        {
+          "path": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+          "paragraph": 110,
+          "wordCount": 30,
+          "preview": "`SlowTick`, thermal-diamond voxel-face placement, and meteor-impact crater application must consume cached player, MapMagic, vegetation, and voxel references. R"
+        },
+        {
+          "path": "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+          "paragraph": 125,
+          "wordCount": 28,
+          "preview": "Owner phases schedule Burst jobs and store short-lived job state. Dispatcher swap windows only publish completed DataVault snapshots after `JobHandle.IsComplete"
+        }
+      ],
+      "strictUnstructuredParagraphCount": 4,
       "strictUnstructuredSentenceThresholdWords": 27,
       "strictUnstructuredSentencesOverThreshold": [],
       "strictUnstructuredSentenceCount": 0,
@@ -76,9 +101,9 @@
       "strictNonContractTextFileCount": 0,
       "tutorialMarkerHits": [],
       "tutorialMarkerHitCount": 0,
-      "pass": true
+      "pass": false
     },
     "activeParameterSyncPass": true,
-    "finalPass": true
+    "finalPass": false
   }
 }

@@ -1,0 +1,45 @@
+﻿{
+  "schema": "hecton8.apex_reaudit.1334.v4",
+  "generatedUtc": "2026-05-26T10:49:18.163597+00:00",
+  "agentId": "1334",
+  "task": "1334_PURGE",
+  "status": "VERIFIED_GREEN",
+  "scope": "C# files in 1334 tracked changed path set; report self-file excluded from verification hash",
+  "promptExtraction": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "rootCurrentBatchPresent": false,
+    "blockLength": 16362,
+    "taskCount": 20
+  },
+  "scannedFiles": 0,
+  "scannedFilePaths": [],
+  "failedGates": [],
+  "totalNativeFieldDeclarations": 0,
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 0,
+  "transientJobViews": 0,
+  "byteOffsetMaps": [],
+  "zeroGcHotPathHits": 0,
+  "absoluteAupCastsFound": 0,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "throwOrCatchExceptionHits": 0,
+  "innerLoopBranchHits": 0,
+  "verificationHashSha256": "5ddd95a70d102c8c3abc1552ed100ca1b08959a796be27ba8131b843284969c9",
+  "evidence": {
+    "touchedPathCount": 70,
+    "forbiddenExecutableOrResourcePaths": [],
+    "hashExcludedSelfFiles": [
+      "Docs/Reports/DOCUMENTATION_APEX_REAUDIT_1334.json"
+    ],
+    "missingTouchedFiles": [],
+    "nativeDeclarations": [],
+    "persistentNativeFields": [],
+    "zeroGcHotPathSamples": [],
+    "aupCastSamples": [],
+    "lockSamples": [],
+    "throwSamples": [],
+    "buildOrUnityBatchInvoked": false,
+    "note": "Agent 1334 touched documentation/report files only; runtime C# gate scope is empty by boundary audit."
+  }
+}

@@ -2,7 +2,7 @@
 
 Batch source: `Docs/Tasks/CURRENT_BATCH.md`
 Domain: compute shader thread sizing, C# compute dispatch sizing, GPU buffer layout audit.
-Status: VERIFIED GREEN STATIC / VENDOR COMPONENT ACTIVATION GATE + SCANNER PREFILTER / BUILD BLOCKED BY CROSS-DOMAIN COMPILE WALL
+Status: VERIFIED GREEN STATIC / VENDOR COMPONENT ACTIVATION GATE + SCANNER PREFILTER / BUILD BLOCKED BY UNITY SHADERGRAPH ARTIFACT
 
 Relevant mandates read:
 - `GPU_Compute_Kernels_Kernels_Optimization_MX350.txt`
@@ -73,7 +73,7 @@ Latest scanner result:
 - byte offset maps: 134
 - purge verification hash: `f54d1fa1dc5d6fada69755f7f6625b14407dce2bdbf765e624869d36cf016364`
 - current-pass code/proof hash: `f54d1fa1dc5d6fada69755f7f6625b14407dce2bdbf765e624869d36cf016364`
-- build: `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1` launched after CPU/process gate opened (`7%`, no compiler processes). It failed before reaching 1333-owned code on existing cross-domain errors: missing `ToolKinematics.Contracts`, missing many non-1333 `BufferID` enum members, missing Odin attributes, duplicate world/inventory methods.
+- build: `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1` launched after CPU/process gate opened (`19%`, no compiler processes). It failed on missing generated Unity dependency `Temp/CodexBuild/Unity.ShaderGraph.Editor/Unity.ShaderGraph.Editor.dll`; `dotnet build-server shutdown` completed.
 
 ## Checklist
 
@@ -209,3 +209,4 @@ Latest scanner result:
 - Iteration 57: Re-audited first-party legacy buffer API usage after hardening lock-write contracts. Found `HabitatStressSmokeTester` still used `ComputeBuffer` for cold smoke shader payloads, converted the fields/allocations to `GraphicsBuffer`, added first-party legacy `ComputeBuffer` scanner enforcement, regenerated dispatch/purge reports green, then attempted `Hecton8.Core.csproj` after CPU/process gate opened. Build is blocked by cross-domain compile errors unrelated to the touched files.
 - Iteration 58: Re-audited authored scene/prefab activation for vendor compute packages. Dispatch scanner now proves Crest `ShapeFFT` is paired with `Crest4KinematicsAdapter` and scene-authored GPUI manager components are covered by runtime admission disable guards; report shows 7 vendor component activation contracts and 0 first-party violations.
 - Iteration 59: Profiled the dispatch scanner after the asset gate and found most time in comment/string stripping for legacy `ComputeBuffer` proof across all C# files. Added cheap API prefilters before the heavy analyzers, regenerated dispatch/purge reports green, and reduced local dispatch scanner runtime to ~21 seconds.
+- Iteration 60: Rechecked CPU/process gate, launched one throttled `Hecton8.Core.csproj` build when the gate opened, and shut down build servers after failure. Build is currently blocked by the missing Unity-generated `Unity.ShaderGraph.Editor.dll` metadata artifact, not by dispatch scanner failures.

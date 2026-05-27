@@ -263,7 +263,7 @@ namespace Hecton8.Construction
             if (_hostModule == null)
                 TryGetComponent(out _hostModule);
             if (_hostModule == null)
-                _hostModule = GetComponentInParent<BaseModule>();
+                ConstructionParentLookup.TryCaptureSelfOrParent(this, out _hostModule);
             if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
                 _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomReadModel>(this);
         }

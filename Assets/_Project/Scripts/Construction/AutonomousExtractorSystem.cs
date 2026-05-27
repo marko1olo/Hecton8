@@ -1377,7 +1377,7 @@ namespace Hecton8.Construction
             }
 
             if (!collider.TryGetComponent(out node))
-                node = collider.GetComponentInParent<ResourceNode>();
+                ConstructionParentLookup.TryCaptureSelfOrParent(collider, out node);
 
             if (colliderId != 0UL && node != null)
                 CacheResourceNodeLookup(colliderId, node);
